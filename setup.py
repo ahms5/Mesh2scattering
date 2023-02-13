@@ -46,7 +46,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10'
     ],
-    description="Numerical calculation of head-related transfer functions",
+    description="Numerical calculation of surface scattering",
     install_requires=requirements,
     license="EUPL v1.2",
     long_description=readme,
