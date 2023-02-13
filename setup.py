@@ -11,22 +11,27 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-with open('VERSION') as version_file:
-    version = version_file.read()
-
 requirements = [
     'numpy>=1.14.0',
     'scipy>=1.5.0',
     'psutil',
     'sofar',
-    'pyfar>=0.5.0'
+    'pyfar>=0.5.0',
+    'trimesh',
 ]
 
-setup_requirements = ['pytest-runner', 'pytest-blender']
+setup_requirements = ['pytest-runner']
 
 test_requirements = [
     'pytest',
-    'flake8'
+    'bump2version',
+    'wheel',
+    'watchdog',
+    'flake8',
+    'tox',
+    'coverage',
+    'Sphinx',
+    'twine',
 ]
 
 setup(
@@ -34,14 +39,14 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: EUPL 1.2'
+        'License :: OSI Approved :: European Union Public Licence 1.2 (EUPL 1.2)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10'
     ],
-    description="Numerical calculation of head-related transfer functions",
+    description="Numerical calculation of surface scattering",
     install_requires=requirements,
     license="EUPL v1.2",
     long_description=readme,
@@ -53,7 +58,7 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/ahms5/mesh2scattering',
-    version=version,
+    version='0.0.1',
     zip_safe=False,
     python_requires='>=3.8'
 )
