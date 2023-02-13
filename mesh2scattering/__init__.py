@@ -1,6 +1,6 @@
 __author__ = """The Mesh2hrtfs developers"""
 __email__ = ''
-__version__ = '0.0.1'
+__version__ = '0.1.0'
 
 from . import input
 from . import numcalc
