@@ -7,6 +7,8 @@ import json
 import datetime
 from mesh2scattering import utils
 import shutil
+import mesh2scattering as m2s
+from packaging import version
 
 
 def create_source_positions(phi_deg, theta_deg, radius):
@@ -48,8 +50,8 @@ def write_scattering_project(
     title = 'scattering coefficient Reference'
     sourcePositions_ref = source_coords[
         np.abs(source_coords.get_sph()[..., 0]) < 1e-14]
-    programPath = utils.program_root()
     project_path_ref = os.path.join(project_path, 'reference')
+
     write_project(
         project_path_ref, title, frequencies, frequencyStepSize,
         reference_path, receiver_coords, sourcePositions_ref,
@@ -57,9 +59,6 @@ def write_scattering_project(
         method=method,  materialSearchPaths=None,
         speedOfSound=speed_of_sound,
         densityOfMedium=density_of_medium, materials=None)
-
-    with open(os.path.join(programPath, "..", "VERSION")) as read_version:
-        version = read_version.readline()
 
     source_list = [list(i) for i in list(source_coords.get_cart())]
     receiver_list = [list(i) for i in list(receiver_coords.get_cart())]
@@ -69,7 +68,7 @@ def write_scattering_project(
         # project Info
         "project_title": 'scattering pattern',
         "mesh2scattering_path": utils.program_root(),
-        "mesh2scattering_version": version,
+        "mesh2scattering_version": m2s.__version__,
         "bem_version": 'ML-FMM BEM',
         # Constants
         "speed_of_sound": float(346.18),
@@ -114,9 +113,6 @@ def write_project(
     else:
         materialSearchPaths += f";  {defaultPath}"
 
-    with open(os.path.join(programPath, "..", "VERSION")) as read_version:
-        version = read_version.readline()
-
     # create folders
     if not os.path.isdir(project_path):
         os.mkdir(project_path)
@@ -144,8 +140,8 @@ def write_project(
 
     # Write NumCalc input files for all sources (NC.inp) ----------------------
     _write_nc_inp(
-        project_path, version, title, speedOfSound, densityOfMedium,
-        frequencies, ['grid'], materials, method, sourceType,
+        project_path, version.parse(m2s.__version__), title, speedOfSound,
+        densityOfMedium, frequencies, ['grid'], materials, method, sourceType,
         sourcePositions, len(mesh.faces), len(mesh.vertices))
 
 
