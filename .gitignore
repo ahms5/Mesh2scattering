@@ -33,3 +33,4 @@ tests/resources/project/*.pattern.sofa
 cov.xml
 examples/project/*/Output2HRTF/*.csv
 examples/project/*.sofa
+examples/project/*.txt

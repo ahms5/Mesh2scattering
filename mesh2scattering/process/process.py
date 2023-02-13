@@ -3,17 +3,16 @@ import imkar as ik
 import numpy as np
 import sofar as sf
 import os
-from mesh2scattering import utils
+import mesh2scattering as m2s
 
 
-def calculate_scattering(folder, grid):
+def calculate_scattering(folder):
     project_name = os.path.split(folder)[-1]
-    sofa = sf.read_sofa(os.path.join(folder, f'sample_{grid}.pattern.sofa'))
     data, source_coordinates, receiver_coorinates = pf.io.read_sofa(
-        os.path.join(folder, f'sample_{grid}.pattern.sofa'))
+        os.path.join(folder, 'sample.pattern.sofa'))
     data_ref, source_coords_ref, receiver_coords_ref = pf.io.read_sofa(
-        os.path.join(folder, f'reference_{grid}.pattern.sofa'))
-    data, _, _ = _reshape_data(
+        os.path.join(folder, 'reference.pattern.sofa'))
+    data, source_coordinates_, receiver_coorinates_ = _reshape_data(
         data, source_coordinates, receiver_coorinates)
     data_ref, source_coords_ref_, receiver_coords_ref_ = _reshape_data(
         data_ref, source_coords_ref, receiver_coords_ref)
@@ -31,30 +30,30 @@ def calculate_scattering(folder, grid):
     shape[0] *= s.freq.shape[0]
     s.freq = s.freq.reshape(shape)
     s = s[index]
-    shape = np.insert(shape, 1, 1)
+    shape = np.insert(np.array(list(xyz.shape)), 1, 1)
     s.freq = s.freq.reshape(shape)
 
-    sofa = utils._get_sofa_object(
+    sofa = m2s.utils._get_sofa_object(
         s.freq,
         source_coordinates.get_cart(),
         np.array([0, 0, 0]),
-        sofa.GLOBAL_ApplicationVersion,
+        m2s.__version__,
         frequencies=s.frequencies)
 
     # write HRTF data to SOFA file
     sf.write_sofa(os.path.join(
-        folder, f'{project_name}_{grid}.scattering.sofa'), sofa)
+        folder, f'{project_name}.scattering.sofa'), sofa)
 
-    sofa = utils._get_sofa_object(
+    sofa = m2s.utils._get_sofa_object(
         s_rand.freq.reshape(1, 1, len(s.frequencies)),
         np.array([0, 0, 0]),
         np.array([0, 0, 0]),
-        sofa.GLOBAL_ApplicationVersion,
+        m2s.__version__,
         frequencies=s.frequencies)
 
     # write HRTF data to SOFA file
     sf.write_sofa(os.path.join(
-        folder, f'{project_name}_{grid}.scattering_rand.sofa'), sofa)
+        folder, f'{project_name}.scattering_rand.sofa'), sofa)
 
 
 def _reshape_data(data, source_coordinates, receiver_coorinates):
