@@ -4,7 +4,7 @@ History
 v0.1.1
 ------
 * Fix readme
-+ Fix doc build on readthedocs
+* Fix doc build on readthedocs
 
 v0.1.0
 ------
