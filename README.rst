@@ -1,13 +1,21 @@
 ===============
 Mesh2scattering
 ===============
+.. image:: https://badge.fury.io/py/mesh2scattering.svg
+    :target: https://badge.fury.io/py/mesh2scattering
+.. image:: https://readthedocs.org/projects/mesh2scattering/badge/?version=latest
+    :target: https://mesh2scattering.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+.. image:: https://circleci.com/gh/ahms5/Mesh2scattering.svg?style=shield
+    :target: https://circleci.com/gh/ahms5/Mesh2scattering
 
-Mesh2scattering is based on Mesh2HRTF and is an open-source project aiming an easy-to-use software package for the numerical calculation of scattering pattern and scattering and diffusion coeffients of any surface. In a nutshell, Mesh2scattering consists of three parts:
+Mesh2scattering is based on `Mesh2HRTF`_ and is an open-source project aiming an easy-to-use software package for the numerical calculation of scattering pattern and scattering and diffusion coefficients of any surface. In a nutshell, Mesh2scattering consists of three parts:
 
 * input: prepares geometrical data and acoustic parameters for the simulation,
-* NumCalc: based on the input from ``input``, it calculates the corresponding sound field
+* numcalc: based on the input from ``input``, it calculates the corresponding sound field
 * output: processes the output from NumCalc to scattering pattern.
-* scattering: processes the output to scattering and/or diffusion coeffients.
+* process: processes the output to scattering and/or diffusion coefficients.
+* utils: helping functions.
 
 Please notice that this project does not support HRTF post processing, use `Mesh2HRTF`_ instead.
 
@@ -29,7 +37,7 @@ Use pip to install mesh2scattering
 
 (Requires Python 3.8 or higher)
 
-Note that NumCalc need to be build on Linus an MacOS. For Windows it can be dowloaded.
+Note that NumCalc need to be build on Linus an MacOS. For Windows it can be downloaded.
 
 for Linux:
 ~~~~~~~~~~
@@ -44,9 +52,9 @@ for Linux:
 
 .. code-block:: console
 
-    $ cd path/to/your/Mesh2HRTF/mesh2hrtf/NumCalc/src
+    $ cd path/to/your/Mesh2scattering/mesh2scattering/numcalc/src
 
-* Compile NumCalc by running make. It is now located in the folder ``mesh2hrtf/NumCalc/bin``
+* Compile NumCalc by running make. It is now located in the folder ``mesh2scattering/numcalc/bin``
 
 .. code-block:: console
 
@@ -64,23 +72,23 @@ for MacOS:
 ~~~~~~~~~~
 
 * Install the C++ build essentials by installing ``xcode``
-* Go into the NumCalc directory by running ``cd path/to/your/Mesh2HRTF/mesh2hrtf/NumCalc/src``
+* Go into the NumCalc directory by running
 
 .. code-block:: console
 
-    $ cd path/to/your/Mesh2HRTF/mesh2hrtf/NumCalc/src
+    $ cd path/to/your/Mesh2scattering/mesh2scattering/numcalc/src
 
-* Compile NumCalc by running make. It is now located in the folder ``mesh2hrtf/NumCalc/bin``bin``
+* Compile NumCalc by running make. It is now located in the folder ``mesh2scattering/numcalc/bin``
 
 .. code-block:: console
 
     $ make
 
-* Now NumCalc can be used by running ``path/to/mesh2hrtf/NumCalc/bin/NumCalc`` (don't do this yet).bin``
+* Now NumCalc can be used by running ``path/to/mesh2scattering/numcalc/bin/NumCalc`` (don't do this yet).bin``
 
 .. code-block:: console
 
-    $ path/to/mesh2hrtf/NumCalc/bin/NumCalc
+    $ path/to/mesh2scattering/numcalc/bin/NumCalc
 
 
 for Windows:
