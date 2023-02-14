@@ -3,7 +3,7 @@ History
 
 v0.0.1
 ------
-* Fork from Mesh2HRTF
+* Fork from Mesh2HRTF==v1.0.0
 * Remove blender and create projects from stl meshes in Python
 * change project structure
 * remove direct sound from NumCalc
@@ -11,7 +11,7 @@ v0.0.1
 * calculate scattering coefficients and save in 
 
 Mesh2HRTF
-=========
+~~~~~~~~~
 
 v1.0.0
 -------
