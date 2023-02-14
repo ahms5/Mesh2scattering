@@ -18,6 +18,7 @@ requirements = [
     'sofar',
     'pyfar>=0.5.0',
     'trimesh',
+    'git+https://github.com/pyfar/imkar.git@scattering-freefield',
 ]
 
 setup_requirements = ['pytest-runner']
