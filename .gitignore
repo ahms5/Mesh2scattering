@@ -25,11 +25,7 @@ tests/resources/install_addons.py
 *.DS_Store
 
 # ignore test files
-tests/resources/project/*.pattern.sofa
-tests/resources/project/*/Output2HRTF/*.csv
-tests/resources/project/*.pattern.sofa
 .coverage
-.gitignore
 cov.xml
 examples/project/*/Output2HRTF/*.csv
 examples/project/*.sofa

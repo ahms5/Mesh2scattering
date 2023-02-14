@@ -1,4 +1,4 @@
-mesh2scattering.NumCalc
+mesh2scattering.numcalc
 =======================
 
 .. automodule:: mesh2scattering.numcalc

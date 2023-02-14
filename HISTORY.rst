@@ -1,9 +1,14 @@
 History
 =======
 
-v0.0.1
+v0.1.1
 ------
-* Fork from Mesh2HRTF
+* Fix readme
+* Fix doc build on readthedocs
+
+v0.1.0
+------
+* Fork from Mesh2HRTF==v1.0.0
 * Remove blender and create projects from stl meshes in Python
 * change project structure
 * remove direct sound from NumCalc
@@ -11,7 +16,7 @@ v0.0.1
 * calculate scattering coefficients and save in 
 
 Mesh2HRTF
-=========
+---------
 
 v1.0.0
 -------
@@ -113,6 +118,10 @@ Mesh2scattering Developers
 
 Mesh2scattering is currently maintained and developed by
 Anne Heimes
+
+**Institutions**
+
+* Institute for Hearing Technology and Acoustics, RWTH Aachen University, Germany
 
 Mesh2HRTF Developers
 ====================
