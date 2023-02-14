@@ -1,6 +1,12 @@
 History
 =======
 
+v0.1.2
+------
+* Fix typos in readme (#20)
+* Adapt contribution from pyfar (#21)
+* Fix missing dependency workaround in readme (#23)
+
 v0.1.1
 ------
 * Fix readme
