@@ -37,7 +37,7 @@ Use pip to install mesh2scattering
 
 (Requires Python 3.8 or higher)
 
-Note that NumCalc need to be build on Linus an MacOS. For Windows it can be downloaded.
+Note that NumCalc need to be build on Linux and MacOS. For Windows it can be downloaded.
 
 for Linux:
 ~~~~~~~~~~
@@ -72,19 +72,19 @@ for MacOS:
 ~~~~~~~~~~
 
 * Install the C++ build essentials by installing ``xcode``
-* Go into the NumCalc directory by running
+* Go into the ``numcalc/src`` directory by running
 
 .. code-block:: console
 
     $ cd path/to/your/Mesh2scattering/mesh2scattering/numcalc/src
 
-* Compile NumCalc by running make. It is now located in the folder ``mesh2scattering/numcalc/bin``
+* Compile NumCalc by running ``make``. It is now located in the folder ``mesh2scattering/numcalc/bin``
 
 .. code-block:: console
 
     $ make
 
-* Now NumCalc can be used by running ``path/to/mesh2scattering/numcalc/bin/NumCalc`` (don't do this yet).bin``
+* Now NumCalc can be used by running ``path/to/mesh2scattering/numcalc/bin/NumCalc`` (don't do this yet)
 
 .. code-block:: console
 
