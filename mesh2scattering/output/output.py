@@ -314,7 +314,7 @@ def write_pattern(folder):
                 pf.FrequencyData(data, params["frequencies"]),
                 _cart_coordinates(receiver_position_ref),
                 _cart_coordinates(source_position_ref),
-                source_coords).freq    
+                source_coords).freq
 
         # create sofa file
         sofa = utils._get_sofa_object(

@@ -361,10 +361,10 @@ def test_write_scattering_parameter_one_source(tmpdir):
 
     # test sources
     assert os.path.isdir(
-        os.path.join(tmpdir, 'sample', 'NumCalc', f'source_1'))
+        os.path.join(tmpdir, 'sample', 'NumCalc', 'source_1'))
     assert not os.path.isdir(
-        os.path.join(tmpdir, 'sample', 'NumCalc', f'source_2'))
+        os.path.join(tmpdir, 'sample', 'NumCalc', 'source_2'))
     assert os.path.isdir(
-        os.path.join(tmpdir, 'reference', 'NumCalc', f'source_1'))
+        os.path.join(tmpdir, 'reference', 'NumCalc', 'source_1'))
     assert not os.path.isdir(
-        os.path.join(tmpdir, 'reference', 'NumCalc', f'source_2'))
+        os.path.join(tmpdir, 'reference', 'NumCalc', 'source_2'))

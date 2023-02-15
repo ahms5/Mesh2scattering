@@ -34,7 +34,8 @@ def test_write_pattern(tmpdir):
 
 def test_write_pattern_one_source(tmpdir):
     project_path = os.path.join(
-        m2s.utils.repository_root(), "tests", "resources", 'project_one_source')
+        m2s.utils.repository_root(), "tests", "resources",
+        'project_one_source')
     test_dir = os.path.join(tmpdir, 'project_one_source')
     shutil.copytree(project_path, test_dir)
 
