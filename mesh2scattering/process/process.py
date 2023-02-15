@@ -72,8 +72,12 @@ def _reshape_data(data, source_coordinates, receiver_coorinates):
     receiver = _angles2coords(
         receiver_phi, receiver_theta, np.mean(receiver_sph[:, 2]), unit='deg')
 
-    data = _reshape_to_az_by_el(data, source_coordinates, sources)
-    data = _reshape_to_az_by_el(data, receiver_coorinates, receiver, 2)
+    if source_coordinates.cshape != sources.cshape:
+        caxe = 2
+        data = _reshape_to_az_by_el(data, source_coordinates, sources)
+    else:
+        caxe = 1
+    data = _reshape_to_az_by_el(data, receiver_coorinates, receiver, caxe)
 
     return data, sources, receiver
 
@@ -100,6 +104,8 @@ def _angles2coords(
 def _reshape_to_az_by_el(
         data: pf.FrequencyData, coords_in: pf.Coordinates,
         coords_out: pf.Coordinates, cdim: int = 0) -> (pf.FrequencyData):
+    if coords_in.cshape == coords_out.cshape:
+        return data
     if cdim > 0:
         data.freq = np.moveaxis(data.freq, cdim, 0)
     freq_shape = list(coords_out.cshape)
