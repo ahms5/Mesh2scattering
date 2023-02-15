@@ -1,6 +1,12 @@
 History
 =======
 
+v0.1.3
+------
+* improve demo (#26)
+* add demo as py-file (#26)
+* fix post processing for single sources (#25)
+
 v0.1.2
 ------
 * Fix typos in readme (#20)
