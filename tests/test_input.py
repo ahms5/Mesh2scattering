@@ -269,3 +269,102 @@ def test_write_scattering_parameter(source_coords_10deg, tmpdir):
             os.path.join(tmpdir, 'reference', 'NumCalc', f'source_{i+1}'))
     assert not os.path.isdir(
         os.path.join(tmpdir, 'reference', 'NumCalc', f'source_{9}'))
+
+
+def test_write_scattering_parameter_one_source(tmpdir):
+    source_coords = pf.Coordinates(1, 0, 1)
+    frequencies = pf.dsp.filter.fractional_octave_frequencies(
+        3, (500, 5000))[0]
+    path = os.path.join(
+        m2s.utils.program_root(), '..',
+        'tests', 'resources', 'mesh', 'sine_5k')
+    sample_path = os.path.join(path, 'sample.stl')
+    reference_path = os.path.join(path, 'reference.stl')
+    receiver_delta_deg = 1
+    receiver_radius = 5
+
+    structural_wavelength = 0
+    sample_diameter = 0.8
+    model_scale = 2.5
+    symmetry_azimuth = [90, 180]
+    symmetry_rotational = False
+
+    receiverPoints = pf.samplings.sph_equal_angle(
+        receiver_delta_deg, receiver_radius)
+    receiverPoints = receiverPoints[receiverPoints.get_sph()[..., 1] < np.pi/2]
+
+    # execute
+    m2s.input.write_scattering_project(
+        project_path=tmpdir,
+        frequencies=frequencies,
+        sample_path=sample_path,
+        reference_path=reference_path,
+        receiver_coords=receiverPoints,
+        source_coords=source_coords,
+        structural_wavelength=structural_wavelength,
+        model_scale=model_scale,
+        sample_diameter=sample_diameter,
+        symmetry_azimuth=symmetry_azimuth,
+        symmetry_rotational=symmetry_rotational,
+        )
+
+    # test parameters
+    f = open(os.path.join(tmpdir, 'parameters.json'))
+    paras = json.load(f)
+    source_list = [list(i) for i in list(source_coords.get_cart())]
+    receiver_list = [list(i) for i in list(receiverPoints.get_cart())]
+    parameters = {
+        # project Info
+        "project_title": 'scattering pattern',
+        "mesh2scattering_path": m2s.utils.program_root(),
+        "mesh2scattering_version": m2s.__version__,
+        "bem_version": 'ML-FMM BEM',
+        # Constants
+        "speed_of_sound": float(346.18),
+        "density_of_medium": float(1.1839),
+        # Sample Information, post processing
+        "structural_wavelength": structural_wavelength,
+        "model_scale": model_scale,
+        "sample_diameter": sample_diameter,
+        # symmetry information
+        "symmetry_azimuth": symmetry_azimuth,
+        "symmetry_rotational": symmetry_rotational,
+        # frequencies
+        "num_frequencies": len(frequencies),
+        "min_frequency": frequencies[0],
+        "max_frequency": frequencies[-1],
+        "frequencies": list(frequencies),
+        # Source definition
+        "source_type": 'Point source',
+        "sources_num": len(source_list),
+        "sources": source_list,
+        # Receiver definition
+        "receivers_num": len(receiver_list),
+        "receivers": receiver_list,
+    }
+    npt.assert_array_almost_equal(paras['receivers'], parameters['receivers'])
+    paras['receivers'] = parameters['receivers']
+    npt.assert_equal(paras, parameters)
+    # test folder structure
+    assert os.path.isdir(os.path.join(tmpdir, 'sample'))
+    assert os.path.isdir(os.path.join(tmpdir, 'reference'))
+    assert os.path.isdir(os.path.join(tmpdir, 'sample', 'EvaluationGrids'))
+    assert os.path.isdir(os.path.join(tmpdir, 'reference', 'EvaluationGrids'))
+    assert os.path.isdir(os.path.join(tmpdir, 'sample', 'NumCalc'))
+    assert os.path.isdir(os.path.join(tmpdir, 'reference', 'NumCalc'))
+    assert os.path.isdir(os.path.join(tmpdir, 'sample', 'ObjectMeshes'))
+    assert os.path.isdir(os.path.join(tmpdir, 'reference', 'ObjectMeshes'))
+    assert os.path.isfile(os.path.join(
+        tmpdir, 'sample', 'ObjectMeshes', 'sample.stl'))
+    assert os.path.isfile(os.path.join(
+        tmpdir, 'reference', 'ObjectMeshes', 'reference.stl'))
+
+    # test sources
+    assert os.path.isdir(
+        os.path.join(tmpdir, 'sample', 'NumCalc', f'source_1'))
+    assert not os.path.isdir(
+        os.path.join(tmpdir, 'sample', 'NumCalc', f'source_2'))
+    assert os.path.isdir(
+        os.path.join(tmpdir, 'reference', 'NumCalc', f'source_1'))
+    assert not os.path.isdir(
+        os.path.join(tmpdir, 'reference', 'NumCalc', f'source_2'))
