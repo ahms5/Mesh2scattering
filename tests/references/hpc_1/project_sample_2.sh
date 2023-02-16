@@ -2,10 +2,10 @@
 #SBATCH --account=rwth1245
 
 ### Job name
-#SBATCH --job-name=hpc_reference_2
+#SBATCH --job-name=project_sample_2
 
 ### File / path where STDOUT will be written, the %J is the job id
-#SBATCH --output=hpc_reference_2-%J.log
+#SBATCH --output=project_sample_2-%J.log
 
 ### Request the time you need for execution. The full format is D-HH:MM:SS
 ### You must at least specify minutes or days and hours and may add or
@@ -27,11 +27,11 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ahe@akustik.rwth-aachen.de
 
-#SBATCH --array=1,2,3
+#SBATCH --array=1
 
 
 ### Change to the work directory
-cd $HOME/mesh2scattering/hpc
+cd $HOME/mesh2scattering/project
 
 ### load modules and execute
 module load DEVELOP
@@ -42,5 +42,5 @@ export DISPLAY="localhost:0.0"
 
 ### start non-interactive batch job
 
-cd ../reference/NumCalc/source_${SLURM_ARRAY_TASK_ID}
+cd ../sample/NumCalc/source_${SLURM_ARRAY_TASK_ID}
 ../../../../NumCalc -istart 2 -iend 2 >NC2-2_log.txt

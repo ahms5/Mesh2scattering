@@ -431,7 +431,8 @@ def test_write_hpc_one(test_folder, tmpdir):
         test_dir, numcalc,
         template_path=None, times='00-03:00:00')
     assert len(files) == 3
-    assert files == ['hpc_sample_1.sh', 'hpc_sample_2.sh', 'hpc_sample_3.sh']
+    assert files == [
+        'project_sample_1.sh', 'project_sample_2.sh', 'project_sample_3.sh']
     for file in files:
         assert filecmp.cmp(
             os.path.join(test_dir, 'hpc', file),
@@ -456,8 +457,9 @@ def test_write_hpc_complete(test_folder, tmpdir):
         template_path=None, times='00-03:00:00')
     assert len(files) == 6
     assert files == [
-        'hpc_sample_1.sh', 'hpc_sample_2.sh', 'hpc_sample_3.sh',
-        'hpc_reference_1.sh', 'hpc_reference_2.sh', 'hpc_reference_3.sh']
+        'project_sample_1.sh', 'project_sample_2.sh', 'project_sample_3.sh',
+        'project_reference_1.sh', 'project_reference_2.sh',
+        'project_reference_3.sh']
     for file in files:
         assert filecmp.cmp(
             os.path.join(test_dir, 'hpc', file),

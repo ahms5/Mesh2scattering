@@ -851,11 +851,11 @@ def create_hpc_files(
     template_path : str, optional
         template path for hpc job. Note that the may differ for each hpc
         cluster. It should contain the following placeholder:
-            - `$$CORES$$`, defines the number of course which are used
-            - `$$TIME$$``, defines the maximum time per job, see times
-            - `$$NAME$$`, job name,
-            - `$$ARRAY$$`, defines the sources to be simulated
-            - `$$PATH$$`, path for simulation root
+        - `$$CORES$$`, defines the number of course which are used
+        - `$$TIME$$``, defines the maximum time per job, see times
+        - `$$NAME$$`, job name,
+        - `$$ARRAY$$`, defines the sources to be simulated
+        - `$$PATH$$`, path for simulation root
         by default `/mesh2scattering/numcalc/hpc_template/rwth_hpc_draft.sh`
     times : str, optional
         defines the time limit for each job, by default '00-03:00:00'
@@ -884,7 +884,7 @@ def create_hpc_files(
     folder_str = '$$TYPE$$'
     index_str = '$$INDEX$$'
 
-    project_name_out = hpc_path.split(os.sep)[-1]
+    project_name_out = hpc_path.split(os.sep)[-2]
     path = f'$HOME/mesh2scattering/{project_name_out}'
 
     # read draft
