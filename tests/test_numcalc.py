@@ -7,6 +7,7 @@ import glob
 import warnings
 import numpy.testing as npt
 import numpy as np
+import filecmp
 
 # directory of this file
 base_dir = os.path.dirname(__file__)
@@ -316,56 +317,38 @@ def test_project_report(folders, issue, errors, nots, tmpdir):
             tmpdir, "Output2HRTF", "report_issues.txt"))
 
 
-@pytest.mark.parametrize("boundary,grid", [
-    (True, True), (True, False), (False, True)])
-def test_purge_outputs_numcalc_data(boundary, grid, tmpdir):
-    """Test purging the raw NumCalc output"""
-    cwd = os.path.dirname(__file__)
-    data_shtf = os.path.join(cwd, 'resources', 'SHTF')
-
-    # copy required data to temporary directory
-    shutil.copytree(data_shtf, os.path.join(tmpdir, "SHTF"))
-
-    m2s.numcalc.remove_outputs(os.path.join(tmpdir, "*"), boundary, grid)
-
-    for source in glob.glob(
-            os.path.join(tmpdir, "SHTF", "NumCalc", "source_*")):
-        if boundary and grid:
-            assert not os.path.isdir(os.path.join(source, "be.out"))
-        elif boundary:
-            assert os.path.isdir(os.path.join(source, "be.out"))
-            for be in glob.glob(os.path.join(source, "be.out", "be.*")):
-                assert glob.glob(os.path.join(be, "*Boundary")) == []
-        elif grid:
-            assert os.path.isdir(os.path.join(source, "be.out"))
-            for be in glob.glob(os.path.join(source, "be.out", "be.*")):
-                assert glob.glob(os.path.join(be, "*EvalGrid")) == []
-
-
-@pytest.mark.parametrize("hrtf,vtk,reports", [
-    (False, True, False), (True, False, True)])
-def test_purge_outputs_output_data(hrtf, vtk, reports, tmpdir):
+@pytest.mark.parametrize("boundary", [(False), (True),])
+@pytest.mark.parametrize("grid", [(False), (True),])
+@pytest.mark.parametrize("scattering", [(False), (True),])
+@pytest.mark.parametrize("log", [(False), (True),])
+def test_remove_outputs(boundary, grid, scattering, log, tmpdir):
     """Test purging the processed data in Output2HRTF"""
-    cwd = os.path.dirname(__file__)
-    data_shtf = os.path.join(cwd, 'resources', 'SHTF')
-    shutil.copytree(data_shtf, os.path.join(tmpdir, "SHTF"))
-    folder = os.path.join(tmpdir, "SHTF", "Output2HRTF")
+    test_folder = os.path.join('examples', 'project')
+    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
+    shutil.copytree(project_path, test_dir)
 
     m2s.numcalc.remove_outputs(
-        os.path.join(tmpdir, "*"), hrtf=hrtf, vtk=vtk, reports=reports)
+        test_dir,
+        boundary=boundary, grid=grid, scattering=scattering, log=log)
 
-    assert os.path.isfile(
-        os.path.join(folder, "HRTF_FourPointHorPlane_r100cm.sofa")) \
-        == (not hrtf)
+    for subfolder in ['sample', 'reference']:
+        assert len(glob.glob(
+                os.path.join(test_dir, subfolder, "*.sofa"))) == 0
 
-    assert os.path.isdir(os.path.join(folder, "vtk")) \
-        == (not vtk)
-
-    assert os.path.isfile(os.path.join(folder, "report_source_1.csv")) == \
-        (not reports)
-
-    assert os.path.isfile(os.path.join(folder, "report_source_2.csv")) == \
-        (not reports)
+        # Test boundary and grid
+        for source in glob.glob(
+                os.path.join(test_dir, subfolder, "NumCalc", "source_*")):
+            if boundary and grid:
+                assert not os.path.isdir(os.path.join(source, "be.out"))
+            elif boundary:
+                assert os.path.isdir(os.path.join(source, "be.out"))
+                for be in glob.glob(os.path.join(source, "be.out", "be.*")):
+                    assert glob.glob(os.path.join(be, "*Boundary")) == []
+            elif grid:
+                assert os.path.isdir(os.path.join(source, "be.out"))
+                for be in glob.glob(os.path.join(source, "be.out", "be.*")):
+                    assert glob.glob(os.path.join(be, "*EvalGrid")) == []
 
 
 def test_read_ram_estimates():
@@ -384,3 +367,101 @@ def test_read_ram_estimates_assertions():
 
     with pytest.raises(ValueError, match="does not contain a Memory.txt"):
         m2s.numcalc.read_ram_estimates(os.getcwd())
+
+
+@pytest.mark.parametrize("test_folder", [
+    (os.path.join('tests', 'resources', 'project_one_source')),
+    (os.path.join('examples', 'project'))
+    ])
+def test_calc_and_read_ram_estimation(test_folder, tmpdir):
+    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
+    shutil.copytree(project_path, test_dir)
+
+    ram = m2s.numcalc.calc_and_read_ram(test_dir, numcalc)
+    npt.assert_array_almost_equal(ram[0:3, :], np.array([
+        [1, 1250, 1.63636, 0, 1],
+        [2, 2500, 1.68203, 0, 1],
+        [3, 5000, 2.36223, 0, 1]]))
+    npt.assert_array_almost_equal(ram[3:, :], np.array([
+        [1, 1250, 0.737776, 1, 1],
+        [2, 2500, 0.773617, 1, 1],
+        [3, 5000, 1.21888, 1, 1]]))
+
+
+def test_calc_and_read_ram_estimation_error(tmpdir):
+    with pytest.raises(ValueError, match='No such directory'):
+        m2s.numcalc.calc_and_read_ram(os.path.join(tmpdir, 'bla'), numcalc)
+
+
+@pytest.mark.parametrize("test_folder", [
+    (os.path.join('tests', 'resources', 'project_one_source')),
+    (os.path.join('examples', 'project'))
+    ])
+def test_write_hpc_empty(test_folder, tmpdir):
+    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
+    shutil.copytree(project_path, test_dir)
+    files = m2s.numcalc.create_hpc_files(
+        test_dir, numcalc,
+        template_path=None, times='00-03:00:00')
+    assert files == []
+
+
+@pytest.mark.parametrize("test_folder", [
+    (os.path.join('examples', 'project'))
+    ])
+def test_write_hpc_one(test_folder, tmpdir):
+    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
+    shutil.copytree(project_path, test_dir)
+    # delete source_1 results
+    shutil.rmtree(os.path.join(
+        test_dir, 'sample', 'NumCalc', 'source_1', 'be.out'))
+    os.remove(os.path.join(
+        test_dir, 'sample', 'NumCalc', 'source_1', 'Memory.txt'))
+    source_dir = os.path.join(
+        test_dir, 'sample', 'NumCalc', 'source_1')
+    path_all = os.listdir(source_dir)
+    extension = ('txt', 'out')
+    path_remove = [fn for fn in path_all if fn.endswith(extension)]
+    [os.remove(os.path.join(source_dir, filePath)) for filePath in path_remove]
+
+    files = m2s.numcalc.create_hpc_files(
+        test_dir, numcalc,
+        template_path=None, times='00-03:00:00')
+    assert len(files) == 3
+    assert files == ['hpc_sample_1.sh', 'hpc_sample_2.sh', 'hpc_sample_3.sh']
+    for file in files:
+        assert filecmp.cmp(
+            os.path.join(test_dir, 'hpc', file),
+            os.path.join(
+                m2s.utils.repository_root(), 'tests', 'references',
+                'hpc_1', file)
+        )
+
+
+@pytest.mark.parametrize("test_folder", [
+    (os.path.join('examples', 'project'))
+    ])
+def test_write_hpc_complete(test_folder, tmpdir):
+    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
+    shutil.copytree(project_path, test_dir)
+    # delete all results
+    m2s.numcalc.remove_outputs(test_dir, True, True, True, True)
+
+    files = m2s.numcalc.create_hpc_files(
+        test_dir, numcalc,
+        template_path=None, times='00-03:00:00')
+    assert len(files) == 6
+    assert files == [
+        'hpc_sample_1.sh', 'hpc_sample_2.sh', 'hpc_sample_3.sh',
+        'hpc_reference_1.sh', 'hpc_reference_2.sh', 'hpc_reference_3.sh']
+    for file in files:
+        assert filecmp.cmp(
+            os.path.join(test_dir, 'hpc', file),
+            os.path.join(
+                m2s.utils.repository_root(), 'tests', 'references',
+                'hpc_2', file)
+        )

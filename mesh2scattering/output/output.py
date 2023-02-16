@@ -405,7 +405,7 @@ def check_project(folder=None):
     sources = glob.glob(os.path.join(folder, "NumCalc", "source_*"))
     num_sources = len(sources)
 
-    with open(os.path.join(folder, "parameters.json"), "r") as file:
+    with open(os.path.join(folder, '..', "parameters.json"), "r") as file:
         params = json.load(file)
 
     # sort source files (not read in correct order in some cases)
