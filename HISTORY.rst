@@ -6,6 +6,7 @@ v0.1.3
 * improve demo (#26)
 * add demo as py-file (#26)
 * fix post processing for single sources (#25)
+* add hpc support fro RWTH Aachen (#28)
 
 v0.1.2
 ------
