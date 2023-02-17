@@ -146,3 +146,5 @@ s_path = os.path.join(
 s, source_pos, _ = pf.io.read_sofa(s_path)
 pf.plot.freq(s, dB=False)
 plt.show()
+
+# %%
