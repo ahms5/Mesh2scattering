@@ -557,7 +557,7 @@ def _numcalc_instances():
 
     num_instances = 0
     for p in psutil.process_iter(['name', 'memory_info']):
-        if hasattr(p.info['name'], 'endswith'):
+        if not hasattr(p.info['name'], 'endswith'):
             continue
         if p.info['name'].endswith(numcalc_executable):
             num_instances += 1
