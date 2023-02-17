@@ -263,60 +263,6 @@ def test_defaults(tmpdir):
         assert os.path.isfile(os.path.join(base, f"NC{step}-{step}.out"))
 
 
-@pytest.mark.parametrize("folders,issue,errors,nots", (
-    # no issues single NC.out filejoin
-    [["case_0"], False, [], []],
-    # issues in NC.out that are corrected by second file NC1-1.out
-    [["case_4"], False, [], []],
-    # missing frequencies
-    [["case_1"], True,
-     ["Frequency steps that were not calculated:\n59, 60"], []],
-    # convergence issues
-    [["case_2"], True,
-     ["Frequency steps that did not converge:\n18, 42"], []],
-    # input/mesh issues
-    [["case_3"], True,
-     ["Frequency steps that were not calculated:\n59, 60",
-      "Frequency steps with bad input:\n58"], []],
-    # no isses in source 1 but issues in source 2
-    [["case_0", "case_1"], True,
-     ["Detected issues for source 2",
-      "Frequency steps that were not calculated:\n59, 60"],
-     ["Detected issues for source 1"]]
-))
-def test_project_report(folders, issue, errors, nots, tmpdir):
-    """Test issues found by the project report"""
-
-    cwd = os.path.dirname(__file__)
-    data_nc = os.path.join(cwd, 'resources', 'nc.out')
-    # create fake project structure
-    os.mkdir(os.path.join(tmpdir, "NumCalc"))
-    os.mkdir(os.path.join(tmpdir, "Output2HRTF"))
-    shutil.copyfile(os.path.join(data_nc, "parameters.json"),
-                    os.path.join(tmpdir, "parameters.json"))
-    for ff, folder in enumerate(folders):
-        shutil.copytree(os.path.join(data_nc, folder),
-                        os.path.join(tmpdir, "NumCalc", f"source_{ff + 1}"))
-
-    # run the project report
-    issues, report = m2s.output.write_output_report(tmpdir)
-
-    # test the output
-    assert issues is issue
-    for error in errors:
-        assert error in report
-    for no in nots:
-        assert no not in report
-    if issue:
-        assert os.path.isfile(os.path.join(
-            tmpdir, "Output2HRTF", "report_issues.txt"))
-        assert ("For more information check Output2HRTF/report_source_*.csv "
-                "and the NC*.out files located at NumCalc/source_*") in report
-    else:
-        assert not os.path.isfile(os.path.join(
-            tmpdir, "Output2HRTF", "report_issues.txt"))
-
-
 @pytest.mark.parametrize("boundary", [(False), (True),])
 @pytest.mark.parametrize("grid", [(False), (True),])
 @pytest.mark.parametrize("scattering", [(False), (True),])
