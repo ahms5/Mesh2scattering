@@ -60,14 +60,17 @@ def test_write_scattering_one_source(tmpdir):
 
 
 def test_write_scattering_sine(tmpdir):
+    # Test simulation and validate with Mommertz previous simulation,
+    # results are same up to a diff to 0.06
     project_path = os.path.join(
         m2s.utils.repository_root(), "tests", "resources",
         'sine')
-    # test random incident scattering coefficient
+    # read simulated data
     scattering_coefficient_rand, source_coords_rand, receiver_coords_rand = \
         pf.io.read_sofa(os.path.join(
             project_path, 'sine.scattering_rand.sofa'))
 
+    # reference from Mommertz
     mommertz_ref = pf.FrequencyData(
         np.array([[[
             0.00592885, 0.00197628, 0.00790514, 0.01976285, 0.00790514,
@@ -79,8 +82,7 @@ def test_write_scattering_sine(tmpdir):
             1233.64867623, 1384.20284453, 1553.13060495, 1742.67426596,
             1942.15012515]))
 
-    # ax = pf.plot.freq(mommertz_ref, dB=False)
-    # ax = pf.plot.freq(scattering_coefficient_rand, dB=False, ax=ax)
+    # compare to reference
     npt.assert_equal(
         scattering_coefficient_rand.frequencies,
         mommertz_ref.frequencies)
