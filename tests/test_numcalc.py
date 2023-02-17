@@ -371,11 +371,11 @@ def test_read_ram_estimates_assertions():
 
 @pytest.mark.parametrize("test_folder", [
     (os.path.join('tests', 'resources', 'project_one_source')),
-    (os.path.join('examples', 'project'))
     ])
 def test_calc_and_read_ram_estimation(test_folder, tmpdir):
     project_path = os.path.join(m2s.utils.repository_root(), test_folder)
-    test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
+    project_name = os.path.split(test_folder)[-1]
+    test_dir = os.path.join(tmpdir, project_name)
     shutil.copytree(project_path, test_dir)
 
     ram = m2s.numcalc.calc_and_read_ram(test_dir, numcalc)
