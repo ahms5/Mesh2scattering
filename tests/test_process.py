@@ -3,6 +3,7 @@ import pyfar as pf
 import os
 import numpy.testing as npt
 import shutil
+import numpy as np
 
 
 def test_import():
@@ -56,3 +57,33 @@ def test_write_scattering_one_source(tmpdir):
     npt.assert_equal(
         scattering_coefficient_rand.freq,
         scattering_coefficient.freq)
+
+
+def test_write_scattering_sine(tmpdir):
+    project_path = os.path.join(
+        m2s.utils.repository_root(), "tests", "resources",
+        'sine')
+    # test random incident scattering coefficient
+    scattering_coefficient_rand, source_coords_rand, receiver_coords_rand = \
+        pf.io.read_sofa(os.path.join(
+            project_path, 'sine.scattering_rand.sofa'))
+
+    mommertz_ref = pf.FrequencyData(
+        np.array([[[
+            0.00592885, 0.00197628, 0.00790514, 0.01976285, 0.00790514,
+            0.03754941, 0.09288538, 0.20553360, 0.32015810, 0.41501976,
+            0.53162055, 0.63636364, 0.70158103]]]),
+        np.array([
+            491.04984069,  550.97743741,  618.21858267,  698.38026206,
+            778.32061898,  873.30666786,  979.88478981, 1099.46967844,
+            1233.64867623, 1384.20284453, 1553.13060495, 1742.67426596,
+            1942.15012515]))
+
+    # ax = pf.plot.freq(mommertz_ref, dB=False)
+    # ax = pf.plot.freq(scattering_coefficient_rand, dB=False, ax=ax)
+    npt.assert_equal(
+        scattering_coefficient_rand.frequencies,
+        mommertz_ref.frequencies)
+    npt.assert_allclose(
+        scattering_coefficient_rand.freq,
+        mommertz_ref.freq, atol=6e-2)
