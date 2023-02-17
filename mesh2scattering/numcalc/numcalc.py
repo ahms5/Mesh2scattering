@@ -7,6 +7,8 @@ import numpy as np
 import shutil
 import csv
 import mesh2scattering as m2s
+import re
+import io
 
 
 def remove_outputs(
@@ -914,6 +916,7 @@ def create_hpc_files(
         array = ','.join(array_list)
 
         name = f'{project_name_out}_{folder}_{index}'
+
         # fill in form
         shell = lines.replace(cores_str, f'{cores}')
         shell = shell.replace(times_str, times)
@@ -923,9 +926,12 @@ def create_hpc_files(
         shell = shell.replace(folder_str, folder)
         shell = shell.replace(index_str, f'{index}')
 
+        # paste correct newline symbol for Linux
+        shell = re.sub('\r\n', '\n', shell)
+
         file_out = os.path.join(hpc_path, f'{name}.sh')
         shell_scripte.append(f'{name}.sh')
-        with open(file_out, "w") as f:
+        with io.open(file_out, "w", newline='\n') as f:
             f.write(shell)
             f.close()
 
