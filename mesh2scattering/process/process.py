@@ -7,6 +7,18 @@ import mesh2scattering as m2s
 
 
 def calculate_scattering(folder):
+    """read pattern data ``sample.pattern.sofa`` and ``reference.pattern.sofa``
+    and calculate and export the scattering coefficient for each incident angle
+    to ``project_name.scattering.sofa``, then random incidence scattering
+    coefficient is calculated and is saved in
+    ``project_name.scattering_rand.sofa``
+
+    Parameters
+    ----------
+    folder : str, path
+        root directory of the project, this folder need to contain the above
+        mentioned sofa files.
+    """
     project_name = os.path.split(folder)[-1]
     data, source_coordinates, receiver_coorinates = pf.io.read_sofa(
         os.path.join(folder, 'sample.pattern.sofa'))
@@ -30,7 +42,7 @@ def calculate_scattering(folder):
     shape[0] *= s.freq.shape[0]
     s.freq = s.freq.reshape(shape)
     s = s[index]
-    shape = np.insert(np.array(list(xyz.shape)), 1, 1)
+    shape = np.insert(np.array(list(s.freq.shape)), 1, 1)
     s.freq = s.freq.reshape(shape)
 
     sofa = m2s.utils._get_sofa_object(
@@ -40,7 +52,7 @@ def calculate_scattering(folder):
         m2s.__version__,
         frequencies=s.frequencies)
 
-    # write HRTF data to SOFA file
+    # write scattering coefficient data to SOFA file
     sf.write_sofa(os.path.join(
         folder, f'{project_name}.scattering.sofa'), sofa)
 
@@ -51,7 +63,7 @@ def calculate_scattering(folder):
         m2s.__version__,
         frequencies=s.frequencies)
 
-    # write HRTF data to SOFA file
+    # write random scattering coefficient data to SOFA file
     sf.write_sofa(os.path.join(
         folder, f'{project_name}.scattering_rand.sofa'), sofa)
 
