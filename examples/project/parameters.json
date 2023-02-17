@@ -1,11 +1,11 @@
 {
     "project_title": "scattering pattern",
     "mesh2scattering_path": "/Users/anne/git/Mesh2scattering/mesh2scattering",
-    "mesh2scattering_version": "0.0.1",
+    "mesh2scattering_version": "0.1.2",
     "bem_version": "ML-FMM BEM",
     "speed_of_sound": 346.18,
     "density_of_medium": 1.1839,
-    "structural_wavelength": 0,
+    "structural_wavelength": 0.0708,
     "model_scale": 2.5,
     "sample_diameter": 0.8,
     "symmetry_azimuth": [

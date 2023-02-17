@@ -6,13 +6,13 @@ import subprocess
 import numpy as np
 import shutil
 import csv
+import mesh2scattering as m2s
 
 
 def remove_outputs(
-        paths, boundary=False, grid=False, hrtf=False, vtk=False,
-        reports=False):
+        paths, boundary=False, grid=False, scattering=False, log=False):
     """
-    Remove output data from Mesh2HRTF project folder.
+    Remove output data from scattering project folder.
 
     Use this function to delete output that is no longer needed and is taking
     too much disk space.
@@ -20,7 +20,7 @@ def remove_outputs(
     Parameters
     ----------
     paths : str, tuple of strings
-        Paths under which Mesh2HRTF project folders are searched. Can contain
+        Paths under which scattering project folders are searched. Can contain
         `*` remove data from multiple project folders, e.g., `path/*left` will
         remove data from all folders in `path` that end with `left`.
     boundary : bool, optional
@@ -31,14 +31,11 @@ def remove_outputs(
         Remove raw pressure and velocity simulated on the evaluation grid.This
         data is saved in
         `project_folder/NumCalc/source_*/be.out/be.*/*EvalGrid`
-    hrtf : bool, optional
-        Remove HRTFs saved in SOFA files saved in
-        `project_folder/Output2HRTF/HRTF_*.sofa`.
-    vtk : bool, optional
-        Remove vtk exports generated with :py:func:`~mesh2hrtf.export_vtk`
-        and saved in `project_folder/Output2HRTF/vtk`.
-    reports : bool, optional
-        Remove project reports saved in `project_folder/Output2HRTF/report_*`.
+    scattering : bool, optional
+        Remove scattering saved in SOFA files saved in
+        `project_folder/*.sofa`.
+    log : bool, optional
+        Remove log ``(*.txt, *.out)`` files in ``source_*`` dir.
     """
 
     # check input
@@ -50,57 +47,63 @@ def remove_outputs(
 
     # loop paths and contained folders
     for pp, path in enumerate(paths):
+        for subfolder in ['sample', 'reference']:
+            folders = glob.glob(os.path.join(path, subfolder))
 
-        folders = glob.glob(path)
+            for ff, folder in enumerate(folders):
 
-        for ff, folder in enumerate(folders):
+                print(
+                    f"Purging path {pp+1}/{len(paths)} "
+                    f"folder {ff+1}/{folders}")
+                print(os.path.basename(folder))
 
-            print(f"Purging path {pp+1}/{len(paths)} folder {ff+1}/{folders}")
-            print(os.path.basename(folder))
+                # check if the directories exist ------------------------------
+                has_numcalc = os.path.isdir(os.path.join(folder, "NumCalc"))
+                if has_numcalc:
+                    numcalc = glob.glob(os.path.join(
+                        folder, "NumCalc", "source_*"))
 
-            # check if the directories exist ----------------------------------
-            has_numcalc = os.path.isdir(os.path.join(folder, "NumCalc"))
-            if has_numcalc:
-                numcalc = glob.glob(os.path.join(
-                    folder, "NumCalc", "source_*"))
+                has_output = os.path.isdir(os.path.join(folder, "Output2HRTF"))
+                if has_output:
+                    output = glob.glob(
+                        os.path.join(folder, "Output2HRTF", "*"))
 
-            has_output = os.path.isdir(os.path.join(folder, "Output2HRTF"))
-            if has_output:
-                output = glob.glob(os.path.join(folder, "Output2HRTF", "*"))
+                # data in source*/be.out/be.* folders -------------------------
+                # delete entire be.out folders
+                if boundary and grid and has_numcalc:
+                    for nc in numcalc:
+                        shutil.rmtree(os.path.join(nc, "be.out"))
+                # delete only the boundary data
+                elif boundary and has_numcalc:
+                    for nc in numcalc:
+                        for be in glob.glob(
+                                os.path.join(nc, "be.out", "be.*")):
+                            os.remove(os.path.join(be, "pBoundary"))
+                            os.remove(os.path.join(be, "vBoundary"))
+                # delete only the grid data
+                elif grid and has_numcalc:
+                    for nc in numcalc:
+                        for be in glob.glob(
+                                os.path.join(nc, "be.out", "be.*")):
+                            os.remove(os.path.join(be, "pEvalGrid"))
+                            os.remove(os.path.join(be, "vEvalGrid"))
+                # delete only the log data
+                if log and has_numcalc:
+                    for nc in numcalc:
+                        for be in glob.glob(os.path.join(nc, "*.txt")):
+                            if os.path.isfile(os.path.join(nc, be)):
+                                os.remove(os.path.join(nc, be))
+                        for be in glob.glob(os.path.join(nc, "*.out")):
+                            if os.path.isfile(os.path.join(nc, be)):
+                                os.remove(os.path.join(nc, be))
 
-            # data in source*/be.out/be.* folders -----------------------------
-            # delete entire be.out folders
-            if boundary and grid and has_numcalc:
-                for nc in numcalc:
-                    shutil.rmtree(os.path.join(nc, "be.out"))
-            # delete only the boundary data
-            elif boundary and has_numcalc:
-                for nc in numcalc:
-                    for be in glob.glob(os.path.join(nc, "be.out", "be.*")):
-                        os.remove(os.path.join(be, "pBoundary"))
-                        os.remove(os.path.join(be, "vBoundary"))
-            # delete only the grid data
-            elif grid and has_numcalc:
-                for nc in numcalc:
-                    for be in glob.glob(os.path.join(nc, "be.out", "be.*")):
-                        os.remove(os.path.join(be, "pEvalGrid"))
-                        os.remove(os.path.join(be, "vEvalGrid"))
-
-            # data in Output2HRTF ---------------------------------------------
-            if has_output:
-                for oo in output:
-                    base = os.path.basename(oo)
-                    # remove compressed boundary data
-                    if base.startswith("HRTF_") and base.endswith(".sofa") \
-                            and hrtf:
-                        os.remove(oo)
-                    # remove compressed boundary data
-                    if base.endswith("vtk") and os.path.isdir(oo) \
-                            and vtk:
-                        shutil.rmtree(oo)
-                    # remove compressed boundary data
-                    if base.startswith("report_") and reports:
-                        os.remove(oo)
+                # data in scattering ------------------------------------------
+                if has_output:
+                    for oo in output:
+                        base = os.path.basename(oo)
+                        # remove compressed boundary data
+                        if base.endswith(".sofa") and scattering:
+                            os.remove(oo)
 
 
 def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
@@ -165,7 +168,7 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
             Always launches the step with the highest possible memory
             consumption.
         ``'low'``
-            Alsways launches the step with the lowest estimated memory
+            Always launches the step with the lowest estimated memory
             consumption
         ``'alternate'`` (default)
             mixes the two approaches above.
@@ -664,7 +667,7 @@ def read_ram_estimates(folder: str):
     Read estimated RAM consumption from Memory.txt.
 
     Note that the RAM consumption per frequency step can be estimated and
-    written to `Memory.txt` by calling ``NumCalc -estimate_ram``. This must
+    written to `Memory.txt` by calling `NumCalc -estimate_ram`. This must
     be done before calling this function.
 
     Parameters
@@ -676,7 +679,7 @@ def read_ram_estimates(folder: str):
     Returns
     -------
     estimates : numpy array
-        An array of shape ``(N, 3)`` where ``N`` is the number of frequency
+        An array of shape `(N, 3)` where `N` is the number of frequency
         steps. The first column contains the frequency step, the second the
         frequency in Hz, and the third the estimated RAM consumption in GB.
     """
@@ -775,3 +778,155 @@ def _load_results(foldername, filename, numFrequencies):
         data[ii, :] = tmpData if tmpData else np.nan
 
     return data, np.arange(start_index, numDatalines + start_index)
+
+
+def calc_and_read_ram(project_path, numcalc_executable):
+    """Calculate if not exists and returns the memory usage for sample and
+    reference.
+
+    Parameters
+    ----------
+    project_path : str, path
+        project root path, this should contain the ``sample`` and the
+        ``reference`` folder.
+    numcalc_executable : str, path
+        Path to numcalc executable, on Windows it ends with ``NumCalc.exe``
+        and on Unix system ``NumCalc``
+
+    Returns
+    -------
+    ram : np.ndarray
+        with shape (N, 6), where the first row definitions are as follows:
+            - id of the frequency
+            - frequency itself
+            - expected RAM usage in GB
+            - defines folder, for ``sample`` 0 and for ``reference`` 1
+            - source id starting from 1, like the folders name
+    """
+    if not os.path.isdir(project_path):
+        raise ValueError(f'No such directory {project_path}')
+    sample_source = os.path.join(project_path, 'sample', 'NumCalc', 'source_1')
+    ref_source = os.path.join(project_path, 'reference', 'NumCalc', 'source_1')
+    paths = [sample_source, ref_source]
+    for path in paths:
+        if not os.path.isfile(os.path.join(path, "Memory.txt")):
+            if os.name == 'nt':  # Windows detected
+                # run NumCalc and route all printouts to a log file
+                subprocess.run(
+                    f"{numcalc_executable} -estimate_ram",
+                    stdout=subprocess.DEVNULL, cwd=path, check=True)
+
+            else:  # elif os.name == 'posix': Linux or Mac detected
+                # run NumCalc and route all printouts to a log file
+                subprocess.run(
+                    [f"{numcalc_executable} -estimate_ram"],
+                    shell=True, stdout=subprocess.DEVNULL,
+                    cwd=path, check=True)
+
+    ram = []
+    for idx in range(len(paths)):
+        data = read_ram_estimates(paths[idx])
+        data = np.append(data, np.zeros((data.shape[0], 1))+idx, axis=1)
+        ram.append(data)
+
+    ram = np.vstack(ram)
+    cores = (np.array(ram[:, 2]*1.1/4, dtype=int)+1)
+    ram = np.append(ram, cores.reshape((len(cores), 1)), axis=1)
+    return ram
+
+
+def create_hpc_files(
+        project_path, numcalc_executable,
+        template_path=None, times='00-03:00:00'):
+    """Create job-files for hpc computing in hpc folder. For each frequency
+    bin a file is created in which a job array is defined for each unsolved
+    step.
+
+    Parameters
+    ----------
+    project_path : str, path
+        Project root, which contains the `sample` and `reference` folder
+    numcalc_executable : str, path
+        path to numcalc executable, is used to estimate the ram usage
+    template_path : str, optional
+        template path for hpc job. Note that the may differ for each hpc
+        cluster. It should contain the following placeholder:
+        - `$$CORES$$`, defines the number of course which are used
+        - `$$TIME$$``, defines the maximum time per job, see times
+        - `$$NAME$$`, job name,
+        - `$$ARRAY$$`, defines the sources to be simulated
+        - `$$PATH$$`, path for simulation root
+        by default `/mesh2scattering/numcalc/hpc_template/rwth_hpc_draft.sh`
+    times : str, optional
+        defines the time limit for each job, by default '00-03:00:00'
+
+    Returns
+    -------
+    list(str)
+        list of job definition files.
+    """
+
+    if template_path is None:
+        template_path = os.path.join(
+            m2s.utils.program_root(), 'numcalc', 'hpc_templates',
+            'rwth_hpc_draft.sh')
+    ram = calc_and_read_ram(project_path, numcalc_executable)
+    program_path = m2s.utils.program_root()
+    hpc_path = os.path.join(project_path, 'hpc')
+    if not os.path.exists(hpc_path):
+        os.mkdir(hpc_path)
+
+    cores_str = '$$CORES$$'
+    times_str = '$$TIME$$'
+    name_str = '$$NAME$$'
+    array_str = '$$ARRAY$$'
+    path_str = '$$PATH$$'
+    folder_str = '$$TYPE$$'
+    index_str = '$$INDEX$$'
+
+    project_name_out = hpc_path.split(os.sep)[-2]
+    path = f'$HOME/mesh2scattering/{project_name_out}'
+
+    # read draft
+    with open(os.path.join(program_path, template_path)) as f:
+        lines = f.read()
+    shell_scripte = []
+    for idx in range(ram.shape[0]):
+        cores = int(ram[idx, 4])
+        if ram[idx, 3] == 0:  # sample
+            folder = 'sample'
+        else:
+            folder = 'reference'
+        index = int(ram[idx, 0])
+
+        all_files, fundamentals, out, out_names = m2s.output.check_project(
+            os.path.join(project_path, folder))
+
+        array_list = []
+        is_error = False
+        for ss in range(out.shape[2]):
+            f = out[index-1, :, ss]
+            if any(f < 0):
+                array_list.append(f'{ss+1}')
+                is_error = True
+        if not is_error:
+            continue
+        array = ','.join(array_list)
+
+        name = f'{project_name_out}_{folder}_{index}'
+        # fill in form
+        shell = lines.replace(cores_str, f'{cores}')
+        shell = shell.replace(times_str, times)
+        shell = shell.replace(name_str, name)
+        shell = shell.replace(array_str, array)
+        shell = shell.replace(path_str, path)
+        shell = shell.replace(folder_str, folder)
+        shell = shell.replace(index_str, f'{index}')
+
+        file_out = os.path.join(hpc_path, f'{name}.sh')
+        shell_scripte.append(f'{name}.sh')
+        with open(file_out, "w") as f:
+            f.write(shell)
+            f.close()
+
+    return shell_scripte

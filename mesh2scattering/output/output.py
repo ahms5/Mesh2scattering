@@ -271,14 +271,13 @@ def write_pattern(folder):
         receiver_coords = _cart_coordinates(receiver_position)
         source_coords = _cart_coordinates(source_position)
         # data = np.swapaxes(data, 0, 1)
-        data_out, source_coords = apply_symmetry_mirror(
-            data, receiver_coords, source_coords, 1)
-        data_out, source_coords = apply_symmetry_mirror(
-            data_out, receiver_coords, source_coords, 1)
+        for i in params['symmetry_azimuth']:
+            data, source_coords = apply_symmetry_mirror(
+                data, receiver_coords, source_coords, 1)
 
         # write data
         sofa = utils._get_sofa_object(
-            data_out.freq,
+            data.freq,
             source_coords.get_cart(),
             receiver_position,
             params["mesh2scattering_version"],
@@ -309,16 +308,17 @@ def write_pattern(folder):
 
         # apply symmetry of reference sample
         data = evaluationGrids[grid]["pressure"]
-        data = np.swapaxes(data, 0, 1)
-        data_out = apply_symmetry_circular(
-            pf.FrequencyData(data, params["frequencies"]),
-            _cart_coordinates(receiver_position_ref),
-            _cart_coordinates(source_position_ref),
-            source_coords)
+        if source_coords.csize != source_position_ref.shape[0]:
+            data = np.swapaxes(data, 0, 1)
+            data = apply_symmetry_circular(
+                pf.FrequencyData(data, params["frequencies"]),
+                _cart_coordinates(receiver_position_ref),
+                _cart_coordinates(source_position_ref),
+                source_coords).freq
 
         # create sofa file
         sofa = utils._get_sofa_object(
-            data_out.freq,
+            data,
             source_coords.get_cart(),
             receiver_position_ref,
             params["mesh2scattering_version"],
@@ -405,7 +405,7 @@ def check_project(folder=None):
     sources = glob.glob(os.path.join(folder, "NumCalc", "source_*"))
     num_sources = len(sources)
 
-    with open(os.path.join(folder, "parameters.json"), "r") as file:
+    with open(os.path.join(folder, '..', "parameters.json"), "r") as file:
         params = json.load(file)
 
     # sort source files (not read in correct order in some cases)
@@ -487,7 +487,10 @@ def read_numcalc(folder=None, is_ref=False):
         params = json.load(file)
 
     # get source positions
-    source_coords = np.transpose(np.array(params['sources']))
+    if params['sources_num'] > 1:
+        source_coords = np.transpose(np.array(params['sources']))
+    else:
+        source_coords = np.array(params['sources']).reshape((1, 3))
     source_coords = pf.Coordinates(
         source_coords[..., 0], source_coords[..., 1], source_coords[..., 2])
 

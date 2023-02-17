@@ -1,6 +1,17 @@
 History
 =======
 
+v0.1.3
+------
+* improve demo (#26)
+* add demo as py-file (#26)
+* fix post processing for single sources (#25)
+* add hpc support fro RWTH Aachen (#28)
+* test and fix remove_output (#28)
+* add validation test for scattering coefficients after Mommertz (#29)
+* fix bug in scattering coefficients calculation (#29)
+* fix geometry for example project (#30)
+
 v0.1.2
 ------
 * Fix typos in readme (#20)

@@ -7,6 +7,18 @@ import mesh2scattering as m2s
 
 
 def calculate_scattering(folder):
+    """read pattern data ``sample.pattern.sofa`` and ``reference.pattern.sofa``
+    and calculate and export the scattering coefficient for each incident angle
+    to ``project_name.scattering.sofa``, then random incidence scattering
+    coefficient is calculated and is saved in
+    ``project_name.scattering_rand.sofa``
+
+    Parameters
+    ----------
+    folder : str, path
+        root directory of the project, this folder need to contain the above
+        mentioned sofa files.
+    """
     project_name = os.path.split(folder)[-1]
     data, source_coordinates, receiver_coorinates = pf.io.read_sofa(
         os.path.join(folder, 'sample.pattern.sofa'))
@@ -30,7 +42,7 @@ def calculate_scattering(folder):
     shape[0] *= s.freq.shape[0]
     s.freq = s.freq.reshape(shape)
     s = s[index]
-    shape = np.insert(np.array(list(xyz.shape)), 1, 1)
+    shape = np.insert(np.array(list(s.freq.shape)), 1, 1)
     s.freq = s.freq.reshape(shape)
 
     sofa = m2s.utils._get_sofa_object(
@@ -40,7 +52,7 @@ def calculate_scattering(folder):
         m2s.__version__,
         frequencies=s.frequencies)
 
-    # write HRTF data to SOFA file
+    # write scattering coefficient data to SOFA file
     sf.write_sofa(os.path.join(
         folder, f'{project_name}.scattering.sofa'), sofa)
 
@@ -51,7 +63,7 @@ def calculate_scattering(folder):
         m2s.__version__,
         frequencies=s.frequencies)
 
-    # write HRTF data to SOFA file
+    # write random scattering coefficient data to SOFA file
     sf.write_sofa(os.path.join(
         folder, f'{project_name}.scattering_rand.sofa'), sofa)
 
@@ -72,8 +84,12 @@ def _reshape_data(data, source_coordinates, receiver_coorinates):
     receiver = _angles2coords(
         receiver_phi, receiver_theta, np.mean(receiver_sph[:, 2]), unit='deg')
 
-    data = _reshape_to_az_by_el(data, source_coordinates, sources)
-    data = _reshape_to_az_by_el(data, receiver_coorinates, receiver, 2)
+    if source_coordinates.cshape != sources.cshape:
+        caxe = 2
+        data = _reshape_to_az_by_el(data, source_coordinates, sources)
+    else:
+        caxe = 1
+    data = _reshape_to_az_by_el(data, receiver_coorinates, receiver, caxe)
 
     return data, sources, receiver
 
@@ -100,6 +116,8 @@ def _angles2coords(
 def _reshape_to_az_by_el(
         data: pf.FrequencyData, coords_in: pf.Coordinates,
         coords_out: pf.Coordinates, cdim: int = 0) -> (pf.FrequencyData):
+    if coords_in.cshape == coords_out.cshape:
+        return data
     if cdim > 0:
         data.freq = np.moveaxis(data.freq, cdim, 0)
     freq_shape = list(coords_out.cshape)

@@ -1,8 +1,8 @@
 istart= 1 iend = 1
 
----------- NumCalc started: 13/2/2023 15:28:45 ----------
+---------- NumCalc started: 17/2/2023 7:28:11 ----------
 
-Running on:         182-246.eduroam.rwth-aachen.de
+Running on:         Annes-MacBook-Air.local
 
 3D analysis
 Job title: scattering coefficient Reference
@@ -15,8 +15,8 @@ Number of equations = 23668
 
 Informations about clusters:
    Level    Num. of clusters    Maximum radius   Minimum radius
-     0           77                0.0742363         0.0278628
-     1          284                0.0440669         0.0267134
+     0           77                0.0742633         0.0279451
+     1          284                0.0441123         0.0267978
  resu. nets    1225                     0              0
 
 
@@ -25,25 +25,25 @@ Informations about the FMM expansion:
      0           8               8              16           128
      1           8               8              16           128
 
-CGS: err_ori = 4.27202e-05
-10 5.69695e-05
-10 Abs Error:2.43375e-09
-20 5.90434e-08
-20 Abs Error:2.52235e-12
-24 3.1807e-10
+CGS: err_ori = 4.26578e-05
+10 9.73804e-05
+10 Abs Error:4.15403e-09
+20 1.58074e-08
+20 Abs Error:6.74307e-13
+24 2.78929e-10
 
-Assembling the equation system         : 67
-Solving the equation system            : 14
+Assembling the equation system         : 60
+Solving the equation system            : 12
 Post processing                        : 2
-Total                                  : 83
+Total                                  : 74
 
 
 Time Statistic for the job (in second):
 Input ............................ 0
 Address computation .............. 0
-Assembling the equation system ... 67
-Solving the equation system ...... 14
+Assembling the equation system ... 60
+Solving the equation system ...... 12
 Post processing .................. 2
-The whole job .................... 83
+The whole job .................... 74
 
----------- NumCalc ended: 13/2/2023 15:30:8 ----------
+---------- NumCalc ended: 17/2/2023 7:29:25 ----------
