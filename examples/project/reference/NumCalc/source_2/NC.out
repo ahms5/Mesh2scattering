@@ -1,12 +1,12 @@
 
-Start time: 13/2/2023 15:15:43
+Start time: 17/2/2023 7:20:58
 
 
 >> G E N E R A L   P A R A M E T E R S <<
 
 
 3D analysis
-Mesh2HRTF 1.0.0-dev
+Mesh2HRTF 0.1.2
 scattering coefficient Reference
 
 Number of frequency steps ................... = 3
@@ -14,7 +14,7 @@ Number of frequency steps ................... = 3
 First step .................................. = 0
 Number of steps ............................. = 3
 Step increment .............................. = 1e-06
-Highest allowable frequency .................. = 7397.58
+Highest allowable frequency .................. = 7396.02
 
 
 
@@ -25,7 +25,7 @@ Total number of elements .................... = 26114
 Number of boundary elements ................. = 23668
 Number of evaluation elements ............... = 2446
 Maximum edge length of boundary elements .... = 0.0159318
-Average edge length of boundary elements .... = 0.010427
+Average edge length of boundary elements .... = 0.0104292
 Minimum edge length of boundary elements .... = 0.00392957
 
 Total number of nodes ....................... = 13061
@@ -52,9 +52,9 @@ methodSolver_  = 0: CGS iterative solver
 methodPreconditioner_ = 0: incomplete LU-decomposition preconditioner
 
  No.   Freq.   Lambda/L_BE_Mesh  Lambda/L_Element
-  1    1250     0.244633           40.5186
-  2    2500     0.122317           20.2593
-  3    5000    0.0611583           10.1296
+  1    1250     0.244632           40.5094
+  2    2500     0.122316           20.2547
+  3    5000     0.061158           10.1273
 
 
 
@@ -69,8 +69,8 @@ Number of equations = 23668
 
 Informations about clusters:
    Level    Num. of clusters    Maximum radius   Minimum radius
-     0           77                0.0742363         0.0278628
-     1          284                0.0440669         0.0267134
+     0           77                0.0742633         0.0279451
+     1          284                0.0441123         0.0267978
  resu. nets    1225                     0              0
 
 
@@ -103,4 +103,4 @@ Informations about the FMM expansion:
      0          16              16              32           512
      1          10              10              20           200
 
-End time: 13/2/2023 15:15:43
+End time: 17/2/2023 7:20:59

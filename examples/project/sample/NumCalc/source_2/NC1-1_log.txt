@@ -1,8 +1,8 @@
 istart= 1 iend = 1
 
----------- NumCalc started: 13/2/2023 15:16:59 ----------
+---------- NumCalc started: 17/2/2023 7:26:39 ----------
 
-Running on:         182-246.eduroam.rwth-aachen.de
+Running on:         Annes-MacBook-Air.local
 
 3D analysis
 Job title: scattering coefficient Sample
@@ -11,12 +11,12 @@ Step 1, Frequency = 1250 Hz
 
 Direct multilevel fast multipole BEM
 
-Number of equations = 30902
+Number of equations = 26610
 
 Informations about clusters:
    Level    Num. of clusters    Maximum radius   Minimum radius
-     0           77                0.0770779         0.027602
-     1          284                0.0573493         0.027602
+     0           77                0.0735096         0.0289369
+     1          284                0.0477238         0.0289369
  resu. nets    1225                     0              0
 
 
@@ -25,27 +25,25 @@ Informations about the FMM expansion:
      0           8               8              16           128
      1           8               8              16           128
 
-CGS: err_ori = 0.000176713
-10 0.00787131
-10 Abs Error:1.39097e-06
-20 4.04158e-05
-20 Abs Error:7.14201e-09
-30 3.3316e-07
-30 Abs Error:5.88739e-11
-36 6.98319e-10
+CGS: err_ori = 9.59011e-05
+10 0.0208802
+10 Abs Error:2.00243e-06
+20 1.39288e-06
+20 Abs Error:1.33579e-10
+29 1.55176e-10
 
-Assembling the equation system         : 153
-Solving the equation system            : 42
+Assembling the equation system         : 83
+Solving the equation system            : 19
 Post processing                        : 3
-Total                                  : 198
+Total                                  : 105
 
 
 Time Statistic for the job (in second):
-Input ............................ 1
+Input ............................ 0
 Address computation .............. 0
-Assembling the equation system ... 153
-Solving the equation system ...... 42
+Assembling the equation system ... 83
+Solving the equation system ...... 19
 Post processing .................. 3
-The whole job .................... 199
+The whole job .................... 105
 
----------- NumCalc ended: 13/2/2023 15:20:18 ----------
+---------- NumCalc ended: 17/2/2023 7:28:24 ----------
