@@ -620,6 +620,8 @@ def _check_project(project, numcalc_executable, log_file):
 
         # get RAM estimates and prepend source number
         estimates = read_ram_estimates(ff)
+        if len(estimates) == 0:
+            raise ValueError(f'{ff} is empty.')
         estimates = np.concatenate(
             ((source_id + 1) * np.ones((estimates.shape[0], 1)), estimates),
             axis=1)
