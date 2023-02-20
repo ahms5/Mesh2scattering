@@ -1,6 +1,14 @@
 History
 =======
 
+v0.1.4
+------
+* raise error for empty result files (#34)
+* shift tests to proper position (#33)
+* bugfix force linux newline for hpc files (#35)
+* fix macos bug by checking processes (#36)
+* raise error is Memory.txt is empty
+
 v0.1.3
 ------
 * improve demo (#26)

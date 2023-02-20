@@ -7,6 +7,8 @@ import numpy as np
 import shutil
 import csv
 import mesh2scattering as m2s
+import re
+import io
 
 
 def remove_outputs(
@@ -557,6 +559,8 @@ def _numcalc_instances():
 
     num_instances = 0
     for p in psutil.process_iter(['name', 'memory_info']):
+        if not hasattr(p.info['name'], 'endswith'):
+            continue
         if p.info['name'].endswith(numcalc_executable):
             num_instances += 1
 
@@ -616,6 +620,8 @@ def _check_project(project, numcalc_executable, log_file):
 
         # get RAM estimates and prepend source number
         estimates = read_ram_estimates(ff)
+        if len(estimates) == 0:
+            raise ValueError(f'{ff} is empty.')
         estimates = np.concatenate(
             ((source_id + 1) * np.ones((estimates.shape[0], 1)), estimates),
             axis=1)
@@ -914,6 +920,7 @@ def create_hpc_files(
         array = ','.join(array_list)
 
         name = f'{project_name_out}_{folder}_{index}'
+
         # fill in form
         shell = lines.replace(cores_str, f'{cores}')
         shell = shell.replace(times_str, times)
@@ -923,9 +930,12 @@ def create_hpc_files(
         shell = shell.replace(folder_str, folder)
         shell = shell.replace(index_str, f'{index}')
 
+        # paste correct newline symbol for Linux
+        shell = re.sub('\r\n', '\n', shell)
+
         file_out = os.path.join(hpc_path, f'{name}.sh')
         shell_scripte.append(f'{name}.sh')
-        with open(file_out, "w") as f:
+        with io.open(file_out, "w", newline='\n') as f:
             f.write(shell)
             f.close()
 

@@ -749,7 +749,9 @@ def _load_results(foldername, filename, num_frequencies):
             elif numDatalines and len(li) > 2:
                 start_index = int(li[0])
                 break
-
+    if numDatalines is None:
+        raise ValueError(
+            f'{current_file} is empty!')
     # ------------------------------load data----------------------------------
     dtype = complex if filename.startswith("p") else float
     data = np.zeros((num_frequencies, numDatalines), dtype=dtype)
