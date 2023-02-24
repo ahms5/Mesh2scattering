@@ -1,10 +1,7 @@
 from .process import (
-    calculate_scattering,
-    calculate_diffusion,
-    )
+    calculate_scattering,)
 
 
 __all__ = [
     'calculate_scattering',
-    'calculate_diffusion',
     ]

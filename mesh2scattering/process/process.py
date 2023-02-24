@@ -20,12 +20,12 @@ def calculate_scattering(folder):
         mentioned sofa files.
     """
     project_name = os.path.split(folder)[-1]
-    data, source_coordinates, receiver_coordinates = pf.io.read_sofa(
+    data, source_coordinates, receiver_coorinates = pf.io.read_sofa(
         os.path.join(folder, 'sample.pattern.sofa'))
     data_ref, source_coords_ref, receiver_coords_ref = pf.io.read_sofa(
         os.path.join(folder, 'reference.pattern.sofa'))
-    data, _, _ = _reshape_data(
-        data, source_coordinates, receiver_coordinates)
+    data, source_coordinates_, receiver_coorinates_ = _reshape_data(
+        data, source_coordinates, receiver_coorinates)
     data_ref, source_coords_ref_, receiver_coords_ref_ = _reshape_data(
         data_ref, source_coords_ref, receiver_coords_ref)
 
@@ -35,7 +35,15 @@ def calculate_scattering(folder):
     s_rand = ik.scattering.coefficient.random_incidence(
         s, source_coords_ref_)
 
-    s = _revert_reshape_data(s, source_coordinates, source_coords_ref_)
+    xyz = source_coordinates.get_cart()
+    index, _ = source_coords_ref_.find_nearest_k(
+        xyz[..., 0], xyz[..., 1], xyz[..., 2])
+    shape = np.array(list(s.freq.shape[1:]))
+    shape[0] *= s.freq.shape[0]
+    s.freq = s.freq.reshape(shape)
+    s = s[index]
+    shape = np.insert(np.array(list(s.freq.shape)), 1, 1)
+    s.freq = s.freq.reshape(shape)
 
     sofa = m2s.utils._get_sofa_object(
         s.freq,
@@ -60,80 +68,14 @@ def calculate_scattering(folder):
         folder, f'{project_name}.scattering_rand.sofa'), sofa)
 
 
-def _revert_reshape_data(data, coords_orig, coords_reshaped):
-
-    xyz = coords_orig.get_cart()
-    index, _ = coords_reshaped.find_nearest_k(
-        xyz[..., 0], xyz[..., 1], xyz[..., 2])
-    shape = np.array(list(data.freq.shape[1:]))
-    shape[0] *= data.freq.shape[0]
-    data.freq = data.freq.reshape(shape)
-    data = data[index]
-    shape = np.insert(np.array(list(data.freq.shape)), 1, 1)
-    data.freq = data.freq.reshape(shape)
-    return data
-
-
-def calculate_diffusion(folder):
-    """read pattern data ``sample.pattern.sofa``
-    and calculate and export the diffusion coefficient for each incident angle
-    to ``project_name.diffusion.sofa``, then random incidence diffusion
-    coefficient is calculated and is saved in
-    ``project_name.diffusion_rand.sofa``
-
-    Parameters
-    ----------
-    folder : str, path
-        root directory of the project, this folder need to contain the above
-        mentioned sofa files.
-    """
-    project_name = os.path.split(folder)[-1]
-    data, source_coordinates, receiver_coordinates = pf.io.read_sofa(
-        os.path.join(folder, 'sample.pattern.sofa'))
-    data, source_coords_, receiver_coords_ = _reshape_data(
-        data, source_coordinates, receiver_coordinates)
-
-    diffusion_coefficient = ik.diffusion.coefficient.freefield(
-        data, receiver_coords_)
-
-    random_diffusion_coefficient = ik.scattering.coefficient.random_incidence(
-        diffusion_coefficient, source_coords_)
-
-    diffusion_coefficient = _revert_reshape_data(
-        diffusion_coefficient, source_coordinates, source_coords_)
-
-    sofa = m2s.utils._get_sofa_object(
-        diffusion_coefficient.freq,
-        source_coordinates.get_cart(),
-        np.array([0, 0, 0]),
-        m2s.__version__,
-        frequencies=diffusion_coefficient.frequencies)
-
-    # write diffusion coefficient data to SOFA file
-    sf.write_sofa(os.path.join(
-        folder, f'{project_name}.diffusion.sofa'), sofa)
-
-    sofa = m2s.utils._get_sofa_object(
-        random_diffusion_coefficient.freq.reshape(
-            1, 1, len(diffusion_coefficient.frequencies)),
-        np.array([0, 0, 0]),
-        np.array([0, 0, 0]),
-        m2s.__version__,
-        frequencies=diffusion_coefficient.frequencies)
-
-    # write random diffusion coefficient data to SOFA file
-    sf.write_sofa(os.path.join(
-        folder, f'{project_name}.diffusion_rand.sofa'), sofa)
-
-
-def _reshape_data(data, source_coordinates, receiver_coordinates):
+def _reshape_data(data, source_coordinates, receiver_coorinates):
     sources_sph = source_coordinates.get_sph(unit='deg')
     source_phi = np.sort(np.array(list(set(np.round(sources_sph[:, 0], 5)))))
     source_theta = np.sort(np.array(list(set(np.round(sources_sph[:, 1], 5)))))
     sources = _angles2coords(
         source_phi, source_theta, np.mean(sources_sph[:, 2]), unit='deg')
 
-    receiver_sph = receiver_coordinates.get_sph(unit='deg')
+    receiver_sph = receiver_coorinates.get_sph(unit='deg')
     receiver_phi = np.sort(
         np.array(list(set(np.round(receiver_sph[:, 0], 5)))))
     receiver_phi = np.append(receiver_phi, 0)
@@ -147,7 +89,7 @@ def _reshape_data(data, source_coordinates, receiver_coordinates):
         data = _reshape_to_az_by_el(data, source_coordinates, sources)
     else:
         caxe = 1
-    data = _reshape_to_az_by_el(data, receiver_coordinates, receiver, caxe)
+    data = _reshape_to_az_by_el(data, receiver_coorinates, receiver, caxe)
 
     return data, sources, receiver
 
@@ -156,7 +98,7 @@ def _angles2coords(
         azimuth, colatitude,
         radius: float = 1., unit='rad') -> pf.Coordinates:
     """
-    ``data.cshape`` fits the cshape of ```coords``. Data get shifted through
+    ``data.cshape`` fits the cshape of ```coords``. Data get shifed throght
     the ``coords`` Object around azimuth by ``shift_azimuth``.
     """
     azimuth = np.array(azimuth)
