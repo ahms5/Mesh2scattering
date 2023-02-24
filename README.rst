@@ -34,7 +34,7 @@ Use pip to install mesh2scattering
 .. code-block:: console
 
     $ pip install mesh2scattering
-    $ pip install git+https://github.com/pyfar/imkar.git@scattering-freefield
+    $ pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
 
 (Requires Python 3.8 or higher)
 
