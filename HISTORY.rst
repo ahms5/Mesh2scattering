@@ -1,6 +1,11 @@
 History
 =======
 
+v0.2.0
+------
+* add diffusion coefficients calculations
+* fix typos in code
+
 v0.1.4
 ------
 * raise error for empty result files (#34)
