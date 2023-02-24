@@ -20,12 +20,12 @@ def calculate_scattering(folder):
         mentioned sofa files.
     """
     project_name = os.path.split(folder)[-1]
-    data, source_coordinates, receiver_coorinates = pf.io.read_sofa(
+    data, source_coordinates, receiver_coordinates = pf.io.read_sofa(
         os.path.join(folder, 'sample.pattern.sofa'))
     data_ref, source_coords_ref, receiver_coords_ref = pf.io.read_sofa(
         os.path.join(folder, 'reference.pattern.sofa'))
-    data, source_coordinates_, receiver_coorinates_ = _reshape_data(
-        data, source_coordinates, receiver_coorinates)
+    data, _, _ = _reshape_data(
+        data, source_coordinates, receiver_coordinates)
     data_ref, source_coords_ref_, receiver_coords_ref_ = _reshape_data(
         data_ref, source_coords_ref, receiver_coords_ref)
 
