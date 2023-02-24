@@ -59,14 +59,14 @@ def test_write_scattering_one_source(tmpdir):
         scattering_coefficient.freq)
 
 
-def test_write_scattering_sine(tmpdir):
+def test_write_scattering_sine():
     # Test simulation and validate with Mommertz previous simulation,
     # results are same up to a diff to 0.06
     project_path = os.path.join(
         m2s.utils.repository_root(), "tests", "resources",
         'sine')
     # read simulated data
-    scattering_coefficient_rand, source_coords_rand, receiver_coords_rand = \
+    scattering_coefficient_rand, _, _ = \
         pf.io.read_sofa(os.path.join(
             project_path, 'sine.scattering_rand.sofa'))
 
@@ -89,3 +89,51 @@ def test_write_scattering_sine(tmpdir):
     npt.assert_allclose(
         scattering_coefficient_rand.freq,
         mommertz_ref.freq, atol=6e-2)
+
+
+def test_write_diffusion(tmpdir):
+    project_path = os.path.join(
+        m2s.utils.repository_root(), "examples", "project")
+    test_dir = os.path.join(tmpdir, 'project')
+    shutil.copytree(project_path, test_dir)
+    m2s.output.write_pattern(test_dir)
+    m2s.process.calculate_diffusion(test_dir)
+    scattering_coefficient, source_coords, receiver_coords = pf.io.read_sofa(
+        os.path.join(test_dir, 'project.diffusion.sofa'))
+    scattering_coefficient_rand, source_coords_rand, receiver_coords_rand = \
+        pf.io.read_sofa(os.path.join(
+            test_dir, 'project.diffusion_rand.sofa'))
+    assert source_coords_rand.csize == 1
+    assert receiver_coords_rand.csize == 1
+    assert receiver_coords.csize == 1
+    assert source_coords.csize == 27
+    npt.assert_equal(
+        scattering_coefficient_rand.frequencies,
+        scattering_coefficient.frequencies)
+
+
+def test_write_diffusion_one_source(tmpdir):
+    project_path = os.path.join(
+        m2s.utils.repository_root(), "tests", "resources",
+        'project_one_source')
+    test_dir = os.path.join(tmpdir, 'project_one_source')
+    shutil.copytree(project_path, test_dir)
+
+    m2s.output.write_pattern(test_dir)
+
+    m2s.process.calculate_diffusion(test_dir)
+    diffusion_coefficient, source_coords, receiver_coords = pf.io.read_sofa(
+        os.path.join(test_dir, 'project_one_source.diffusion.sofa'))
+    diffusion_coefficient_rand, source_coords_rand, receiver_coords_rand = \
+        pf.io.read_sofa(os.path.join(
+            test_dir, 'project_one_source.diffusion_rand.sofa'))
+    assert source_coords_rand.csize == 1
+    assert receiver_coords_rand.csize == 1
+    assert receiver_coords.csize == 1
+    assert source_coords.csize == 1
+    npt.assert_equal(
+        diffusion_coefficient_rand.frequencies,
+        diffusion_coefficient.frequencies)
+    npt.assert_equal(
+        diffusion_coefficient_rand.freq,
+        diffusion_coefficient.freq)
