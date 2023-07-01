@@ -1,7 +1,7 @@
 History
 =======
 
-v0.2.0
+v0.1.5
 ------
 * add diffusion coefficients calculations
 * fix typos in code
@@ -19,7 +19,7 @@ v0.1.3
 * improve demo (#26)
 * add demo as py-file (#26)
 * fix post processing for single sources (#25)
-* add hpc support fro RWTH Aachen (#28)
+* add hpc support for RWTH Aachen (#28)
 * test and fix remove_output (#28)
 * add validation test for scattering coefficients after Mommertz (#29)
 * fix bug in scattering coefficients calculation (#29)
@@ -42,8 +42,8 @@ v0.1.0
 * Remove blender and create projects from stl meshes in Python
 * change project structure
 * remove direct sound from NumCalc
-* read simulation results and export to Sofa
-* calculate scattering coefficients and save in 
+* read simulation results and export to SOFA
+* calculate scattering coefficients and save in SOFA
 
 Mesh2HRTF
 ---------
