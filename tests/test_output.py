@@ -110,3 +110,12 @@ def test_write_pattern_one_source(tmpdir):
     assert reference.cshape[1] == receiver_coords_ref.csize
     assert reference.cshape == sample.cshape
     npt.assert_equal(reference.frequencies, sample.frequencies)
+
+
+def test_apply_symmetry_mirror(
+        quarter_half_sphere, half_sphere,
+        pressure_data_mics_incident_directions):
+    data, new_coords = m2s.output.apply_symmetry_mirror(
+        pressure_data_mics_incident_directions, half_sphere,
+        quarter_half_sphere, 0, 90)
+    npt.assert_equal(new_coords[:quarter_half_sphere.csize], quarter_half_sphere)

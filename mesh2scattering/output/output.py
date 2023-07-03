@@ -158,7 +158,39 @@ def apply_symmetry_circular(
 
 
 def apply_symmetry_mirror(
-        data_in, coords_mic, incident_coords, mirror_axe=None):
+        data_in, coords_mic, incident_coords, mirror_axe=None, angle=90):
+    idx = angle != incident_coords.get_sph(unit='deg').T[0]
+    idx = np.flip(idx)
+    coords = incident_coords.get_sph(unit='deg').T
+    coords_mirrored = coords[:, idx]
+    coords_mirrored[0] = 2*angle - coords_mirrored[0]
+    coords_mirrored = np.flip(coords_mirrored, axis=1)
+    data_mirrored_shape = list(data_in.freq.shape)
+    data_mirrored_shape[mirror_axe] = len(idx)
+    data_mirrored = np.zeros(data_mirrored_shape)
+    weights = incident_coords.weights
+    weights_mirrored = incident_coords.weights[idx]
+    weights_mirrored = np.flip(weights_mirrored, axis=0)
+
+    for idx_mirror in range(len(coords_mirrored[0, :])):
+        idx_real = idx_mirror + incident_coords.csize
+        mirrored_coord = coords_mirrored[:, idx_mirror]
+        real_coord = mirrored_coord.copy()
+        real_coord[0] = 2*angle - real_coord[0]
+        delta_phi = mirrored_coord[0] - real_coord[0]
+        receiver_coords_new = coords_mic.
+        print(1)
+
+    
+    
+    coords_ = np.concatenate((coords, coords_mirrored), axis=1)
+    weights_ = np.concatenate((weights, weights_mirrored), axis=0)
+    new_coords = pf.Coordinates(
+        coords_[0], coords_[1], coords_[2], 'sph', 'top_colat', 'deg',
+        weights_)
+    new_data = np.concatenate((data_in.freq, data_mirrored), axis=mirror_axe)
+
+
     all_az = np.sort(np.array(list(set(
         np.round(incident_coords.get_sph(unit='deg')[..., 0], 5)))))
     all_el = np.sort(np.array(list(set(
@@ -270,6 +302,8 @@ def write_pattern(folder):
             evaluationGrids[grid]["pressure"], params["frequencies"])
         receiver_coords = _cart_coordinates(receiver_position)
         source_coords = _cart_coordinates(source_position)
+        source_coords.weights = np.array(params["sources_weights"])
+        receiver_coords.weights = np.array(params["receivers_weights"])
         # data = np.swapaxes(data, 0, 1)
         for i in params['symmetry_azimuth']:
             data, source_coords = apply_symmetry_mirror(
