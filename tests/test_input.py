@@ -171,7 +171,11 @@ def test_create_source_positions():
         sourcePositions.get_sph()[..., 2], source_radius)
 
 
-def test_write_scattering_parameter(source_coords_10deg, tmpdir):
+def test_write_scattering_parameter(tmpdir):
+    sourcePoints = pf.samplings.sph_equal_angle(10, 10)
+    sourcePoints = sourcePoints[sourcePoints.elevation >= 0]
+    sourcePoints = sourcePoints[sourcePoints.azimuth <= np.pi/2]
+
     frequencies = pf.dsp.filter.fractional_octave_frequencies(
         3, (500, 5000))[0]
     path = os.path.join(
@@ -199,7 +203,7 @@ def test_write_scattering_parameter(source_coords_10deg, tmpdir):
         sample_path=sample_path,
         reference_path=reference_path,
         receiver_coords=receiverPoints,
-        source_coords=source_coords_10deg,
+        source_coords=sourcePoints,
         structural_wavelength=structural_wavelength,
         model_scale=model_scale,
         sample_diameter=sample_diameter,
@@ -210,7 +214,7 @@ def test_write_scattering_parameter(source_coords_10deg, tmpdir):
     # test parameters
     f = open(os.path.join(tmpdir, 'parameters.json'))
     paras = json.load(f)
-    source_list = [list(i) for i in list(source_coords_10deg.get_cart())]
+    source_list = [list(i) for i in list(sourcePoints.get_cart())]
     receiver_list = [list(i) for i in list(receiverPoints.get_cart())]
     parameters = {
         # project Info
@@ -259,16 +263,16 @@ def test_write_scattering_parameter(source_coords_10deg, tmpdir):
         tmpdir, 'reference', 'ObjectMeshes', 'reference.stl'))
 
     # test sources
-    for i in range(80):
+    for i in range(91):
         assert os.path.isdir(
             os.path.join(tmpdir, 'sample', 'NumCalc', f'source_{i+1}'))
     assert not os.path.isdir(
-        os.path.join(tmpdir, 'sample', 'NumCalc', f'source_{81}'))
-    for i in range(8):
+        os.path.join(tmpdir, 'sample', 'NumCalc', f'source_{92}'))
+    for i in range(10):
         assert os.path.isdir(
             os.path.join(tmpdir, 'reference', 'NumCalc', f'source_{i+1}'))
     assert not os.path.isdir(
-        os.path.join(tmpdir, 'reference', 'NumCalc', f'source_{9}'))
+        os.path.join(tmpdir, 'reference', 'NumCalc', f'source_{11}'))
 
 
 def test_write_scattering_parameter_one_source(tmpdir):
