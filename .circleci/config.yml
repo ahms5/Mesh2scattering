@@ -150,14 +150,13 @@ jobs:
             python setup.py sdist bdist_wheel
             twine upload dist/*
   publish-github-release:
-    docker:
-      - image: circleci/golang:1.8
-    steps:
-      - attach_workspace:
-          at: ./release
+      - checkout
       - run:
-          name: Install System Dependencies and zip files
-          command: sudo apt-get update && sudo apt-get install zip && zip -r examples.zip examples && zip -r NumCalc_WindowsExe.zip NumCalc_WindowsExe
+          name: Install System Dependencies
+          command: sudo apt install golang-go && sudo apt-get update && sudo apt-get install zip
+      - run:
+          name: zip folders
+          command: zip -r examples.zip examples && zip -r NumCalc_WindowsExe.zip NumCalc_WindowsExe
       - run:
           name: "Publish Release on GitHub"
           command: |
@@ -202,8 +201,6 @@ workflows:
             - build_and_test
 
       - publish-github-release:
-          requires:
-            - build_and_test
 
 
 
