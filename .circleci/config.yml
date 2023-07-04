@@ -162,7 +162,6 @@ jobs:
           name: "Publish Release on GitHub"
           command: |
             go get github.com/tcnksm/ghr
-            VERSION=$(<<parameters.version>>)
             ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering -c ${CIRCLE_SHA1} -delete v001 ./release/
   
 # Invoke jobs via workflows
