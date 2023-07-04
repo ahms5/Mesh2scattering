@@ -254,7 +254,7 @@ def write_pattern(folder):
         # write data
         sofa = utils._get_sofa_object(
             data.freq,
-            source_coords.get_cart(),
+            source_coords.cartesian,
             receiver_position,
             params["mesh2scattering_version"],
             frequencies=params["frequencies"])
@@ -491,7 +491,7 @@ def read_numcalc(folder=None, is_ref=False):
     if is_ref:
         xyz = np.array(params["sources"])
         coords = pf.Coordinates(xyz[..., 0], xyz[..., 1], xyz[..., 2])
-        num_sources = np.sum(np.abs(coords.get_sph()[..., 0]) < 1e-12)
+        num_sources = np.sum(np.abs(coords.azimuth) < 1e-12)
     else:
         num_sources = params["sources_num"]
 

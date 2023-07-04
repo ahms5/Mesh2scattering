@@ -158,11 +158,11 @@ def test_apply_symmetry_mirror_90(
 
 def test_apply_symmetry_mirror_180(
         quarter_hemisphere_inc, half_sphere,
-        pressure_data_mics_incident_directions):
-    pressure_data_mics_incident_directions.freq[0, 0, 0] = 1
-    pressure_data_mics_incident_directions.freq[11, 100, 1] = 2
+        data_in):
+    data_in.freq[0, 0, 0] = 1
+    data_in.freq[11, 100, 1] = 2
     data, new_coords = m2s.output.apply_symmetry_mirror(
-        pressure_data_mics_incident_directions, half_sphere,
+        data_in, half_sphere,
         quarter_hemisphere_inc, 90)
     data, new_coords = m2s.output.apply_symmetry_mirror(
         data, half_sphere, new_coords, 180)
