@@ -4,6 +4,16 @@ import pyfar as pf
 
 
 @pytest.fixture
+def source_coords_10deg():
+    source_azimuth_deg = np.arange(0, 95, 10)
+    source_colatitude_deg = np.arange(10, 85, 10)
+    source_radius = 10
+
+    return input.create_source_positions(
+        source_azimuth_deg, source_colatitude_deg, source_radius)
+
+
+@pytest.fixture
 def half_sphere():
     """return 42th order gaussian sampling for the half sphere and radius 1.
 
