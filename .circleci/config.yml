@@ -203,10 +203,6 @@ workflows:
             - build_and_test
 
       - publish-github-release:
-          matrix:
-            parameters:
-              version:
-                - "3.9"
           requires:
             - build_and_test
             - flake
