@@ -69,7 +69,7 @@ def test_project_report(folders, issue, errors, nots, tmpdir):
 
 def test_write_pattern(tmpdir):
     project_path = os.path.join(
-        m2s.utils.repository_root(), "examples", "project")
+        m2s.utils.repository_root(), 'release', 'examples', 'project')
     test_dir = os.path.join(tmpdir, 'project_one_source')
     shutil.copytree(project_path, test_dir)
     m2s.output.write_pattern(test_dir)

@@ -15,7 +15,8 @@ base_dir = os.path.dirname(__file__)
 # ignore tests for windows since its difficult to build the exe
 if os.name == 'nt':
     numcalc = os.path.join(
-        m2s.utils.program_root(), "numcalc", "bin", "NumCalc.exe")
+        m2s.utils.program_root(),
+        "..", "release", "NumCalc_WindowsExe", "NumCalc.exe")
     numcalc_path = os.path.dirname(numcalc)
     warnings.warn(
         ('Under Windows the code is not compiling but an executable is '
@@ -263,10 +264,10 @@ def test_defaults(tmpdir):
         assert os.path.isfile(os.path.join(base, f"NC{step}-{step}.out"))
 
 
-@pytest.mark.parametrize("boundary", [(False), (True),])
-@pytest.mark.parametrize("grid", [(False), (True),])
-@pytest.mark.parametrize("scattering", [(False), (True),])
-@pytest.mark.parametrize("log", [(False), (True),])
+@pytest.mark.parametrize("boundary", [(False), (True), ])
+@pytest.mark.parametrize("grid", [(False), (True), ])
+@pytest.mark.parametrize("scattering", [(False), (True), ])
+@pytest.mark.parametrize("log", [(False), (True), ])
 def test_remove_outputs(boundary, grid, scattering, log, tmpdir):
     """Test purging the processed data in Output2HRTF"""
     test_folder = os.path.join('examples', 'project')
@@ -342,7 +343,7 @@ def test_calc_and_read_ram_estimation_error(tmpdir):
 
 @pytest.mark.parametrize("test_folder", [
     (os.path.join('tests', 'resources', 'project_one_source')),
-    (os.path.join('examples', 'project'))
+    (os.path.join('release', 'examples', 'project'))
     ])
 def test_write_hpc_empty(test_folder, tmpdir):
     project_path = os.path.join(m2s.utils.repository_root(), test_folder)
@@ -355,7 +356,7 @@ def test_write_hpc_empty(test_folder, tmpdir):
 
 
 @pytest.mark.parametrize("test_folder", [
-    (os.path.join('examples', 'project'))
+    (os.path.join('release', 'examples', 'project'))
     ])
 def test_write_hpc_one(test_folder, tmpdir):
     project_path = os.path.join(m2s.utils.repository_root(), test_folder)
@@ -389,7 +390,7 @@ def test_write_hpc_one(test_folder, tmpdir):
 
 
 @pytest.mark.parametrize("test_folder", [
-    (os.path.join('examples', 'project'))
+    (os.path.join('release', 'examples', 'project'))
     ])
 def test_write_hpc_complete(test_folder, tmpdir):
     project_path = os.path.join(m2s.utils.repository_root(), test_folder)

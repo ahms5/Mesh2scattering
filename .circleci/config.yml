@@ -149,6 +149,22 @@ jobs:
           command: |  # create whl, install twine and publish to Test PyPI
             python setup.py sdist bdist_wheel
             twine upload dist/*
+  publish-github-release:
+    docker:
+      - image: circleci/golang:1.8
+    steps:
+      - attach_workspace:
+          at: ./release
+      - run:
+          name: Install System Dependencies and zip files
+          command: sudo apt-get update && sudo apt-get install zip && zip -r examples.zip examples && zip -r NumCalc_WindowsExe.zip NumCalc_WindowsExe
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go get github.com/tcnksm/ghr
+            VERSION=$(<<parameters.version>>)
+            ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering -c ${CIRCLE_SHA1} -delete ${VERSION} ./release/
+  
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
