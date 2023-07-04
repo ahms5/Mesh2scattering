@@ -10,122 +10,14 @@ import csv
 import re
 
 
-def angles2coords(
-        azimuth, colatitude, radius=1., unit='rad') -> pf.Coordinates:
-    """ ``data.cshape`` fits the cshape of ```coords``. Data get shifted
-    through the ``coords`` Object around azimuth by ``shift_azimuth``.
-
-
-    Parameters
-    ----------
-    azimuth : ndarray
-        1D array or list of azimuth angles
-    colatitude : ndarray
-        1D array or list of incident angles
-    radius : float, optional
-        radius of the coordinate object, by default 1.
-    unit : str, optional
-        defines the unit of azimuth and colatitude, by default 'rad'
-
-    Returns
-    -------
-    pf.Coordinates
-        coordinate object ob chape (#azimuth, #colatitude) with radius radius.
-    """
-    azimuth = np.array(azimuth)
-    colatitude = np.array(colatitude)
-    if unit == 'deg':
-        azimuth = azimuth * np.pi / 180.
-        colatitude = colatitude * np.pi / 180.
-    elif unit != 'rad':
-        raise TypeError("Unknown Unit")
-    phi, theta = np.meshgrid(azimuth, colatitude, indexing='ij')
-    return pf.Coordinates(
-        phi, theta, np.ones(phi.shape)*radius, 'sph')
-
-
-def shift_data_coords(
-        data, coords, shift_azimuth) -> pf.FrequencyData:
-    """``data`` get shifted through the ``coords`` Object around azimuth by
-    ``shift_azimuth``.
-
-    Parameters
-    ----------
-    data : pf.FrequencyData
-        data which need to be shifted. I has the cshape of (..., coords.cshape)
-    coords : pf.Coordinates
-        coordinates object of ``data```. It has the chape (#azimuth,
-        #colatitude)
-    shift_azimuth : float
-        data get shifted by this azimuth angle in degree.
-
-    Returns
-    -------
-    pf.FrequencyData
-        shifted data object
-    """
-    # test input
-    if not isinstance(data, pf.FrequencyData):
-        raise TypeError(
-            f'Data should be of type FrequencyData not {type(data)}')
-    if not isinstance(coords, pf.Coordinates):
-        raise TypeError(
-            f'coords should be of type Coordinates not {type(coords)}')
-    if not isinstance(shift_azimuth, (float, int)):
-        raise TypeError(
-            f'shift_azimuth should be of type float not {type(shift_azimuth)}')
-
-    if shift_azimuth == 0:
-        return data.copy()
-    coords_ref = coords.copy()
-    coords_cp = coords.copy()
-    sph = coords_cp.get_sph(unit='deg')
-    # shift azimuth by shift_azimuth in deg
-    azimuth = np.remainder(sph[..., 0] + shift_azimuth, 360)
-    coords_cp.set_sph(azimuth, sph[..., 1], sph[..., 2], unit='deg')
-    xyz = coords_ref.get_cart()
-    data_mask, _ = coords_cp.find_nearest_k(
-        xyz[..., 0], xyz[..., 1], xyz[..., 2])
-    data_mask = data_mask.flatten()
-    freq = data.freq.copy()
-    freq_new = freq[..., data_mask, :]
-    data_out = pf.FrequencyData(
-        freq_new, data.frequencies)
-    return data_out
-
-
-def reshape_to_az_by_el(
-        data: pf.FrequencyData, coords_in: pf.Coordinates,
-        coords_out: pf.Coordinates, cdim: int = 0) -> (pf.FrequencyData):
-    if cdim > 0:
-        data.freq = np.moveaxis(data.freq, cdim, 0)
-    freq_shape = list(coords_out.cshape)
-    if len(data.cshape) > 1:
-        for dim in data.cshape[1:]:
-            freq_shape.append(dim)
-    freq_shape.append(data.n_bins)
-    freq = np.zeros(freq_shape, dtype=complex)
-    data_in = data.freq
-    xyz = coords_out.get_cart()
-    index, _ = coords_in.find_nearest_k(xyz[..., 0], xyz[..., 1], xyz[..., 2])
-    for iaz in range(coords_out.cshape[0]):
-        res_data = data_in[index[iaz, :], ...]
-        freq[iaz, ...] = res_data
-    if cdim > 0:
-        freq = np.moveaxis(freq, 0, cdim+1)
-        freq = np.moveaxis(freq, 0, cdim+1)
-    data_out = pf.FrequencyData(freq, data.frequencies)
-    return data_out
-
-
 def apply_symmetry_circular(
-        data: pf.FrequencyData, coords_mic: pf.Coordinates,
+        data_in: pf.FrequencyData, coords_mic: pf.Coordinates,
         coords_inc: pf.Coordinates, coords_inc_out: pf.Coordinates):
     """apply symmetry for circular symmetrical surfaces.
 
     Parameters
     ----------
-    data : pf.FrequencyData
+    data_in : pf.FrequencyData
         data which is rotated, cshape need to be (#theta_coords_inc,
         #coords_mic)
     coords_mic : pf.Coordinates
@@ -140,83 +32,166 @@ def apply_symmetry_circular(
 
     Returns
     -------
-    pf.FrequencyData
+    data_in_mirrored : pf.FrequencyData
         _description_
     """
-    shape = [coords_inc_out.cshape[0], data.cshape[1], len(data.frequencies)]
-    freq = np.empty(shape, dtype=complex)
-    thetas = np.sort(np.array(list(set(
-        np.round(coords_inc.get_sph(unit='deg')[..., 1], 5)))))
-    for ii in range(coords_inc_out.cshape[0]):
-        az = coords_inc_out[ii].get_sph(unit='deg')[0, 0]
-        theta = coords_inc_out[ii].get_sph(unit='deg')[0, 1]
-        data_in = data[np.abs(thetas-theta) < 1e-3, :]
-        freq[ii, ...] = shift_data_coords(
-            data_in, coords_mic, float(az)).freq.copy()
-    data_out = pf.FrequencyData(freq, data.frequencies)
-    return data_out
+    if not isinstance(coords_inc, pf.Coordinates):
+        raise ValueError(
+            'coords_inc needs to be of type pf.Coordinates, '
+            f'bit it is {type(coords_inc)}.')
+    if not isinstance(coords_mic, pf.Coordinates):
+        raise ValueError(
+            'coords_mic needs to be of type pf.Coordinates, '
+            f'bit it is {type(coords_mic)}.')
+    if not isinstance(coords_inc_out, pf.Coordinates):
+        raise ValueError(
+            'coords_inc_out needs to be of type pf.Coordinates, '
+            f'bit it is {type(coords_inc_out)}.')
+    if not isinstance(data_in, pf.FrequencyData):
+        raise ValueError(
+            'data_in needs to be of type pf.FrequencyData, '
+            f'bit it is {type(data_in)}.')
+    if data_in.cshape[-2] != coords_inc.csize:
+        raise ValueError(
+            'data_in.cshape[-2] needs to have the dimension of coords_inc '
+            f'{data_in.cshape[-2]} != {coords_inc.csize}.')
+    if data_in.cshape[-1] != coords_mic.csize:
+        raise ValueError(
+            'data_in.cshape[-1] needs to have the dimension of coords_mic '
+            f'{data_in.cshape[-1]} != {coords_mic.csize}.')
+    if np.max(np.abs(np.diff(coords_inc.azimuth))) > 1e-5:
+        raise ValueError('coords_inc needs to have constant azimuth angle.')
+
+    data_raw = data_in.freq.copy()
+    shape = [coords_inc_out.cshape[0],
+             coords_mic.cshape[0],
+             len(data_in.frequencies)]
+    data_out = np.empty(shape, dtype=data_in.freq.dtype)
+
+    for idx in range(coords_inc_out.csize):
+        mirrored_coord = coords_inc_out[idx].copy()
+        corresponding_coord = mirrored_coord.copy()
+        corresponding_coord.azimuth = coords_inc[0].azimuth
+        delta_phi = -(mirrored_coord.azimuth - corresponding_coord.azimuth)
+        receiver_coords_new = coords_mic.copy()
+        receiver_coords_new.rotate('z', delta_phi, degrees=False)
+        i, _ = coords_mic.find_nearest_k(
+            receiver_coords_new.x.copy(), receiver_coords_new.y.copy(),
+            receiver_coords_new.z.copy())
+        i_source, _ = coords_inc.find_nearest_k(
+            corresponding_coord.x, corresponding_coord.y,
+            corresponding_coord.z)
+        data_out[..., idx, :, :] = data_raw[..., i_source, i, :]
+
+    data_in_mirrored = pf.FrequencyData(
+        data_out, data_in.frequencies, data_in.comment)
+
+    return data_in_mirrored
 
 
 def apply_symmetry_mirror(
-        data_in, coords_mic, incident_coords, mirror_axe=None):
-    all_az = np.sort(np.array(list(set(
-        np.round(incident_coords.get_sph(unit='deg')[..., 0], 5)))))
-    all_el = np.sort(np.array(list(set(
-        np.round(incident_coords.get_sph(unit='deg')[..., 1], 5)))))
-    radius = np.median(incident_coords.get_sph()[..., 2])
-    source_coords_out = pf.Coordinates(
-        *np.meshgrid(all_az, all_el, indexing='ij'), radius, 'sph', unit='deg')
-    data = reshape_to_az_by_el(data_in, incident_coords, source_coords_out, 1)
+        data_in: pf.FrequencyData, coords_mic: pf.Coordinates,
+        coords_inc: pf.Coordinates, symmetry_azimuth_deg: float):
+    """Mirrors the data along a symmetry axe, defined by the azimuth_angle_deg.
 
-    shape = list(data.cshape)
-    shape.append(data.n_bins)
-    azimuths = np.sort(np.array(list(set(
-        np.round(incident_coords.get_sph()[..., 0], 5)))))
-    index_min = len(azimuths)-1
-    index_max = 2 * index_min + 1
-    shape[mirror_axe] = index_max
+    Note: Angles on the symmetry axes will be skipped for mirroring.
 
-    freq = np.empty(shape, dtype=complex)
-    freq[:] = np.nan
-    freq = np.moveaxis(freq, mirror_axe, -1)
-    freq_in = np.moveaxis(data.freq.copy(), mirror_axe, -1)
-    max_aimuth = np.max(azimuths)
-    radius = np.median(incident_coords.get_sph()[:, 2])
-    azimuths_new = []
-    for iaz in range(index_max):
-        if iaz > index_min:
-            idx = index_max-iaz-1
-            az = (max_aimuth-azimuths[idx]) * 2
-            if azimuths[idx] + az > 2 * np.pi:
-                az = 2 * np.pi - azimuths[idx]
-            data_swap = pf.FrequencyData(
-                np.moveaxis(data.freq, 0, -2), data.frequencies)
-            data_in = shift_data_coords(
-                data_swap, coords_mic, az/np.pi*180).freq
-            data_in = np.moveaxis(data_in, -2, 0)
+    Parameters
+    ----------
+    data_in : pf.FrequencyData
+        data object of cshape (..., #incident_coords, #coords_mic),
+        which should be rotated
+    coords_mic : pf.Coordinates
+        microphone positions
+    coords_inc : pf.Coordinates
+        Incident coordinates, which should be mirrored along
+    symmetry_azimuth_deg : float
+        azimuth angle in degree where the data should be mirrored.
 
-            azimuths_new.append(azimuths[idx] + az)
-        else:
-            data_in = data.freq
-            idx = iaz
-            azimuths_new.append(azimuths[iaz])
-        freq_in = np.moveaxis(data_in, mirror_axe, 0)
-        freq[..., iaz] = freq_in[idx, ...]
-    # if max_index > 0:
-    #     freq = freq[..., :max_index]
-    freq = np.moveaxis(freq, -1, mirror_axe)
-    data_out = pf.FrequencyData(freq, data.frequencies)
-    elevations = np.sort(np.array(list(set(
-        np.round(incident_coords.get_sph()[..., 1], 5)))))
-    new_inc_coords = angles2coords(np.array(azimuths_new), elevations, radius)
-    shape = data_out.cshape
-    data_out.freq = np.reshape(
-        data_out.freq, (shape[0], shape[1]*shape[2], data_out.n_bins))
-    xyz = new_inc_coords.get_cart().reshape((new_inc_coords.csize, 3))
-    new_inc_coords = pf.Coordinates(xyz[..., 0], xyz[..., 1], xyz[..., 2])
-    mask_not_double = new_inc_coords.get_sph()[..., 1] != 0
-    mask_not_double[np.argmax(~mask_not_double)] = True
-    return data_out[:, mask_not_double], new_inc_coords[mask_not_double]
+    Returns
+    -------
+    data_in_mirrored : pf.FrequencyData
+        mirrored data object for the coords_inc coordinates.
+    coords_inc_mirrored : pf.Coordinates
+        new coordinate object, angles on the symmetry axes will be skipped.
+    """
+    if not isinstance(coords_inc, pf.Coordinates):
+        raise ValueError(
+            'coords_inc needs to be of type pf.Coordinates, '
+            f'bit it is {type(coords_inc)}.')
+    if not isinstance(coords_mic, pf.Coordinates):
+        raise ValueError(
+            'coords_mic needs to be of type pf.Coordinates, '
+            f'bit it is {type(coords_mic)}.')
+    if not isinstance(data_in, pf.FrequencyData):
+        raise ValueError(
+            'data_in needs to be of type pf.FrequencyData, '
+            f'bit it is {type(data_in)}.')
+    if not isinstance(data_in, pf.FrequencyData):
+        raise ValueError(
+            'data needs to be of type pf.FrequencyData, '
+            f'bit it is {type(data_in)}.')
+    if symmetry_azimuth_deg <= 0 or symmetry_azimuth_deg >= 360:
+        raise ValueError(
+            '0 >= symmetry_azimuth_deg >= 360, but its '
+            f'{symmetry_azimuth_deg}.')
+    if data_in.cshape[-2] != coords_inc.csize:
+        raise ValueError(
+            'data_in.cshape[-2] needs to have the dimension of coords_inc '
+            f'{data_in.cshape[-2]} != {coords_inc.csize}.')
+    if data_in.cshape[-1] != coords_mic.csize:
+        raise ValueError(
+            'data_in.cshape[-1] needs to have the dimension of coords_mic '
+            f'{data_in.cshape[-1]} != {coords_mic.csize}.')
+
+    symmetry_angle_rad = symmetry_azimuth_deg*np.pi/180
+    if np.abs(symmetry_azimuth_deg - 180) < 1e-8:
+        idx = np.abs(coords_inc.azimuth % symmetry_angle_rad) > 1e-8
+    elif np.abs(symmetry_azimuth_deg - 90) < 1e-8:
+        idx = np.abs(coords_inc.azimuth - symmetry_angle_rad) > 1e-8
+    no_top_point = coords_inc.colatitude > 1e-8
+    idx = np.flip(np.where(idx & no_top_point)).flatten()
+    dim_inc = -3
+    # dim_mic = -2
+    # dim_frequency = -1
+
+    coords_mirrored = coords_inc[idx].copy()
+    coords_mirrored.azimuth = 2*symmetry_angle_rad - coords_mirrored.azimuth
+    data_mirrored_shape = list(data_in.freq.shape)
+    data_mirrored_shape[dim_inc] = len(idx)
+    data_mirrored = np.zeros(data_mirrored_shape, dtype=data_in.freq.dtype)
+    data_raw = data_in.freq.copy()
+
+    for idx_mirror in range(coords_mirrored.csize):
+        mirrored_coord = coords_mirrored[idx_mirror].copy()
+        corresponding_coord = mirrored_coord.copy()
+        corresponding_coord.azimuth \
+            = 2*symmetry_angle_rad - corresponding_coord.azimuth
+        delta_phi = -(mirrored_coord.azimuth - corresponding_coord.azimuth)
+        receiver_coords_new = coords_mic.copy()
+        receiver_coords_new.rotate('z', delta_phi, degrees=False)
+        i, _ = coords_mic.find_nearest_k(
+            receiver_coords_new.x.copy(), receiver_coords_new.y.copy(),
+            receiver_coords_new.z.copy())
+        i_source, _ = coords_inc.find_nearest_k(
+            corresponding_coord.x, corresponding_coord.y,
+            corresponding_coord.z)
+        data_mirrored[..., idx_mirror, :, :] = data_raw[..., i_source, i, :]
+
+    coords_ = np.concatenate(
+        (coords_inc.cartesian, coords_mirrored.cartesian), axis=0).T
+    if coords_inc.weights is not None:
+        weights_ = np.concatenate(
+            (coords_inc.weights, coords_mirrored.weights), axis=0)
+    else:
+        weights_ = None
+    coords_inc_mirrored = pf.Coordinates(
+        coords_[0], coords_[1], coords_[2], weights=weights_)
+    new_data = np.concatenate((data_in.freq, data_mirrored), axis=dim_inc)
+    data_in_mirrored = pf.FrequencyData(
+        new_data, data_in.frequencies, data_in.comment)
+
+    return data_in_mirrored, coords_inc_mirrored
 
 
 def write_pattern(folder):
@@ -266,19 +241,20 @@ def write_pattern(folder):
             receiver_position = np.transpose(receiver_position)
 
         # apply symmetry of reference sample
+        data_raw = np.moveaxis(evaluationGrids[grid]["pressure"], 1, 0)
         data = pf.FrequencyData(
-            evaluationGrids[grid]["pressure"], params["frequencies"])
+            data_raw, params["frequencies"])
         receiver_coords = _cart_coordinates(receiver_position)
         source_coords = _cart_coordinates(source_position)
         # data = np.swapaxes(data, 0, 1)
         for i in params['symmetry_azimuth']:
             data, source_coords = apply_symmetry_mirror(
-                data, receiver_coords, source_coords, 1)
+                data, receiver_coords, source_coords, i)
 
         # write data
         sofa = utils._get_sofa_object(
             data.freq,
-            source_coords.get_cart(),
+            source_coords.cartesian,
             receiver_position,
             params["mesh2scattering_version"],
             frequencies=params["frequencies"])
@@ -298,28 +274,30 @@ def write_pattern(folder):
         # get pressure as SOFA object (all following steps are run on SOFA
         # objects. This way they are available to other users as well)
         # read source and receiver positions
-        source_position_ref = np.array(params["sources"])
-        if source_position_ref.shape[1] != 3:
-            source_position_ref = np.transpose(source_position_ref)
+        # source_position_ref = np.array(params["sources"])
+        # if source_position_ref.shape[1] != 3:
+        #     source_position_ref = np.transpose(source_position_ref)
         receiver_position_ref = np.array(
             evaluationGrids[grid]["nodes"][:, 1:4])
         if receiver_position_ref.shape[1] != 3:
             receiver_position_ref = np.transpose(receiver_position_ref)
 
         # apply symmetry of reference sample
+        source_position_ref = source_coords[
+            np.abs(source_coords.azimuth) < 1e-14]
         data = evaluationGrids[grid]["pressure"]
-        if source_coords.csize != source_position_ref.shape[0]:
+        if source_coords.csize != source_position_ref.cshape[0]:
             data = np.swapaxes(data, 0, 1)
             data = apply_symmetry_circular(
                 pf.FrequencyData(data, params["frequencies"]),
                 _cart_coordinates(receiver_position_ref),
-                _cart_coordinates(source_position_ref),
+                source_position_ref,
                 source_coords).freq
 
         # create sofa file
         sofa = utils._get_sofa_object(
             data,
-            source_coords.get_cart(),
+            source_coords.cartesian,
             receiver_position_ref,
             params["mesh2scattering_version"],
             frequencies=params["frequencies"])
@@ -513,7 +491,7 @@ def read_numcalc(folder=None, is_ref=False):
     if is_ref:
         xyz = np.array(params["sources"])
         coords = pf.Coordinates(xyz[..., 0], xyz[..., 1], xyz[..., 2])
-        num_sources = np.sum(np.abs(coords.get_sph()[..., 0]) < 1e-12)
+        num_sources = np.sum(np.abs(coords.azimuth) < 1e-12)
     else:
         num_sources = params["sources_num"]
 

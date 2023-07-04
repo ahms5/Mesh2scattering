@@ -16,7 +16,7 @@ requirements = [
     'scipy>=1.5.0',
     'psutil',
     'sofar',
-    'pyfar>=0.5.0',
+    # 'pyfar>=0.6.0',
     'trimesh',
 ]
 
