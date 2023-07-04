@@ -270,7 +270,7 @@ def test_defaults(tmpdir):
 @pytest.mark.parametrize("log", [(False), (True), ])
 def test_remove_outputs(boundary, grid, scattering, log, tmpdir):
     """Test purging the processed data in Output2HRTF"""
-    test_folder = os.path.join('examples', 'project')
+    test_folder = os.path.join('release', 'examples', 'project')
     project_path = os.path.join(m2s.utils.repository_root(), test_folder)
     test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
     shutil.copytree(project_path, test_dir)
