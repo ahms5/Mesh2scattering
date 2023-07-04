@@ -202,6 +202,18 @@ workflows:
           requires:
             - build_and_test
 
+      - publish-github-release:
+          matrix:
+            parameters:
+              version:
+                - "3.9"
+          requires:
+            - build_and_test
+            - flake
+            - test_examples
+            - test_documentation_build
+
+
 
   test_and_publish:
     # Test and publish on new git version tags
