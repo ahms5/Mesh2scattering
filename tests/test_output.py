@@ -279,6 +279,39 @@ def test_apply_symmetry_mirror_20_180(half_sphere):
     assert np.sum(data.freq[..., 1]) == 8
 
 
+def test_apply_symmetry_mirror_with_top_point(
+        half_sphere):
+    hemisphere_inc = pf.samplings.sph_equal_angle(30, 10)
+    hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.colatitude <= np.pi/2]
+    half_hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.azimuth <= np.pi]
+    quarter_hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.azimuth <= np.pi/2]
+
+    data_in = pf.FrequencyData(np.zeros(
+        (quarter_hemisphere_inc.csize, half_sphere.csize, 2)), [100, 200])
+    data, new_coords = m2s.output.apply_symmetry_mirror(
+        data_in, half_sphere,
+        quarter_hemisphere_inc, 90)
+
+    # test new_coords object
+    npt.assert_almost_equal(
+        np.sort(new_coords.azimuth), np.sort(half_hemisphere_inc.azimuth))
+    npt.assert_almost_equal(
+        np.sort(new_coords.colatitude),
+        np.sort(half_hemisphere_inc.colatitude))
+    npt.assert_almost_equal(
+        new_coords.radius, half_hemisphere_inc.radius)
+    npt.assert_equal(
+        new_coords[:quarter_hemisphere_inc.csize].cartesian,
+        quarter_hemisphere_inc.cartesian)
+
+    # test new_coords and data relationship
+    npt.assert_equal(data.cshape[0], new_coords.csize)
+    npt.assert_equal(data.cshape[1], half_sphere.csize)
+
+
 def test_apply_symmetry_mirror_error(half_sphere):
     hemisphere_inc = pf.samplings.sph_gaussian(10)
     hemisphere_inc = hemisphere_inc[

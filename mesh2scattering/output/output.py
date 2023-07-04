@@ -149,7 +149,8 @@ def apply_symmetry_mirror(
         idx = np.abs(coords_inc.azimuth % symmetry_angle_rad) > 1e-8
     elif np.abs(symmetry_azimuth_deg - 90) < 1e-8:
         idx = np.abs(coords_inc.azimuth - symmetry_angle_rad) > 1e-8
-    idx = np.flip(np.where(idx)).flatten()
+    no_top_point = coords_inc.colatitude > 1e-8
+    idx = np.flip(np.where(idx & no_top_point)).flatten()
     dim_inc = -3
     # dim_mic = -2
     # dim_frequency = -1
