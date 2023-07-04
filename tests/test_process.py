@@ -26,7 +26,7 @@ def test_write_scattering(tmpdir):
     assert source_coords_rand.csize == 1
     assert receiver_coords_rand.csize == 1
     assert receiver_coords.csize == 1
-    assert source_coords.csize == 27
+    assert source_coords.csize == 26
     npt.assert_equal(
         scattering_coefficient_rand.frequencies,
         scattering_coefficient.frequencies)
@@ -106,7 +106,7 @@ def test_write_diffusion(tmpdir):
     assert source_coords_rand.csize == 1
     assert receiver_coords_rand.csize == 1
     assert receiver_coords.csize == 1
-    assert source_coords.csize == 27
+    assert source_coords.csize == 26
     npt.assert_equal(
         scattering_coefficient_rand.frequencies,
         scattering_coefficient.frequencies)

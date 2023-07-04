@@ -158,97 +158,74 @@ def apply_symmetry_circular(
 
 
 def apply_symmetry_mirror(
-        data_in, coords_mic, incident_coords, mirror_axe=None, angle=90):
-    idx = angle != incident_coords.get_sph(unit='deg').T[0]
-    idx = np.flip(idx)
-    coords = incident_coords.get_sph(unit='deg').T
-    coords_mirrored = coords[:, idx]
-    coords_mirrored[0] = 2*angle - coords_mirrored[0]
-    coords_mirrored = np.flip(coords_mirrored, axis=1)
+        data_in: pf.FrequencyData, coords_mic: pf.Coordinates,
+        coords_inc: pf.Coordinates, symmetry_azimuth_deg: float):
+    """Mirrors the data along a symmetry axe, defined by the azimuth_angle_deg
+
+    Parameters
+    ----------
+    data_in : pf.FrequencyData
+        data object of cshape (..., #incident_coords, #coords_mic),
+        which should be rotated
+    coords_mic : pf.Coordinates
+        microphone positions
+    coords_inc : pf.Coordinates
+        Incident coordinates, which should be mirrored along
+    symmetry_azimuth_deg : float
+        _description_, by default 90
+
+    Returns
+    -------
+    data_in_mirrored : pf.FrequencyData
+        _description_
+    coords_inc_mirrored : pf.Coordinates
+        _description_
+    """
+    symmetry_angle_rad = symmetry_azimuth_deg*np.pi/180
+    if np.abs(symmetry_azimuth_deg - 180) < 1e-8:
+        idx = np.abs(coords_inc.azimuth % symmetry_angle_rad) > 1e-8
+    elif np.abs(symmetry_azimuth_deg - 90) < 1e-8:
+        idx = np.abs(coords_inc.azimuth - symmetry_angle_rad) > 1e-8
+    idx = np.flip(np.where(idx)).flatten()
+    dim_inc = -3
+    # dim_mic = -2
+    # dim_frequency = -1
+
+    coords_mirrored = coords_inc[idx].copy()
+    coords_mirrored.azimuth = 2*symmetry_angle_rad - coords_mirrored.azimuth
     data_mirrored_shape = list(data_in.freq.shape)
-    data_mirrored_shape[mirror_axe] = len(idx)
+    data_mirrored_shape[dim_inc] = len(idx)
     data_mirrored = np.zeros(data_mirrored_shape)
-    weights = incident_coords.weights
-    weights_mirrored = incident_coords.weights[idx]
-    weights_mirrored = np.flip(weights_mirrored, axis=0)
+    data_raw = data_in.freq.copy()
 
-    for idx_mirror in range(len(coords_mirrored[0, :])):
-        idx_real = idx_mirror + incident_coords.csize
-        mirrored_coord = coords_mirrored[:, idx_mirror]
+    for idx_mirror in range(coords_mirrored.csize):
+        mirrored_coord = coords_mirrored[idx_mirror].copy()
         real_coord = mirrored_coord.copy()
-        real_coord[0] = 2*angle - real_coord[0]
-        delta_phi = mirrored_coord[0] - real_coord[0]
-        receiver_coords_new = coords_mic.
-        print(1)
+        real_coord.azimuth = 2*symmetry_angle_rad - real_coord.azimuth
+        delta_phi = -(mirrored_coord.azimuth - real_coord.azimuth)
+        receiver_coords_new = coords_mic.copy()
+        receiver_coords_new.rotate('z', delta_phi, degrees=False)
+        i, _ = coords_mic.find_nearest_k(
+            receiver_coords_new.x.copy(), receiver_coords_new.y.copy(),
+            receiver_coords_new.z.copy())
+        i_source, _ = coords_inc.find_nearest_k(
+            real_coord.x, real_coord.y, real_coord.z)
+        data_mirrored[..., idx_mirror, :, :] = data_raw[..., i_source, i, :]
 
-    
-    
-    coords_ = np.concatenate((coords, coords_mirrored), axis=1)
-    weights_ = np.concatenate((weights, weights_mirrored), axis=0)
-    new_coords = pf.Coordinates(
-        coords_[0], coords_[1], coords_[2], 'sph', 'top_colat', 'deg',
-        weights_)
-    new_data = np.concatenate((data_in.freq, data_mirrored), axis=mirror_axe)
+    coords_ = np.concatenate(
+        (coords_inc.cartesian, coords_mirrored.cartesian), axis=0).T
+    if coords_inc.weights is not None:
+        weights_ = np.concatenate(
+            (coords_inc.weights, coords_mirrored.weights), axis=0)
+    else:
+        weights_ = None
+    coords_inc_mirrored = pf.Coordinates(
+        coords_[0], coords_[1], coords_[2], weights=weights_)
+    new_data = np.concatenate((data_in.freq, data_mirrored), axis=dim_inc)
+    data_in_mirrored = pf.FrequencyData(
+        new_data, data_in.frequencies, data_in.comment)
 
-
-    all_az = np.sort(np.array(list(set(
-        np.round(incident_coords.get_sph(unit='deg')[..., 0], 5)))))
-    all_el = np.sort(np.array(list(set(
-        np.round(incident_coords.get_sph(unit='deg')[..., 1], 5)))))
-    radius = np.median(incident_coords.get_sph()[..., 2])
-    source_coords_out = pf.Coordinates(
-        *np.meshgrid(all_az, all_el, indexing='ij'), radius, 'sph', unit='deg')
-    data = reshape_to_az_by_el(data_in, incident_coords, source_coords_out, 1)
-
-    shape = list(data.cshape)
-    shape.append(data.n_bins)
-    azimuths = np.sort(np.array(list(set(
-        np.round(incident_coords.get_sph()[..., 0], 5)))))
-    index_min = len(azimuths)-1
-    index_max = 2 * index_min + 1
-    shape[mirror_axe] = index_max
-
-    freq = np.empty(shape, dtype=complex)
-    freq[:] = np.nan
-    freq = np.moveaxis(freq, mirror_axe, -1)
-    freq_in = np.moveaxis(data.freq.copy(), mirror_axe, -1)
-    max_aimuth = np.max(azimuths)
-    radius = np.median(incident_coords.get_sph()[:, 2])
-    azimuths_new = []
-    for iaz in range(index_max):
-        if iaz > index_min:
-            idx = index_max-iaz-1
-            az = (max_aimuth-azimuths[idx]) * 2
-            if azimuths[idx] + az > 2 * np.pi:
-                az = 2 * np.pi - azimuths[idx]
-            data_swap = pf.FrequencyData(
-                np.moveaxis(data.freq, 0, -2), data.frequencies)
-            data_in = shift_data_coords(
-                data_swap, coords_mic, az/np.pi*180).freq
-            data_in = np.moveaxis(data_in, -2, 0)
-
-            azimuths_new.append(azimuths[idx] + az)
-        else:
-            data_in = data.freq
-            idx = iaz
-            azimuths_new.append(azimuths[iaz])
-        freq_in = np.moveaxis(data_in, mirror_axe, 0)
-        freq[..., iaz] = freq_in[idx, ...]
-    # if max_index > 0:
-    #     freq = freq[..., :max_index]
-    freq = np.moveaxis(freq, -1, mirror_axe)
-    data_out = pf.FrequencyData(freq, data.frequencies)
-    elevations = np.sort(np.array(list(set(
-        np.round(incident_coords.get_sph()[..., 1], 5)))))
-    new_inc_coords = angles2coords(np.array(azimuths_new), elevations, radius)
-    shape = data_out.cshape
-    data_out.freq = np.reshape(
-        data_out.freq, (shape[0], shape[1]*shape[2], data_out.n_bins))
-    xyz = new_inc_coords.get_cart().reshape((new_inc_coords.csize, 3))
-    new_inc_coords = pf.Coordinates(xyz[..., 0], xyz[..., 1], xyz[..., 2])
-    mask_not_double = new_inc_coords.get_sph()[..., 1] != 0
-    mask_not_double[np.argmax(~mask_not_double)] = True
-    return data_out[:, mask_not_double], new_inc_coords[mask_not_double]
+    return data_in_mirrored, coords_inc_mirrored
 
 
 def write_pattern(folder):
@@ -298,16 +275,15 @@ def write_pattern(folder):
             receiver_position = np.transpose(receiver_position)
 
         # apply symmetry of reference sample
+        data_raw = np.moveaxis(evaluationGrids[grid]["pressure"], 1, 0)
         data = pf.FrequencyData(
-            evaluationGrids[grid]["pressure"], params["frequencies"])
+            data_raw, params["frequencies"])
         receiver_coords = _cart_coordinates(receiver_position)
         source_coords = _cart_coordinates(source_position)
-        source_coords.weights = np.array(params["sources_weights"])
-        receiver_coords.weights = np.array(params["receivers_weights"])
         # data = np.swapaxes(data, 0, 1)
         for i in params['symmetry_azimuth']:
             data, source_coords = apply_symmetry_mirror(
-                data, receiver_coords, source_coords, 1)
+                data, receiver_coords, source_coords, i)
 
         # write data
         sofa = utils._get_sofa_object(

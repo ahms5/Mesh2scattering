@@ -4,6 +4,7 @@ import numpy.testing as npt
 import pyfar as pf
 import shutil
 import pytest
+import numpy as np
 
 
 def test_import():
@@ -112,10 +113,166 @@ def test_write_pattern_one_source(tmpdir):
     npt.assert_equal(reference.frequencies, sample.frequencies)
 
 
-def test_apply_symmetry_mirror(
-        quarter_half_sphere, half_sphere,
+def test_apply_symmetry_mirror_90(
+        half_sphere):
+    hemisphere_inc = pf.samplings.sph_gaussian(10)
+    hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.get_sph().T[1] <= np.pi/2]
+    half_hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.get_sph().T[0] <= np.pi]
+    quarter_hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.get_sph().T[0] <= np.pi/2]
+
+    data_in = pf.FrequencyData(np.zeros(
+        (quarter_hemisphere_inc.csize, half_sphere.csize, 2)), [100, 200])
+    data_in.freq[0, 0, 0] = 1
+    data_in.freq[11, 100, 1] = 2
+    data, new_coords = m2s.output.apply_symmetry_mirror(
+        data_in, half_sphere,
+        quarter_hemisphere_inc, 90)
+
+    # test new_coords object
+    npt.assert_almost_equal(new_coords.azimuth, half_hemisphere_inc.azimuth)
+    npt.assert_almost_equal(
+        np.sort(new_coords.colatitude),
+        np.sort(half_hemisphere_inc.colatitude))
+    npt.assert_almost_equal(
+        new_coords.radius, half_hemisphere_inc.radius)
+    npt.assert_equal(
+        new_coords[:quarter_hemisphere_inc.csize].cartesian,
+        quarter_hemisphere_inc.cartesian)
+
+    # test new_coords and data relationship
+    npt.assert_equal(data.cshape[0], new_coords.csize)
+    npt.assert_equal(data.cshape[1], half_sphere.csize)
+
+    # test data shift
+    assert data.freq[0, 0, 0] == 1
+    assert data.freq[-1, 441, 0] == 1
+    assert np.sum(data.freq[..., 0]) == 2
+    assert data.freq[11, 100, 1] == 2
+    assert data.freq[18, 184, 1] == 2
+    assert np.sum(data.freq[..., 1]) == 4
+
+
+def test_apply_symmetry_mirror_180(
+        quarter_hemisphere_inc, half_sphere,
         pressure_data_mics_incident_directions):
+    pressure_data_mics_incident_directions.freq[0, 0, 0] = 1
+    pressure_data_mics_incident_directions.freq[11, 100, 1] = 2
     data, new_coords = m2s.output.apply_symmetry_mirror(
         pressure_data_mics_incident_directions, half_sphere,
-        quarter_half_sphere, 0, 90)
-    npt.assert_equal(new_coords[:quarter_half_sphere.csize], quarter_half_sphere)
+        quarter_hemisphere_inc, 90)
+    data, new_coords = m2s.output.apply_symmetry_mirror(
+        data, half_sphere, new_coords, 180)
+
+    # test new_coords object
+    new_coords_desired = pf.samplings.sph_gaussian(10)
+    new_coords_desired = new_coords_desired[
+        new_coords_desired.get_sph().T[1] <= np.pi/2]
+    npt.assert_almost_equal(new_coords.azimuth, new_coords_desired.azimuth)
+    npt.assert_almost_equal(
+        np.sort(new_coords.colatitude), np.sort(new_coords_desired.colatitude))
+    npt.assert_almost_equal(
+        new_coords.radius, new_coords_desired.radius)
+    npt.assert_equal(
+        new_coords[:quarter_hemisphere_inc.csize].cartesian,
+        quarter_hemisphere_inc.cartesian)
+
+    # test new_coords and data relationship
+    npt.assert_equal(data.cshape[0], new_coords.csize)
+    npt.assert_equal(data.cshape[1], half_sphere.csize)
+
+    # test data shift
+    assert data.freq[0, 0, 0] == 1
+    assert data.freq[29, 441, 0] == 1
+    assert np.sum(data.freq[..., 0]) == 2
+    assert data.freq[11, 100, 1] == 2
+    assert data.freq[18, 184, 1] == 2
+    assert data.freq[36, 541, 1] == 2
+    assert data.freq[43, 625, 1] == 2
+    assert np.sum(data.freq[..., 1]) == 8
+
+
+def test_apply_symmetry_mirror_20_90(half_sphere):
+    hemisphere_inc = pf.samplings.sph_gaussian(20)
+    hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.get_sph().T[1] <= np.pi/2]
+    quarter_hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.get_sph().T[0] <= np.pi/2]
+    half_hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.get_sph().T[0] <= np.pi]
+
+    data_in = pf.FrequencyData(np.zeros(
+        (quarter_hemisphere_inc.csize, half_sphere.csize, 2)), [100, 200])
+    data_in.freq[0, 0, 0] = 1
+    data_in.freq[11, 100, 1] = 2
+    data, new_coords = m2s.output.apply_symmetry_mirror(
+        data_in, half_sphere,
+        quarter_hemisphere_inc, 90)
+
+    # test new_coords object
+    npt.assert_almost_equal(new_coords.azimuth, half_hemisphere_inc.azimuth)
+    npt.assert_almost_equal(
+        np.sort(new_coords.colatitude),
+        np.sort(half_hemisphere_inc.colatitude))
+    npt.assert_almost_equal(
+        new_coords.radius, half_hemisphere_inc.radius)
+    npt.assert_equal(
+        new_coords[:quarter_hemisphere_inc.csize].cartesian,
+        quarter_hemisphere_inc.cartesian)
+
+    # test new_coords and data relationship
+    npt.assert_equal(data.cshape[0], new_coords.csize)
+    npt.assert_equal(data.cshape[1], half_sphere.csize)
+
+    # test data shift
+    assert data.freq[0, 0, 0] == 1
+    assert data.freq[109, 441, 0] == 1
+    assert np.sum(data.freq[..., 0]) == 2
+    assert data.freq[11, 100, 1] == 2
+    assert data.freq[98, 457, 1] == 2
+    assert np.sum(data.freq[..., 1]) == 4
+
+
+def test_apply_symmetry_mirror_20_180(half_sphere):
+    hemisphere_inc = pf.samplings.sph_gaussian(20)
+    hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.get_sph().T[1] <= np.pi/2]
+    quarter_hemisphere_inc = hemisphere_inc[
+        hemisphere_inc.get_sph().T[0] <= np.pi/2]
+
+    data_in = pf.FrequencyData(np.zeros(
+        (quarter_hemisphere_inc.csize, half_sphere.csize, 2)), [100, 200])
+    data_in.freq[0, 0, 0] = 1
+    data_in.freq[11, 100, 1] = 2
+    data, new_coords = m2s.output.apply_symmetry_mirror(
+        data_in, half_sphere,
+        quarter_hemisphere_inc, 90)
+    data, new_coords = m2s.output.apply_symmetry_mirror(
+        data, half_sphere, new_coords, 180)
+
+    # test new_coords object
+    npt.assert_almost_equal(new_coords.azimuth, hemisphere_inc.azimuth)
+    npt.assert_almost_equal(
+        np.sort(new_coords.colatitude),
+        np.sort(hemisphere_inc.colatitude))
+    npt.assert_almost_equal(
+        new_coords.radius, hemisphere_inc.radius)
+    npt.assert_equal(
+        new_coords[:quarter_hemisphere_inc.csize].cartesian,
+        quarter_hemisphere_inc.cartesian)
+
+    # test new_coords and data relationship
+    npt.assert_equal(data.cshape[0], new_coords.csize)
+    npt.assert_equal(data.cshape[1], half_sphere.csize)
+
+    # test data shift
+    assert data.freq[0, 0, 0] == 1
+    assert data.freq[109, 441, 0] == 1
+    assert np.sum(data.freq[..., 0]) == 2
+    assert data.freq[11, 100, 1] == 2
+    assert data.freq[98, 457, 1] == 2
+    assert data.freq[111, 541, 1] == 2
+    assert data.freq[198, 16, 1] == 2
+    assert np.sum(data.freq[..., 1]) == 8

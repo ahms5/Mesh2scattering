@@ -18,7 +18,7 @@ def half_sphere():
 
 
 @pytest.fixture
-def quarter_half_sphere():
+def quarter_hemisphere_inc():
     """return 10th order gaussian sampling for the quarter half sphere
     and radius 1.
 
@@ -32,6 +32,23 @@ def quarter_half_sphere():
         incident_directions.get_sph().T[1] <= np.pi/2]
     return incident_directions[
         incident_directions.get_sph().T[0] <= np.pi/2]
+
+
+@pytest.fixture
+def half_hemisphere_inc():
+    """return 10th order gaussian sampling for the quarter half sphere
+    and radius 1.
+
+    Returns
+    -------
+    pf.Coordinates
+        quarter half sphere sampling grid
+    """
+    incident_directions = pf.samplings.sph_gaussian(10)
+    incident_directions = incident_directions[
+        incident_directions.get_sph().T[1] <= np.pi/2]
+    return incident_directions[
+        incident_directions.get_sph().T[0] <= np.pi]
 
 
 @pytest.fixture
@@ -55,8 +72,8 @@ def pressure_data_mics(half_sphere):
 
 
 @pytest.fixture
-def pressure_data_mics_incident_directions(
-        half_sphere, quarter_half_sphere):
+def data_in(
+        half_sphere, quarter_hemisphere_inc):
     """returns a sound pressure data example, with sound pressure 0 and
     two frequency bins
 
@@ -74,6 +91,6 @@ def pressure_data_mics_incident_directions(
     """
     frequencies = [200, 300]
     shape_new = np.append(
-        quarter_half_sphere.cshape, half_sphere.cshape)
+        quarter_hemisphere_inc.cshape, half_sphere.cshape)
     shape_new = np.append(shape_new, len(frequencies))
     return pf.FrequencyData(np.zeros(shape_new), frequencies)
