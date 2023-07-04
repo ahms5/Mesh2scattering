@@ -150,14 +150,13 @@ jobs:
             python setup.py sdist bdist_wheel
             twine upload dist/*
   publish-github-release:
-    executor:
-      name: python-docker
-      version: '3.9'
+    docker:
+      - image: cibuilds/github:0.10
     steps:
       - checkout
       - run:
           name: Install System Dependencies
-          command: sudo apt install golang-go && sudo apt-get update && sudo apt-get install zip
+          command: sudo apt-get update && sudo apt-get install zip
       - run:
           name: zip folders
           command: zip -r examples.zip examples && zip -r NumCalc_WindowsExe.zip NumCalc_WindowsExe
