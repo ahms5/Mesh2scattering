@@ -150,6 +150,7 @@ jobs:
             python setup.py sdist bdist_wheel
             twine upload dist/*
   publish-github-release:
+    steps:
       - checkout
       - run:
           name: Install System Dependencies
@@ -201,8 +202,6 @@ workflows:
             - build_and_test
 
       - publish-github-release:
-          requires:
-            - build_and_test
 
 
 
