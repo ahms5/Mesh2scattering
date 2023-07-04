@@ -15,7 +15,7 @@ base_dir = os.path.dirname(__file__)
 # ignore tests for windows since its difficult to build the exe
 if os.name == 'nt':
     numcalc = os.path.join(
-        m2s.utils.program_root(), "numcalc", "bin", "NumCalc", "NumCalc.exe")
+        m2s.utils.program_root(), "numcalc", "bin", "NumCalc.exe")
     numcalc_path = os.path.dirname(numcalc)
     warnings.warn(
         ('Under Windows the code is not compiling but an executable is '
