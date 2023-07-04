@@ -448,7 +448,7 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
             if os.name == 'nt':  # Windows detected
                 # create a log file for all print-outs
                 LogFileHandle = open(
-                    os.path.join(cwd, "NC{step}-{step}_log.txt"), "w")
+                    os.path.join(cwd, f"NC{step}-{step}_log.txt"), "w")
                 # run NumCalc and route all printouts to a log file
                 subprocess.Popen(
                     f"{numcalc_executable} -istart {step} -iend {step}",
