@@ -156,7 +156,7 @@ jobs:
       - checkout
       - run:
           name: zip folders
-          command: zip -r examples.zip examples && zip -r NumCalc_WindowsExe.zip NumCalc_WindowsExe
+          command: zip -r examples.zip ./release/examples && zip -r NumCalc_WindowsExe.zip ./release/NumCalc_WindowsExe
       - run:
           name: "Publish Release on GitHub"
           command: |
