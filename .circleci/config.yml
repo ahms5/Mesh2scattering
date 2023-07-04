@@ -201,6 +201,8 @@ workflows:
             - build_and_test
 
       - publish-github-release:
+          requires:
+            - build_and_test
 
 
 
