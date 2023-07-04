@@ -160,7 +160,9 @@ def apply_symmetry_circular(
 def apply_symmetry_mirror(
         data_in: pf.FrequencyData, coords_mic: pf.Coordinates,
         coords_inc: pf.Coordinates, symmetry_azimuth_deg: float):
-    """Mirrors the data along a symmetry axe, defined by the azimuth_angle_deg
+    """Mirrors the data along a symmetry axe, defined by the azimuth_angle_deg.
+
+    Note: Angles on the symmetry axes will be skipped for mirroring.
 
     Parameters
     ----------
@@ -172,14 +174,14 @@ def apply_symmetry_mirror(
     coords_inc : pf.Coordinates
         Incident coordinates, which should be mirrored along
     symmetry_azimuth_deg : float
-        _description_, by default 90
+        azimuth angle in degree where the data should be mirrored.
 
     Returns
     -------
     data_in_mirrored : pf.FrequencyData
-        _description_
+        mirrored data object for the coords_inc coordinates.
     coords_inc_mirrored : pf.Coordinates
-        _description_
+        new coordinate object, angles on the symmetry axes will be skipped.
     """
     symmetry_angle_rad = symmetry_azimuth_deg*np.pi/180
     if np.abs(symmetry_azimuth_deg - 180) < 1e-8:
@@ -200,16 +202,18 @@ def apply_symmetry_mirror(
 
     for idx_mirror in range(coords_mirrored.csize):
         mirrored_coord = coords_mirrored[idx_mirror].copy()
-        real_coord = mirrored_coord.copy()
-        real_coord.azimuth = 2*symmetry_angle_rad - real_coord.azimuth
-        delta_phi = -(mirrored_coord.azimuth - real_coord.azimuth)
+        corresponding_coord = mirrored_coord.copy()
+        corresponding_coord.azimuth \
+            = 2*symmetry_angle_rad - corresponding_coord.azimuth
+        delta_phi = -(mirrored_coord.azimuth - corresponding_coord.azimuth)
         receiver_coords_new = coords_mic.copy()
         receiver_coords_new.rotate('z', delta_phi, degrees=False)
         i, _ = coords_mic.find_nearest_k(
             receiver_coords_new.x.copy(), receiver_coords_new.y.copy(),
             receiver_coords_new.z.copy())
         i_source, _ = coords_inc.find_nearest_k(
-            real_coord.x, real_coord.y, real_coord.z)
+            corresponding_coord.x, corresponding_coord.y,
+            corresponding_coord.z)
         data_mirrored[..., idx_mirror, :, :] = data_raw[..., i_source, i, :]
 
     coords_ = np.concatenate(
