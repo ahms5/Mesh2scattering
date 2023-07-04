@@ -151,7 +151,7 @@ jobs:
             twine upload dist/*
   publish-github-release:
     docker:
-      - image: circleci/github:0.10
+      - image: circleci/golang:1.16.3
     steps:
       - checkout
       - run:
@@ -160,6 +160,7 @@ jobs:
       - run:
           name: "Publish Release on GitHub"
           command: |
+            go install github.com/tcnksm/ghr@latest
             ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering -c ${CIRCLE_SHA1} -generatenotes -delete ${CIRCLE_SHA1} ./release/
   
 
