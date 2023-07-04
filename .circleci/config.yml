@@ -201,11 +201,6 @@ workflows:
           requires:
             - build_and_test
 
-      - publish-github-release:
-          filters:
-            branches:
-              only: /.*/
-
 
 
   test_and_publish:
@@ -273,6 +268,19 @@ workflows:
             parameters:
               version:
                 - "3.9"
+          requires:
+            - build_and_test
+            - flake
+            - test_examples
+            - test_documentation_build
+          filters:
+            branches:
+              ignore: /.*/
+            # only act on version tags
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+
+      - publish-github-release:
           requires:
             - build_and_test
             - flake
