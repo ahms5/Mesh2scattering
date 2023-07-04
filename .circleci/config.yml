@@ -151,7 +151,7 @@ jobs:
             twine upload dist/*
   publish-github-release:
     docker:
-      - image: circleci/golang:1.17
+      - image: circleci/golang:1.19
     steps:
       - checkout
       - run:
