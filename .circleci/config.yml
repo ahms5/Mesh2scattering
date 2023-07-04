@@ -163,7 +163,7 @@ jobs:
           command: |
             go get github.com/tcnksm/ghr
             VERSION=$(<<parameters.version>>)
-            ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering -c ${CIRCLE_SHA1} -delete ${VERSION} ./release/
+            ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering -c ${CIRCLE_SHA1} -delete v001 ./release/
   
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
@@ -205,9 +205,6 @@ workflows:
       - publish-github-release:
           requires:
             - build_and_test
-            - flake
-            - test_examples
-            - test_documentation_build
 
 
 
