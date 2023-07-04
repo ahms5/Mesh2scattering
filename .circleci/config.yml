@@ -150,6 +150,9 @@ jobs:
             python setup.py sdist bdist_wheel
             twine upload dist/*
   publish-github-release:
+    executor:
+      name: python-docker
+      version: '3.9'
     steps:
       - checkout
       - run:
@@ -202,6 +205,9 @@ workflows:
             - build_and_test
 
       - publish-github-release:
+          filters:
+            branches:
+              only: /.*/
 
 
 
