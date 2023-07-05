@@ -99,7 +99,7 @@ jobs:
             cd mesh2scattering/numcalc/src
             make
             cd ../../../
-            pytest --nbmake examples/*.ipynb
+            pytest --nbmake release/examples/*.ipynb
   test_documentation_build:
     parameters:
       version:
