@@ -719,8 +719,8 @@ void NC_WriteResultsEvaluationGrid
 	  ndip = nuinnode[inp];
 	  for(i=0; i<NDIM; i++) crdip[i] = nodesCoordinates[ndip][i];
 	  
-	  z1 = NC_ContributionIncidentWaves(NCout, crdip, Zvelopoi_3d, 1);
-	  zprint[inp] += z1;
+	  // z1 = NC_ContributionIncidentWaves(NCout, crdip, Zvelopoi_3d, 1);
+	  // zprint[inp] += z1;
 	  for(j=0; j<NDIM; j++) zveint(inp, j) += Zvelopoi_3d[j];
 	}
     }
@@ -736,8 +736,8 @@ void NC_WriteResultsEvaluationGrid
 	
 	// contribution of the incident waves
 	if(numIncidentPlaneWaves_ || numPointSources_) {
-	  z1 = NC_ContributionIncidentWaves(NCout, crdip, Zvelopoi_3d, 1);
-	  zprint[inp] += z1;
+	  // z1 = NC_ContributionIncidentWaves(NCout, crdip, Zvelopoi_3d, 1);
+	  // zprint[inp] += z1;
 	  for(j=0; j<NDIM; j++) zveint(inp, j) += Zvelopoi_3d[j];
 	}
       } // end of loop INP
@@ -875,7 +875,7 @@ Complex NC_ContributionIncidentWaves
         for(i=0; i<numIncidentPlaneWaves_; i++)
         {
             // direction of the cuurent incident plane wave
-            for(j=0; j<NDIM; j++) vect1[j] = dirinw[i][j];
+            // for(j=0; j<NDIM; j++) vect1[j] = dirinw[i][j];
             
             // reflection of the incident plane wave with respect to the symmetric planes
             zini = zinwav[i];
