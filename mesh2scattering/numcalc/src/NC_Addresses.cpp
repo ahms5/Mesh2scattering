@@ -229,6 +229,8 @@ Labsettradibem:
 	d_ratio[i] = (double)n_Pair_NeaF[i]/(double)n_Pair_FarD[i];
       } else {
 	d_ratio[i] = 0.0;
+	//	NC_Error_Exit_1(NCout, "Frquency is too low, the single level FMBEM can not be used! Also, the number of elements for the traditional BEM is limited to 20000 Elements (~ 6.4Gb). Stopping NumCalc",
+	//			"Frequency = ", frequency_);
       }
     }
     
@@ -635,25 +637,24 @@ void NC_GenerateClustersFMM
 	Vector<int>& nfath_clus		//O: number of the father clusters
 )
 {
-    int i, j, k, l, ibg, nelgri, nodgri, ieli, ndij, inodi, nclus, l1, iclus, i1;
-    int idexel = 0;
-    Vector<int> nundgri(numNodesOfBoundaryMesh_), ndiv_xyz(NDIM);
-    double d0, d1, dCluEdgLv = ClusEdgL1/pow(2.0, nu_lev);
-    Vector<double> xyz_max(NDIM), xyz_min(NDIM), dif_xyz(NDIM);
-
-    // compute (1) number of clusters; (2) number of elements of each cluster
-    //         (3) numbers of elements of each cluster
-    for(ibg=0; ibg<nbegr_fcl; ibg++)
-    {
-
-        // number of elements and numbers of elements of the current element group
-        nelgri = 0;
-        nuelbegrp = 0;
-        if(nu_lev == 0)
-        {
-            for(j=0; j<numElements_; j++) if(indexOfElementGroup[nubegrp[ibg]] == listElementsElementGroup[j])
-                nuelbegrp[nelgri++] = j;
-        }
+  int i, j, k, l, ibg, nelgri, nodgri, ieli, ndij, inodi, nclus, l1, iclus, i1;
+  int idexel = 0;
+  Vector<int> nundgri(numNodesOfBoundaryMesh_), ndiv_xyz(NDIM);
+  double d0, d1, dCluEdgLv = ClusEdgL1/pow(2.0, nu_lev);
+  Vector<double> xyz_max(NDIM), xyz_min(NDIM), dif_xyz(NDIM);
+  
+  // compute (1) number of clusters; (2) number of elements of each cluster
+  //         (3) numbers of elements of each cluster
+  for(ibg=0; ibg<nbegr_fcl; ibg++) {
+    
+    // number of elements and numbers of elements of the current element group
+    nelgri = 0;
+    nuelbegrp = 0;
+    if(nu_lev == 0) {
+      for(j=0; j<numElements_; j++)
+	if(indexOfElementGroup[nubegrp[ibg]] == listElementsElementGroup[j])
+	  nuelbegrp[nelgri++] = j;
+    }
         else
         {
             nelgri = clulevarry[nu_lev - 1].ClastArLv[ibg].NumOfEl;
@@ -2026,28 +2027,31 @@ void NC_DeleteArrays(const int& imultpol, const int& nlevmlfm, const int& ifdelN
 		delete [] clustarry;
 		break;
 	case 3: // DMLFMBEM
-		for(i=0; i<nlevmlfm; i++)
+	  for(i=0; i<nlevmlfm; i++)
+	    {
+	      for(j=0; j<clulevarry[i].nClustSLv; j++)
 		{
-			for(j=0; j<clulevarry[i].nClustSLv; j++)
-			{
-				delete [] clulevarry[i].ClastArLv[j].NumsFarClus;
-				delete [] clulevarry[i].ClastArLv[j].NumsNeaClus;
-				delete [] clulevarry[i].ClastArLv[j].NumsOfEl;
-			}
-
-			if(ifdelNFC)
-			{
-				for(j=0; j<clulevarry[i].nClustOLv; j++)
-				{
-					delete [] clulevarry[i].ClastArLv[j].NumsFanClus;
-				}
-			}
-
-			delete [] clulevarry[i].ClastArLv;
-
+		  // kreiza 2024: there is the theoretical chance that
+		  //      no Far Field Clusters exist, check for that
+		  if( clulevarry[i].ClastArLv[j].NumsFarClus != NULL )
+		    delete [] clulevarry[i].ClastArLv[j].NumsFarClus;
+		  delete [] clulevarry[i].ClastArLv[j].NumsNeaClus;
+		  delete [] clulevarry[i].ClastArLv[j].NumsOfEl;
 		}
-		delete [] clulevarry;
-		break;
+	      
+	      if(ifdelNFC)
+		{
+		  for(j=0; j<clulevarry[i].nClustOLv; j++)
+		    {
+		      delete [] clulevarry[i].ClastArLv[j].NumsFanClus;
+		    }
+		}
+	      
+	      delete [] clulevarry[i].ClastArLv;
+	      
+	    }
+	  delete [] clulevarry;
+	  break;
 	}
 
 	if(imultpol) // FMBEM

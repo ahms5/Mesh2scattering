@@ -1260,6 +1260,7 @@ void NC_ComputeEntriesNforFMM
     switch(Ibvi03)
     {
         case 0:
+	  /* that is slightly unnecessary if Admia3 is zero */
             zcoefl[j1] += (Admia3*zBta3 - Gama3)*0.5;
             break;
         case 1:
@@ -1497,10 +1498,12 @@ void NC_SingularIntegration
             // compute the area(/4) of the sub element in the local coordinate system and the local coordinates of nodes of the sub elements
             switch(inodj)
             {
+	      // we construct 6 subtriangles, based on the midpoint of the element and the vertices + midpoints of edges
                 case 3: // triangle element
                     aresub = 1.0/24.0/(double)nsec2;
                     ssub[0] = tsub[0] = 1.0/3.0;
                     if(isec == 0) {
+		      // the difference is in the ordering/indices
                         ssub[1] = CSI6[ieg];
                         ssub[2] = CSI6[ig2];
                         tsub[1] = ETA6[ieg];

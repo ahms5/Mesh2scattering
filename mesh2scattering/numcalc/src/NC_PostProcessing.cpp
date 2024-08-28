@@ -782,7 +782,7 @@ Complex NC_ContributionIncidentWaves
 // = 1: compute potential and velocity
 )
 {
-  	int i, j, kref;
+    int i, j, kref;
     double re1, reffac, wavruim = harmonicTimeFactor_*waveNumbers_;
     Complex zrc(0.0, 0.0), zg, zini, zv;
     Vector<double> vect1(NDIM), vect2(NDIM);
