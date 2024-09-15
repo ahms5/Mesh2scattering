@@ -99,7 +99,7 @@ jobs:
             cd mesh2scattering/numcalc/src
             make
             cd ../../../
-            pytest --nbmake examples/*.ipynb
+            pytest --nbmake release/examples/*.ipynb
   test_documentation_build:
     parameters:
       version:
@@ -149,6 +149,21 @@ jobs:
           command: |  # create whl, install twine and publish to Test PyPI
             python setup.py sdist bdist_wheel
             twine upload dist/*
+  publish-github-release:
+    docker:
+      - image: circleci/golang:1.17
+    steps:
+      - checkout
+      - run:
+          name: zip folders
+          command: zip -r examples.zip ./release/examples && zip -r NumCalc_WindowsExe.zip ./release/NumCalc_WindowsExe
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go install github.com/tcnksm/ghr@latest
+            ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering ${CIRCLE_SHA1} ./release/
+  
+
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
@@ -185,6 +200,7 @@ workflows:
                 - "3.9"
           requires:
             - build_and_test
+
 
 
   test_and_publish:
@@ -252,6 +268,19 @@ workflows:
             parameters:
               version:
                 - "3.9"
+          requires:
+            - build_and_test
+            - flake
+            - test_examples
+            - test_documentation_build
+          filters:
+            branches:
+              ignore: /.*/
+            # only act on version tags
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+
+      - publish-github-release:
           requires:
             - build_and_test
             - flake

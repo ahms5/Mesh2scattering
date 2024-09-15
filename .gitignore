@@ -30,3 +30,5 @@ cov.xml
 examples/project/*/Output2HRTF/*.csv
 examples/project/*.sofa
 examples/project/*.txt
+release/examples.zip
+release/NumCalc_WindowsExe.zip

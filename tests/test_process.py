@@ -13,7 +13,7 @@ def test_import():
 
 def test_write_scattering(tmpdir):
     project_path = os.path.join(
-        m2s.utils.repository_root(), "examples", "project")
+        m2s.utils.repository_root(), 'release', 'examples', 'project')
     test_dir = os.path.join(tmpdir, 'project')
     shutil.copytree(project_path, test_dir)
     m2s.output.write_pattern(test_dir)
@@ -93,7 +93,7 @@ def test_write_scattering_sine():
 
 def test_write_diffusion(tmpdir):
     project_path = os.path.join(
-        m2s.utils.repository_root(), "examples", "project")
+        m2s.utils.repository_root(), 'release', 'examples', 'project')
     test_dir = os.path.join(tmpdir, 'project')
     shutil.copytree(project_path, test_dir)
     m2s.output.write_pattern(test_dir)

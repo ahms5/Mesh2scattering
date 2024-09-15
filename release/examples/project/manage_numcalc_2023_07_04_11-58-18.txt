@@ -1,0 +1,16 @@
+
+Starting manage_numcalc with the following arguments [Jul 04 2023, 11:58:18]
+----------------------------------------------------------------------------
+project_path: d:\git\_pyfar\mesh2scattering\examples\project
+numcalc_path: d:\git\_pyfar\mesh2scattering\mesh2scattering\numcalc\bin\NumCalc
+max_ram_load: 15.795623779296875
+ram_safety_factor: 1.05
+max_cpu_load: 90
+max_instances: 8
+wait_time: 15
+starting_order: alternate
+confirm_errors: False
+
+
+
+The file NumCalc.exe is missing or manage_numcalc did not find the containing folder 'NumCalc_WindowsExe'
