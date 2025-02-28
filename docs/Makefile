@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = python -msphinx
-SPHINXPROJ    = pyfar
+SPHINXPROJ    = mesh2scattering
 SOURCEDIR     = .
 BUILDDIR      = _build
 

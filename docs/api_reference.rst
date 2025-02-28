@@ -1,8 +1,14 @@
-Modules
-=======
+.. _api_reference:
 
-The following gives detailed information about all pyfar functions sorted
+API Reference
+=============
+
+The following gives detailed information about all mesh2scattering functions sorted
 according to their modules.
+
+
+Modules
+-------
 
 .. toctree::
    :maxdepth: 1
