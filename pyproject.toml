@@ -71,7 +71,10 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ['mesh2scattering/numcalc/*']
+include = [
+    'mesh2scattering/*',
+    'mesh2scattering/numcalc/*',
+    ]
 
 [tool.ruff]
 exclude = [
