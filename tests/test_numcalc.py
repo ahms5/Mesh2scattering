@@ -300,10 +300,11 @@ def test_remove_outputs(boundary, grid, scattering, log, tmpdir):
 def test_read_ram_estimates():
 
     estimates = m2s.numcalc.read_ram_estimates(os.path.join(
-        os.path.dirname(__file__), "resources", "SHTF", "NumCalc", "source_1"))
+        os.path.dirname(__file__), "resources", "project_one_source",
+        "sample", "NumCalc", "source_1"))
 
     assert isinstance(estimates, np.ndarray)
-    assert estimates.shape == (60, 3)
+    assert estimates.shape == (3, 3)
     npt.assert_allclose([1.00000e+00, 1.00000e+02, 4.16414e-02], estimates[0])
     npt.assert_allclose([6.00000e+01, 6.00000e+03, 7.22010e-02], estimates[-1])
 
