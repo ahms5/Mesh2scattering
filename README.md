@@ -63,7 +63,6 @@ Now NumCalc can be used by running NumCalc (don't do this yet).
 
 ### for MacOS
 
-
 Install the C++ build essentials by installing ``xcode``
 Go into the ``numcalc/src`` directory by running
 
