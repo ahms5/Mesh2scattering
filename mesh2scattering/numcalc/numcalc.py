@@ -1,3 +1,4 @@
+"""This module contains functions for managing numerical calculations."""
 import os
 import glob
 import time
@@ -6,9 +7,6 @@ import subprocess
 import numpy as np
 import shutil
 import csv
-import mesh2scattering as m2s
-import re
-import io
 
 
 def remove_outputs(
@@ -430,43 +428,44 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
             # find frequency step with the highest possible RAM consumption
             for idx, ram_required in enumerate(instances_to_run[:, 3]):
                 if ram_required <= ram_available:
-                    break
+                    continue
 
-            # start new NumCalc instance
-            source = int(instances_to_run[idx, 0])
-            step = int(instances_to_run[idx, 1])
-            progress = total_nr_to_run - instances_to_run.shape[0] + 1
-            message = (
-                f"{progress}/{total_nr_to_run} starting instance from: "
-                f"{os.path.basename(project)} (source {source}, step {step}, "
-                f"{current_time})")
-            _print_message(message, text_color_reset, log_file)
+                # start new NumCalc instance
+                source = int(instances_to_run[idx, 0])
+                step = int(instances_to_run[idx, 1])
+                progress = total_nr_to_run - instances_to_run.shape[0] + 1
+                message = (
+                    f"{progress}/{total_nr_to_run} starting instance from: "
+                    f"{os.path.basename(project)} (source {source}, "
+                    f"step {step}, "
+                    f"{current_time})")
+                _print_message(message, text_color_reset, log_file)
 
-            # new working directory
-            cwd = os.path.join(root_NumCalc, "source_" + str(source))
+                # new working directory
+                cwd = os.path.join(root_NumCalc, "source_" + str(source))
 
-            if os.name == 'nt':  # Windows detected
-                # create a log file for all print-outs
-                LogFileHandle = open(
-                    os.path.join(cwd, f"NC{step}-{step}_log.txt"), "w")
-                # run NumCalc and route all printouts to a log file
-                subprocess.Popen(
-                    f"{numcalc_executable} -istart {step} -iend {step}",
-                    stdout=LogFileHandle, cwd=cwd)
+                if os.name == 'nt':  # Windows detected
+                    # create a log file for all print-outs
+                    LogFileHandle = open(
+                        os.path.join(cwd, f"NC{step}-{step}_log.txt"), "w")
+                    # run NumCalc and route all printouts to a log file
+                    subprocess.Popen(
+                        f"{numcalc_executable} -istart {step} -iend {step}",
+                        stdout=LogFileHandle, cwd=cwd)
 
-            else:  # elif os.name == 'posix': Linux or Mac detected
-                # run NumCalc and route all printouts to a log file
-                subprocess.Popen((
-                    f"{numcalc_executable} -istart {step} -iend {step}"
-                    f" >NC{step}-{step}_log.txt"), shell=True, cwd=cwd)
+                else:  # elif os.name == 'posix': Linux or Mac detected
+                    # run NumCalc and route all printouts to a log file
+                    subprocess.Popen((
+                        f"{numcalc_executable} -istart {step} -iend {step}"
+                        f" >NC{step}-{step}_log.txt"), shell=True, cwd=cwd)
 
-            # prepare instances for next loop
-            instances_to_run = np.delete(instances_to_run, idx, 0)
-            if starting_order == "alternate":
-                instances_to_run = np.flip(instances_to_run, axis=0)
+                # prepare instances for next loop
+                instances_to_run = np.delete(instances_to_run, idx, 0)
+                if starting_order == "alternate":
+                    instances_to_run = np.flip(instances_to_run, axis=0)
 
-            started_instance = True
-            time.sleep(wait_time)  # long wait to initialize RAM
+                started_instance = True
+                time.sleep(wait_time)  # long wait to initialize RAM
         #  END of per project loop --------------------------------------------
     #  END of all projects loop -----------------------------------------------
 
@@ -514,7 +513,7 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
 
 
 def _raise_error(message, text_color, log_file, confirm_errors):
-    """Two different ways of error handling depending on `confirm_errors`"""
+    """Two different ways of error handling depending on `confirm_errors`."""
 
     # error to logfile
     with open(log_file, "a", encoding="utf8", newline="\n") as f:
@@ -534,7 +533,7 @@ def _raise_error(message, text_color, log_file, confirm_errors):
 
 
 def _print_message(message, text_color, log_file):
-    """Print message to console and log file"""
+    """Print message to console and log file."""
 
     if os.name == 'nt':  # Windows detected
         text_color = ''  # color codes do not work as intended on Win10
@@ -545,7 +544,7 @@ def _print_message(message, text_color, log_file):
 
 
 def _get_current_ram(ram_offset):
-    """Get the available RAM = free RAM - ram_offset"""
+    """Get the available RAM = free RAM - ram_offset."""
     ram_info = psutil.virtual_memory()
     ram_available = max([0, ram_info.available / 1073741824 - ram_offset])
     ram_used = ram_info.used / 1073741824
@@ -553,7 +552,7 @@ def _get_current_ram(ram_offset):
 
 
 def _numcalc_instances():
-    """Return the number of currently running NumCalc instances"""
+    """Return the number of currently running NumCalc instances."""
 
     numcalc_executable = 'NumCalc' if os.name != 'nt' else 'NumCalc.exe'
 
@@ -569,12 +568,16 @@ def _numcalc_instances():
 
 def _check_project(project, numcalc_executable, log_file):
     """
-    Find unfinished instances (frequency steps) in a Mesh2HRTF project folder
+    Find unfinished instances (frequency steps) in a Mesh2HRTF project folder.
 
     Parameters
     ----------
     project : str
         Full path of the Mesh2HRTF project folder
+    numcalc_executable : str
+        Full path to the NumCalc executable
+    log_file : str
+        Full path to the log file
 
     Returns
     -------
@@ -744,7 +747,7 @@ def _load_results(foldername, filename, numFrequencies):
     numDatalines = None
     with open(current_file) as file:
         line = csv.reader(file, delimiter=' ', skipinitialspace=True)
-        for idx, li in enumerate(line):
+        for _idx, li in enumerate(line):
             # read number of data points and head lines
             if len(li) == 2 and not li[0].startswith("Mesh"):
                 numDatalines = int(li[1])

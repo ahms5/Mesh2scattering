@@ -1,8 +1,8 @@
+"""Demo for using mesh2scattering."""
 # Note that this notebook do the same as the demo.py, so its up to you what
 # you prefer.
 
 # %%
-# import dependencies
 import mesh2scattering as m2s
 import pyfar as pf
 import os

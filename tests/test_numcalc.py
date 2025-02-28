@@ -7,7 +7,6 @@ import glob
 import warnings
 import numpy.testing as npt
 import numpy as np
-import filecmp
 
 # directory of this file
 base_dir = os.path.dirname(__file__)
@@ -19,7 +18,7 @@ if os.name == 'nt':
     numcalc_path = os.path.dirname(numcalc)
     warnings.warn(
         ('Under Windows the code is not compiling but an executable is '
-         f'expected in {numcalc}.'), UserWarning)
+         f'expected in {numcalc}.'), UserWarning, stacklevel=2)
 
 else:
     # Build NumCalc locally to use for testing
@@ -70,7 +69,7 @@ def test_numcalc_invalid_parameter(capfd):
     1,
     ])
 def test_numcalc_commandline_nitermax(nitermax, tmpdir):
-    """Test if command line parameter nitermax behaves as expected"""
+    """Test if command line parameter nitermax behaves as expected."""
     # Setup
 
     # copy test directory
@@ -117,10 +116,10 @@ def test_numcalc_commandline_nitermax(nitermax, tmpdir):
         in out_text
 
 
-@pytest.mark.parametrize("istart, iend", [
+@pytest.mark.parametrize(('istart', 'iend'), [
     (3, False), (False, 3), (2, 3)])
 def test_numcalc_commandline_istart_iend(istart, iend, tmpdir):
-    """Test if command line parameters istart and iend behave as expected
+    """Test if command line parameters istart and iend behave as expected.
     """
     # copy test directory
     shutil.copytree(
@@ -193,7 +192,7 @@ def test_numcalc_commandline_istart_iend(istart, iend, tmpdir):
 
 
 def test_numcalc_commandline_estimate_ram(tmpdir):
-    """Test NumCalc's RAM estimation using -estimate_ram"""
+    """Test NumCalc's RAM estimation using -estimate_ram."""
     # copy test data
     data_cwd = os.path.join(
         tmpdir, 'project_one_source', 'sample', 'NumCalc', 'source_1')
@@ -223,18 +222,19 @@ def test_numcalc_commandline_estimate_ram(tmpdir):
         current = file.readlines()
 
     with open(os.path.join(
-            data_shtf, 'sample', 'NumCalc', 'source_1', 'Memory.txt'), 'r') as file:
+            data_shtf, 'sample', 'NumCalc', 'source_1',
+            'Memory.txt'), 'r') as file:
         reference = file.readlines()
 
     assert current == reference
 
 
-@pytest.mark.parametrize("boundary", [(False), (True),])
-@pytest.mark.parametrize("grid", [(False), (True),])
-@pytest.mark.parametrize("scattering", [(False), (True),])
-@pytest.mark.parametrize("log", [(False), (True),])
+@pytest.mark.parametrize("boundary", [(False), (True)])
+@pytest.mark.parametrize("grid", [(False), (True)])
+@pytest.mark.parametrize("scattering", [(False), (True)])
+@pytest.mark.parametrize("log", [(False), (True)])
 def test_remove_outputs(boundary, grid, scattering, log, tmpdir):
-    """Test purging the processed data in Output2HRTF"""
+    """Test purging the processed data in Output2HRTF."""
     test_folder = os.path.join('examples', 'project')
     project_path = os.path.join(os.path.dirname(__file__), '..', test_folder)
     test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
@@ -277,7 +277,7 @@ def test_read_ram_estimates():
 
 
 def test_read_ram_estimates_assertions():
-    """test assertions for read_ram_estimates"""
+    """Test assertions for read_ram_estimates."""
 
     with pytest.raises(ValueError, match="does not contain a Memory.txt"):
         m2s.numcalc.read_ram_estimates(os.getcwd())

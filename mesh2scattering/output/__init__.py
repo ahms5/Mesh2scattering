@@ -1,3 +1,5 @@
+"""Write output for Mesh2HRTF."""
+
 from .output import (
     check_project,
     read_numcalc,
