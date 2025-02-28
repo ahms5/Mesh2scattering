@@ -1,3 +1,4 @@
+"""This module contains functions for managing numerical calculations."""
 import os
 import glob
 import time
