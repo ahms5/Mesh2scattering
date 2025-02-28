@@ -41,8 +41,15 @@ jobs:
           name: Install System Dependencies
           command: sudo apt-get update && sudo apt-get install -y build-essential
       - run:
-          name: install dependencies
-          command: pip install ".[tests]"
+          command: |
+            pip install ".[tests]"
+            pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
+      - run:
+          name: Build numcalc
+          command: |
+            cd mesh2scattering/numcalc/src
+            make
+            cd ../../../
       - run:
           name: Run tests
           command: pytest
@@ -91,13 +98,14 @@ jobs:
             pip install ".[tests]"
             pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
       - run:
-          name: Examples
+          name: Build numcalc
           command: |
-            pip install astroid
-            pip install -e .
             cd mesh2scattering/numcalc/src
             make
             cd ../../../
+      - run:
+          name: Examples
+          command: |
             pytest --nbmake examples/*.ipynb
 
   test_documentation_build:
@@ -111,9 +119,6 @@ jobs:
       version: <<parameters.version>>
     steps:
       - checkout
-      - run:
-          name: Install System Dependencies
-          command: sudo apt-get update && sudo apt-get install -y build-essential
       - run:
           name: Sphinx
           command: |
@@ -141,11 +146,50 @@ jobs:
           command: |
             pip install ".[tests]"
             pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
+      - run:
+          name: Build numcalc
+          command: |
+            cd mesh2scattering/numcalc/src
+            make
+            cd ../../../
       - run: |
           python --version
       - run:
           name: Run tests
           command: pytest tests -W error::DeprecationWarning
+          
+  coverage:
+    parameters:
+      version:
+        description: "version tag"
+        default: "latest"
+        type: string
+    executor:
+      name: python-docker
+      version: <<parameters.version>>
+    steps:
+      - checkout
+        - run:
+            name: Install System Dependencies
+            command: sudo apt-get update && sudo apt-get install -y build-essential
+      - run:
+          name: Setup testing environment
+          command: |
+            pip install ".[tests]"
+            pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
+      - run:
+          name: Build numcalc
+          command: |
+            cd mesh2scattering/numcalc/src
+            make
+            cd ../../../
+      - run:
+          name: Run Tests with coverage and create html report
+          command: |
+            coverage run -m pytest
+            coverage html  # open htmlcov/index.html in a browser
+      - store_artifacts:
+          path: htmlcov
 
   test_pypi_publish:
     parameters:
@@ -222,6 +266,7 @@ workflows:
                 - "3.9"
           requires:
             - build_and_test
+
       - ruff:
           matrix:
             parameters:
@@ -247,6 +292,14 @@ workflows:
             - build_and_test
 
       - test_pypi_publish:
+          matrix:
+            parameters:
+              version:
+                - "3.9"
+          requires:
+            - build_and_test
+
+      - coverage:
           matrix:
             parameters:
               version:
