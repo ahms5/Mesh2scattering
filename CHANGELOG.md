@@ -11,9 +11,10 @@
 
 #### Changed
 
-- replaced ``flake8``by ``ruff`` (#48)
-- changed to ``pyproject.toml`` (#48)
-- updated documentation style (#48)
+- add numcalc code to build ([#46](https://github.com/ahms5/Mesh2scattering/issues/46))
+- Deploy: changed to ``pyproject.toml`` ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
+- Documentation: updated documentation style ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
+- CI: replaced ``flake8`` by ``ruff`` ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
 
 #### Removed
 
