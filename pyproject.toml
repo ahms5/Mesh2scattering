@@ -70,9 +70,8 @@ Changelog = "https://github.com/ahms5/mesh2scattering/blob/master/CHANGELOG.md"
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages]
-where = ["mesh2scattering"]  # list of folders that contain the packages (["."] by default)
-include = ["mesh2scattering/numcalc/src*"]  # package names should match these glob patterns (["*"] by default)
+[tool.setuptools.packages.find]
+include = ['mesh2scattering/numcalc/*']
 
 [tool.ruff]
 exclude = [
