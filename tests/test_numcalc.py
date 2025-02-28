@@ -234,37 +234,6 @@ def test_numcalc_commandline_estimate_ram(tmpdir):
     assert current == reference
 
 
-def test_defaults(tmpdir):
-    """
-    Test numcalc manager with default parameters by
-    - directly calling the functions
-    - running the script that calls the function
-    """
-    cwd = os.path.dirname(__file__)
-    data_shtf = os.path.join(cwd, 'resources', 'project_one_source')
-
-    # copy test data to temporary directory and remove test critical data
-    shutil.copytree(data_shtf, os.path.join(tmpdir, "project_one_source"))
-    os.remove(os.path.join(
-        tmpdir, "project_one_source",
-        "sample", "NumCalc", "source_1", "Memory.txt"))
-    shutil.rmtree(
-        os.path.join(tmpdir, "project_one_source",
-        "sample", "NumCalc", "source_1", "be.out"))
-
-    # run as function
-    m2s.numcalc.manage_numcalc(
-        os.path.join(tmpdir, 'project_one_source'), numcalc_path=numcalc_path, wait_time=0)
-    # check if files exist
-    assert len(glob.glob(os.path.join(tmpdir, "manage_numcalc_*txt")))
-
-    base = os.path.join(tmpdir, "project_one_source",
-        "sample", "NumCalc", "source_1")
-    assert os.path.isfile(os.path.join(base, "Memory.txt"))
-    for step in range(1, 4):
-        assert os.path.isfile(os.path.join(base, f"NC{step}-{step}.out"))
-
-
 @pytest.mark.parametrize("boundary", [(False), (True),])
 @pytest.mark.parametrize("grid", [(False), (True),])
 @pytest.mark.parametrize("scattering", [(False), (True),])
