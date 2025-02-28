@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=pyfar
+set SPHINXPROJ=mesh2scattering
 
 if "%1" == "" goto help
 

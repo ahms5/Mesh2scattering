@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+"""Top-level package for mesh2scattering."""
+
 __author__ = """The Mesh2hrtfs developers"""
 __email__ = ''
 __version__ = '0.1.4'
