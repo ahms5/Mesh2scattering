@@ -77,7 +77,10 @@ find = { }  # Scan the project directory with the default parameters
 include-package-data = true
 
 [tool.setuptools.package-data]
-"mesh2scattering" = ["numcalc/src/**/*"]
+"mesh2scattering" = [
+    "numcalc/src/**/*",
+    "numcalc/bin/**/*",
+    ]
 
 [tool.ruff]
 exclude = [
