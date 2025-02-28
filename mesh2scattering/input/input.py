@@ -1,3 +1,6 @@
+"""
+This module provides functions to write input files for Mesh2HRTF.
+"""
 import os
 import numpy as np
 import pyfar as pf
@@ -12,6 +15,9 @@ from packaging import version
 
 
 def create_source_positions(phi_deg, theta_deg, radius):
+    """
+    Create source positions on a sphere.
+    """
     theta_rad = theta_deg * np.pi / 180.
     phi_rad = phi_deg * np.pi / 180.
     theta, phi = np.meshgrid(theta_rad, phi_rad)
@@ -31,16 +37,16 @@ def write_scattering_project(
         symmetry_rotational=False, sample_diameter=0.8,
         speed_of_sound='346.18',
         density_of_medium='1.1839'):
+    """Write scattering project for Mesh2HRTF."""
 
     if not os.path.isdir(project_path):
         os.mkdir(project_path)
 
-    frequencyStepSize = 0
     title = 'scattering coefficient Sample'
     method = 'ML-FMM BEM'
     project_path_sample = os.path.join(project_path, 'sample')
     write_project(
-        project_path_sample, title, frequencies, frequencyStepSize,
+        project_path_sample, title, frequencies,
         sample_path,
         receiver_coords, source_coords, sourceType='Point source',
         method=method, materialSearchPaths=None,
@@ -53,7 +59,7 @@ def write_scattering_project(
     project_path_ref = os.path.join(project_path, 'reference')
 
     write_project(
-        project_path_ref, title, frequencies, frequencyStepSize,
+        project_path_ref, title, frequencies,
         reference_path, receiver_coords, sourcePositions_ref,
         sourceType='Point source',
         method=method,  materialSearchPaths=None,
@@ -99,11 +105,14 @@ def write_scattering_project(
 
 
 def write_project(
-        project_path, title, frequencies, frequencyStepSize, mesh_path,
+        project_path, title, frequencies, mesh_path,
         evaluationPoints, sourcePositions,
         sourceType='Point source', method='ML-FMM BEM',
         materialSearchPaths=None, speedOfSound='346.18',
         densityOfMedium='1.1839', materials=None):
+    """
+    Write a Mesh2HRTF project.
+    """
 
     programPath = utils.program_root()
     defaultPath = os.path.join(
@@ -145,7 +154,35 @@ def write_project(
         sourcePositions, len(mesh.faces), len(mesh.vertices))
 
 
-def write_mesh(vertices, faces, path, start=200000, discard=None):
+def write_mesh(vertices, faces, path, start=200000):
+    """
+    Write mesh to Mesh2HRTF input format.
+
+    Mesh2HRTF meshes consist of two text files Nodes.txt and Elements.txt.
+    The Nodes.txt file contains the coordinates of the vertices and the
+    Elements.txt file contains the indices of the vertices that form the faces
+    of the mesh.
+
+    Parameters
+    ----------
+    vertices : pyfar Coordinates, numpy array
+        pyfar Coordinates object or 2D numpy array containing the cartesian
+        points of the mesh in meter. The array must be of shape (N, 3) with N
+        > 2.
+    faces : numpy array
+        2D numpy array containing the indices of the vertices that form the
+        faces of the mesh. The array must be of shape (M, 3) with M > 0.
+    path : str
+        Path to the directory where the mesh is saved.
+    start : int, optional
+        The nodes and elements of the mesh are numbered and the first element
+        will have the number `start`. In Mesh2HRTF, each Node must have a
+        unique number. The nodes/elements of the mesh for which the HRTFs are
+        simulated start at 1. Thus `start` must at least be greater than the
+        number of nodes/elements in the mesh.
+
+    """
+
     if vertices.ndim != 2 or vertices.shape[0] < 3 \
             or vertices.shape[1] != 3:
         raise ValueError(
@@ -397,6 +434,26 @@ def _write_nc_inp(
 
 
 def read_material_data(materials):
+    """
+    Read material data from file.
+
+    Mesh2HRTF supports non-rigid boundary conditions in the form of text files.
+
+    Parameters
+    ----------
+    materials : dict
+        Dictionary containing the materials. The keys are the names of the
+        materials and the values are dictionaries containing the path to the
+        material file.
+
+    Returns
+    -------
+    materials : dict
+        Dictionary containing the materials. The keys are the names of the
+        materials and the values are dictionaries containing the path to the
+        material file and the boundary condition, frequencies, real, and
+        imaginary values.
+    """
 
     for material in materials:
         # current material file
@@ -588,7 +645,6 @@ def write_evaluation_grid(
 
     Examples
     --------
-
     Generate a spherical sampling grid with pyfar and write it to the current
     working directory
 

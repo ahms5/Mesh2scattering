@@ -1,3 +1,6 @@
+"""
+This module provides functions to write input files for Mesh2HRTF.
+"""
 from .input import (
     write_mesh,
     write_evaluation_grid,

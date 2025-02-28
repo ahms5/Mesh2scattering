@@ -1,3 +1,6 @@
+"""
+This module contains functions for managing numerical calculations.
+"""
 from .numcalc import (
     manage_numcalc,
     remove_outputs,

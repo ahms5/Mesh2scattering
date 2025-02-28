@@ -5,7 +5,7 @@ import pyfar as pf
 
 @pytest.fixture
 def half_sphere():
-    """return 42th order gaussian sampling for the half sphere and radius 1.
+    """Return 42th order gaussian sampling for the half sphere and radius 1.
 
     Returns
     -------
@@ -19,7 +19,7 @@ def half_sphere():
 
 @pytest.fixture
 def quarter_hemisphere_inc():
-    """return 10th order gaussian sampling for the quarter half sphere
+    """Return 10th order gaussian sampling for the quarter half sphere
     and radius 1.
 
     Returns
@@ -36,7 +36,7 @@ def quarter_hemisphere_inc():
 
 @pytest.fixture
 def half_hemisphere_inc():
-    """return 10th order gaussian sampling for the quarter half sphere
+    """Return 10th order gaussian sampling for the quarter half sphere
     and radius 1.
 
     Returns
@@ -53,8 +53,8 @@ def half_hemisphere_inc():
 
 @pytest.fixture
 def pressure_data_mics(half_sphere):
-    """returns a sound pressure data example, with sound pressure 0 and
-    two frequency bins
+    """Returns a sound pressure data example, with sound pressure 0 and
+    two frequency bins.
 
     Parameters
     ----------
@@ -74,14 +74,14 @@ def pressure_data_mics(half_sphere):
 @pytest.fixture
 def data_in(
         half_sphere, quarter_hemisphere_inc):
-    """returns a sound pressure data example, with sound pressure 0 and
-    two frequency bins
+    """Returns a sound pressure data example, with sound pressure 0 and
+    two frequency bins.
 
     Parameters
     ----------
     half_sphere : pf.Coordinates
         half sphere sampling grid for mics
-    quarter_half_sphere : pf.Coordinates
+    quarter_hemisphere_inc : pf.Coordinates
         quarter half sphere sampling grid for incident directions
 
     Returns

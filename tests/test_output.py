@@ -13,29 +13,29 @@ def test_import():
     assert output
 
 
-@pytest.mark.parametrize("folders,issue,errors,nots", (
+@pytest.mark.parametrize(("folders", "issue", "errors", "nots"), [
     # no issues single NC.out filejoin
-    [["case_0"], False, [], []],
+    (["case_0"], False, [], []),
     # issues in NC.out that are corrected by second file NC1-1.out
-    [["case_4"], False, [], []],
+    (["case_4"], False, [], []),
     # missing frequencies
-    [["case_1"], True,
-     ["Frequency steps that were not calculated:\n59, 60"], []],
+    (["case_1"], True,
+     ["Frequency steps that were not calculated:\n59, 60"], []),
     # convergence issues
-    [["case_2"], True,
-     ["Frequency steps that did not converge:\n18, 42"], []],
+    (["case_2"], True,
+     ["Frequency steps that did not converge:\n18, 42"], []),
     # input/mesh issues
-    [["case_3"], True,
+    (["case_3"], True,
      ["Frequency steps that were not calculated:\n59, 60",
-      "Frequency steps with bad input:\n58"], []],
+      "Frequency steps with bad input:\n58"], []),
     # no isses in source 1 but issues in source 2
-    [["case_0", "case_1"], True,
+    (["case_0", "case_1"], True,
      ["Detected issues for source 2",
       "Frequency steps that were not calculated:\n59, 60"],
-     ["Detected issues for source 1"]]
-))
+     ["Detected issues for source 1"]),
+])
 def test_project_report(folders, issue, errors, nots, tmpdir):
-    """Test issues found by the project report"""
+    """Test issues found by the project report."""
 
     cwd = os.path.dirname(__file__)
     data_nc = os.path.join(cwd, 'resources', 'nc.out')
@@ -451,13 +451,15 @@ def test_apply_symmetry_circular_error(half_sphere):
             1, half_sphere, hemisphere_inc_in, hemisphere_inc)
 
     with pytest.raises(
-            ValueError, match="coords_inc_out needs to be of type pf.Coordinates"):
+            ValueError,
+            match="coords_inc_out needs to be of type pf.Coordinates"):
         m2s.output.apply_symmetry_circular(
             data_in_correct, half_sphere, hemisphere_inc_in, 1)
 
     hemisphere_inc_in.azimuth = [1., 0., 0., 0., 0.]
     with pytest.raises(
-            ValueError, match="coords_inc needs to have constant azimuth angle."):
+            ValueError,
+            match="coords_inc needs to have constant azimuth angle."):
         m2s.output.apply_symmetry_circular(
             data_in_correct, half_sphere, hemisphere_inc_in, hemisphere_inc)
 

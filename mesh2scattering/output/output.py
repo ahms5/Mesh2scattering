@@ -1,3 +1,5 @@
+"""Write output for Mesh2HRTF."""
+
 import os
 import warnings
 import json
@@ -13,7 +15,7 @@ import re
 def apply_symmetry_circular(
         data_in: pf.FrequencyData, coords_mic: pf.Coordinates,
         coords_inc: pf.Coordinates, coords_inc_out: pf.Coordinates):
-    """apply symmetry for circular symmetrical surfaces.
+    """Apply symmetry for circular symmetrical surfaces.
 
     Parameters
     ----------
@@ -152,9 +154,6 @@ def apply_symmetry_mirror(
     no_top_point = coords_inc.colatitude > 1e-8
     idx = np.flip(np.where(idx & no_top_point)).flatten()
     dim_inc = -3
-    # dim_mic = -2
-    # dim_frequency = -1
-
     coords_mirrored = coords_inc[idx].copy()
     coords_mirrored.azimuth = 2*symmetry_angle_rad - coords_mirrored.azimuth
     data_mirrored_shape = list(data_in.freq.shape)
@@ -246,7 +245,6 @@ def write_pattern(folder):
             data_raw, params["frequencies"])
         receiver_coords = _cart_coordinates(receiver_position)
         source_coords = _cart_coordinates(source_position)
-        # data = np.swapaxes(data, 0, 1)
         for i in params['symmetry_azimuth']:
             data, source_coords = apply_symmetry_mirror(
                 data, receiver_coords, source_coords, i)
@@ -274,9 +272,6 @@ def write_pattern(folder):
         # get pressure as SOFA object (all following steps are run on SOFA
         # objects. This way they are available to other users as well)
         # read source and receiver positions
-        # source_position_ref = np.array(params["sources"])
-        # if source_position_ref.shape[1] != 3:
-        #     source_position_ref = np.transpose(source_position_ref)
         receiver_position_ref = np.array(
             evaluationGrids[grid]["nodes"][:, 1:4])
         if receiver_position_ref.shape[1] != 3:
@@ -399,13 +394,26 @@ def check_project(folder=None):
 
 
 def merge_frequency_data(data_list):
+    """
+    Merge multiple FrequencyData objects into one.
+
+    Parameters
+    ----------
+    data_list : list of pyfar.FrequencyData
+        List of FrequencyData objects to be merged.
+
+    Returns
+    -------
+    data_out : pyfar.FrequencyData
+        Merged FrequencyData object.
+    """
     data_out = data_list[0].copy()
     frequencies = data_out.frequencies.copy()
     for idx in range(1, len(data_list)):
         data = data_list[idx]
         assert data_out.cshape == data.cshape
         frequencies = np.append(frequencies, data.frequencies)
-        frequencies = np.array([i for i in set(frequencies)])
+        frequencies = np.array(list(set(frequencies)))
         frequencies = np.sort(frequencies)
 
         data_new = []
@@ -445,6 +453,8 @@ def read_numcalc(folder=None, is_ref=False):
         The path of the Mesh2HRTF project folder, i.e., the folder containing
         the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
         default, ``None`` uses the current working directory.
+    is_ref : bool, optional
+        If the data is from the reference sample. The default is False.
     """
 
     # check input
@@ -481,7 +491,7 @@ def read_numcalc(folder=None, is_ref=False):
     found_issues, report = write_output_report(folder)
 
     if found_issues:
-        warnings.warn(report)
+        warnings.warn(report, stacklevel=2)
 
     # get the evaluation grids
     evaluationGrids, _ = _read_nodes_and_elements(
@@ -718,7 +728,7 @@ def _load_results(foldername, filename, num_frequencies):
     numDatalines = None
     with open(current_file) as file:
         line = csv.reader(file, delimiter=' ', skipinitialspace=True)
-        for idx, li in enumerate(line):
+        for _idx, li in enumerate(line):
             # read number of data points and head lines
             if len(li) == 2 and not li[0].startswith("Mesh"):
                 numDatalines = int(li[1])
@@ -765,7 +775,7 @@ def _load_results(foldername, filename, num_frequencies):
 def _check_project_report(folder, fundamentals, out):
 
     # return if there are no fundamental errors or other issues
-    if not all([all(f) for f in fundamentals]) and not np.any(out == -1) \
+    if not all(all(f) for f in fundamentals) and not np.any(out == -1) \
             and np.all(out[:, 3:5]):
         return
 
@@ -835,7 +845,7 @@ def _check_project_report(folder, fundamentals, out):
 
 def _write_project_reports(folder, all_files, out, out_names):
     """
-    Write project report to disk at folder/Output2HRTF/report_source_*.csv
+    Write project report to disk at folder/Output2HRTF/report_source_*.csv.
 
     For description of input parameter refer to write_output_report and
     _parse_nc_out_files
