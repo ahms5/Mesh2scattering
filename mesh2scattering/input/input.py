@@ -397,7 +397,6 @@ def _write_nc_inp(
 
 
 def read_material_data(materials):
-
     for material in materials:
         # current material file
         file = materials[material]["path"]
@@ -588,7 +587,6 @@ def write_evaluation_grid(
 
     Examples
     --------
-
     Generate a spherical sampling grid with pyfar and write it to the current
     working directory
 

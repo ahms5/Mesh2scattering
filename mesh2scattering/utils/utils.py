@@ -1,3 +1,7 @@
+"""
+This module contains utility functions for the mesh2scattering package.
+"""
+
 import os
 import numpy as np
 import sofar as sf
@@ -43,13 +47,12 @@ def _get_sofa_object(data, source_position,
     ----------
     data : numpy array
         The data as an array of shape (MRE)
-    evaluation_grid : numpy array
+    source_position : numpy array
         The evaluation grid in Cartesian coordinates as an array of shape (MC)
     receiver_position : numpy array
         The position of the receivers (ears) in Cartesian coordinates
-    mode : str
-        "HRTF" to save HRTFs, "HRIR" to save HRIRs
     Mesh2HRTF_version : str
+        The version of the Mesh2HRTF software.
     frequencies : numpy array
         The frequencies at which the HRTFs were calculated. Required if mode is
         "HRTF"

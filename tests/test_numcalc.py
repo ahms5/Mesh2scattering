@@ -7,7 +7,6 @@ import glob
 import warnings
 import numpy.testing as npt
 import numpy as np
-import filecmp
 
 # directory of this file
 base_dir = os.path.dirname(__file__)
@@ -19,7 +18,7 @@ if os.name == 'nt':
     numcalc_path = os.path.dirname(numcalc)
     warnings.warn(
         ('Under Windows the code is not compiling but an executable is '
-         f'expected in {numcalc}.'), UserWarning)
+         f'expected in {numcalc}.'), UserWarning, stacklevel=2)
 
 else:
     # Build NumCalc locally to use for testing
@@ -66,10 +65,10 @@ def test_numcalc_invalid_parameter(capfd):
         ValueError("Num calc did not throw an error")
 
 
-@pytest.mark.parametrize("nitermax, use", [
+@pytest.mark.parametrize(('nitermax', 'use'), [
     (0, True), (1, True), (2, True), ([], False)])
 def test_numcalc_commandline_nitermax(nitermax, use, tmpdir):
-    """Test if command line parameter nitermax behaves as expected"""
+    """Test if command line parameter nitermax behaves as expected."""
     # Setup
 
     # copy test directory
@@ -123,10 +122,10 @@ def test_numcalc_commandline_nitermax(nitermax, use, tmpdir):
             not in out_text
 
 
-@pytest.mark.parametrize("istart, iend", [
+@pytest.mark.parametrize(('istart', 'iend'), [
     (False, False), (3, False), (False, 3), (2, 3)])
 def test_numcalc_commandline_istart_iend(istart, iend, tmpdir):
-    """Test if command line parameters istart and iend behave as expected
+    """Test if command line parameters istart and iend behave as expected.
     """
     # copy test directory
     shutil.copytree(
@@ -198,7 +197,7 @@ def test_numcalc_commandline_istart_iend(istart, iend, tmpdir):
 
 
 def test_numcalc_commandline_estimate_ram(tmpdir):
-    """Test NumCalc's RAM estimation using -estimate_ram"""
+    """Test NumCalc's RAM estimation using -estimate_ram."""
 
     # copy test data
     data_cwd = os.path.join(tmpdir, 'SHTF', 'NumCalc', 'source_1')
@@ -238,7 +237,7 @@ def test_defaults(tmpdir):
     """
     Test numcalc manager with default parameters by
     - directly calling the functions
-    - running the script that calls the function
+    - running the script that calls the function.
     """
     cwd = os.path.dirname(__file__)
     data_shtf = os.path.join(cwd, 'resources', 'SHTF')
@@ -263,12 +262,12 @@ def test_defaults(tmpdir):
         assert os.path.isfile(os.path.join(base, f"NC{step}-{step}.out"))
 
 
-@pytest.mark.parametrize("boundary", [(False), (True),])
-@pytest.mark.parametrize("grid", [(False), (True),])
-@pytest.mark.parametrize("scattering", [(False), (True),])
-@pytest.mark.parametrize("log", [(False), (True),])
+@pytest.mark.parametrize("boundary", [(False), (True)])
+@pytest.mark.parametrize("grid", [(False), (True)])
+@pytest.mark.parametrize("scattering", [(False), (True)])
+@pytest.mark.parametrize("log", [(False), (True)])
 def test_remove_outputs(boundary, grid, scattering, log, tmpdir):
-    """Test purging the processed data in Output2HRTF"""
+    """Test purging the processed data in Output2HRTF."""
     test_folder = os.path.join('examples', 'project')
     project_path = os.path.join(os.path.dirname(__file__), '..', test_folder)
     test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
@@ -309,7 +308,7 @@ def test_read_ram_estimates():
 
 
 def test_read_ram_estimates_assertions():
-    """test assertions for read_ram_estimates"""
+    """Test assertions for read_ram_estimates."""
 
     with pytest.raises(ValueError, match="does not contain a Memory.txt"):
         m2s.numcalc.read_ram_estimates(os.getcwd())

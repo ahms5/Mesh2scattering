@@ -1,3 +1,6 @@
+"""This module contains functions to calculate scattering and diffusion
+coefficients from SOFA files and save them in new SOFA files.
+"""
 import pyfar as pf
 import imkar as ik
 import numpy as np
@@ -7,11 +10,11 @@ import mesh2scattering as m2s
 
 
 def calculate_scattering(folder):
-    """read pattern data ``sample.pattern.sofa`` and ``reference.pattern.sofa``
+    """Read pattern data ``sample.pattern.sofa`` and ``reference.pattern.sofa``
     and calculate and export the scattering coefficient for each incident angle
     to ``project_name.scattering.sofa``, then random incidence scattering
     coefficient is calculated and is saved in
-    ``project_name.scattering_rand.sofa``
+    ``project_name.scattering_rand.sofa``.
 
     Parameters
     ----------
@@ -75,11 +78,11 @@ def _revert_reshape_data(data, coords_orig, coords_reshaped):
 
 
 def calculate_diffusion(folder):
-    """read pattern data ``sample.pattern.sofa``
+    """Read pattern data ``sample.pattern.sofa``
     and calculate and export the diffusion coefficient for each incident angle
     to ``project_name.diffusion.sofa``, then random incidence diffusion
     coefficient is calculated and is saved in
-    ``project_name.diffusion_rand.sofa``
+    ``project_name.diffusion_rand.sofa``.
 
     Parameters
     ----------

@@ -1,7 +1,6 @@
 # %%
 import mesh2scattering as m2s
 import pyfar as pf
-# import matplotlib.pyplot as plt
 import os
 
 parameters = (
@@ -24,16 +23,6 @@ for smooth_fractions, phase, weights in parameters:
     dtf, dftf_inverse = m2s.compute_dtfs(
         os.path.join("..", "resources", "SOFA_files", "HRIR_6_points.sofa"),
         smooth_fractions, phase, weights)
-
-    # plots used for manual verification of the results
-
-    # pf.plot.time_freq(dftf_inverse)
-    # plt.savefig(name + "_filter.png")
-    # plt.close("all")
-
-    # pf.plot.time_freq(pf.io.convert_sofa(dtf)[0])
-    # plt.savefig(name + "_dtfs.png")
-    # plt.close("all")
 
     pf.io.write(
         name, compress=True, dtf=dtf.Data_IR, dftf_inverse=dftf_inverse.time)

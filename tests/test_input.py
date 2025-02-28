@@ -11,7 +11,7 @@ import json
 
 
 def test_import():
-    from mesh2scattering import input
+    from mesh2scattering import input  # noqa: A004
     assert input
 
 
@@ -23,17 +23,17 @@ def test_write_mesh(tmpdir):
     m2s.input.write_mesh(mesh.vertices, mesh.faces, tmpdir, start=0)
     assert filecmp.cmp(
         os.path.join(path, 'Elements.txt'),
-        os.path.join(tmpdir, 'Elements.txt')
+        os.path.join(tmpdir, 'Elements.txt'),
     )
     assert filecmp.cmp(
         os.path.join(path, 'Nodes.txt'),
-        os.path.join(tmpdir, 'Nodes.txt')
+        os.path.join(tmpdir, 'Nodes.txt'),
     )
 
 
 @pytest.mark.parametrize("n_dim", [3, 2])
-@pytest.mark.parametrize("coordinates,show", [[False, True], [True, False]])
-def test_read_and_write_evaluation_grid(n_dim, coordinates, show):
+@pytest.mark.parametrize(('coordinates'), [False, True])
+def test_read_and_write_evaluation_grid(n_dim, coordinates):
     cwd = os.path.dirname(__file__)
     data_grids = os.path.join(cwd, 'resources', 'evaluation_grids')
 
@@ -104,10 +104,10 @@ def test_write_material():
     assert file.endswith("100, 1.0, 0.0\n200, 1.5, 0.5\n")
 
 
-@pytest.mark.parametrize("kind,check_kind", (
-    ["admittance", ["ADMI", "PRES", "VELO"]],
-    ["pressure", ["PRES", "ADMI", "VELO"]],
-    ["velocity", ["VELO", "ADMI", "PRES"]]))
+@pytest.mark.parametrize(('kind', 'check_kind'), [
+    ("admittance", ["ADMI", "PRES", "VELO"]),
+    ("pressure", ["PRES", "ADMI", "VELO"]),
+    ("velocity", ["VELO", "ADMI", "PRES"])])
 def test_write_material_kind(kind, check_kind):
     # test if the kind of boundary condition is written correctly
 
