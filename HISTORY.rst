@@ -178,7 +178,7 @@ order
 
 **Institutions**
 
-* Austrian Research Institute, Austian Academy of Sciences, Vienna
+* Acoustics Research Institute, Austrian Academy of Sciences, Vienna
 * Audio Communication Group, Technical University of Berlin
 * Computer Graphics Group, Technical University of Berlin
 * University of Applied Sciences, Technikum Wien
