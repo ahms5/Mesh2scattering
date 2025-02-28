@@ -81,6 +81,10 @@ include-package-data = true
     "numcalc/src/**/*",
     "numcalc/bin/**/*",
     ]
+"*" = [
+    "examples/*",
+    "examples/project/*",
+    ]
 
 [tool.ruff]
 exclude = [
