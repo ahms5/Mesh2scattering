@@ -199,12 +199,12 @@ def test_numcalc_commandline_istart_iend(istart, iend, tmpdir):
 
 def test_numcalc_commandline_estimate_ram(tmpdir):
     """Test NumCalc's RAM estimation using -estimate_ram"""
-
     # copy test data
-    data_cwd = os.path.join(tmpdir, 'SHTF', 'NumCalc', 'source_1')
+    data_cwd = os.path.join(
+        tmpdir, 'project_one_source', 'sample', 'NumCalc', 'source_1')
     data_shtf = os.path.join(
-        os.path.dirname(__file__), 'resources', 'SHTF')
-    shutil.copytree(data_shtf, os.path.join(tmpdir, 'SHTF'))
+        os.path.dirname(__file__), 'resources', 'project_one_source')
+    shutil.copytree(data_shtf, os.path.join(tmpdir, 'project_one_source'))
 
     if os.name == 'nt':  # Windows detected
         # run NumCalc and route all printouts to a log file
@@ -228,7 +228,7 @@ def test_numcalc_commandline_estimate_ram(tmpdir):
         current = file.readlines()
 
     with open(os.path.join(
-            data_shtf, 'NumCalc', 'source_1', 'Memory.txt'), 'r') as file:
+            data_shtf, 'sample', 'NumCalc', 'source_1', 'Memory.txt'), 'r') as file:
         reference = file.readlines()
 
     assert current == reference
@@ -241,25 +241,27 @@ def test_defaults(tmpdir):
     - running the script that calls the function
     """
     cwd = os.path.dirname(__file__)
-    data_shtf = os.path.join(cwd, 'resources', 'SHTF')
+    data_shtf = os.path.join(cwd, 'resources', 'project_one_source')
 
     # copy test data to temporary directory and remove test critical data
-    shutil.copytree(data_shtf, os.path.join(tmpdir, "SHTF"))
+    shutil.copytree(data_shtf, os.path.join(tmpdir, "project_one_source"))
     os.remove(os.path.join(
-        tmpdir, "SHTF", "NumCalc", "source_1", "Memory.txt"))
+        tmpdir, "project_one_source",
+        "sample", "NumCalc", "source_1", "Memory.txt"))
     shutil.rmtree(
-        os.path.join(tmpdir, "SHTF", "NumCalc", "source_1", "be.out"))
-    shutil.rmtree(os.path.join(tmpdir, "SHTF", "NumCalc", "source_2"))
+        os.path.join(tmpdir, "project_one_source",
+        "sample", "NumCalc", "source_1", "be.out"))
 
     # run as function
     m2s.numcalc.manage_numcalc(
-        tmpdir, numcalc_path=numcalc_path, wait_time=0)
+        os.path.join(tmpdir, 'project_one_source'), numcalc_path=numcalc_path, wait_time=0)
     # check if files exist
     assert len(glob.glob(os.path.join(tmpdir, "manage_numcalc_*txt")))
 
-    base = os.path.join(tmpdir, "SHTF", "NumCalc", "source_1")
+    base = os.path.join(tmpdir, "project_one_source",
+        "sample", "NumCalc", "source_1")
     assert os.path.isfile(os.path.join(base, "Memory.txt"))
-    for step in range(1, 61):
+    for step in range(1, 4):
         assert os.path.isfile(os.path.join(base, f"NC{step}-{step}.out"))
 
 
@@ -305,8 +307,9 @@ def test_read_ram_estimates():
 
     assert isinstance(estimates, np.ndarray)
     assert estimates.shape == (3, 3)
-    npt.assert_allclose([1.00000e+00, 1.00000e+02, 4.16414e-02], estimates[0])
-    npt.assert_allclose([6.00000e+01, 6.00000e+03, 7.22010e-02], estimates[-1])
+    npt.assert_allclose([1, 1250, 1.63636], estimates[0])
+    npt.assert_allclose([2, 2500, 1.68203], estimates[1])
+    npt.assert_allclose([3, 5000, 2.36223], estimates[2])
 
 
 def test_read_ram_estimates_assertions():
