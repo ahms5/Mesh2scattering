@@ -45,12 +45,6 @@ jobs:
             pip install ".[tests]"
             pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
       - run:
-          name: Build numcalc
-          command: |
-            cd mesh2scattering/numcalc/src
-            make
-            cd ../../../
-      - run:
           name: Run tests
           command: pytest
 
