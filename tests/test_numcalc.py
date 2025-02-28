@@ -270,7 +270,7 @@ def test_defaults(tmpdir):
 def test_remove_outputs(boundary, grid, scattering, log, tmpdir):
     """Test purging the processed data in Output2HRTF"""
     test_folder = os.path.join('examples', 'project')
-    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    project_path = os.path.join(os.path.dirname(__file__), '..', test_folder)
     test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
     shutil.copytree(project_path, test_dir)
 
@@ -319,9 +319,10 @@ def test_read_ram_estimates_assertions():
     (os.path.join('tests', 'resources', 'project_one_source')),
     ])
 def test_calc_and_read_ram_estimation(test_folder, tmpdir):
-    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    project_path = os.path.join( os.path.dirname(__file__), '..', test_folder)
     project_name = os.path.split(test_folder)[-1]
     test_dir = os.path.join(tmpdir, project_name)
+    print(project_path)
     shutil.copytree(project_path, test_dir)
 
     ram = m2s.numcalc.calc_and_read_ram(test_dir, numcalc)
@@ -345,7 +346,7 @@ def test_calc_and_read_ram_estimation_error(tmpdir):
     (os.path.join('examples', 'project'))
     ])
 def test_write_hpc_empty(test_folder, tmpdir):
-    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    project_path = os.path.join( os.path.dirname(__file__), '..', test_folder)
     test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
     shutil.copytree(project_path, test_dir)
     files = m2s.numcalc.create_hpc_files(
@@ -358,7 +359,7 @@ def test_write_hpc_empty(test_folder, tmpdir):
     (os.path.join('examples', 'project'))
     ])
 def test_write_hpc_one(test_folder, tmpdir):
-    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    project_path = os.path.join( os.path.dirname(__file__), '..', test_folder)
     test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
     shutil.copytree(project_path, test_dir)
     # delete source_1 results
@@ -392,7 +393,7 @@ def test_write_hpc_one(test_folder, tmpdir):
     (os.path.join('examples', 'project'))
     ])
 def test_write_hpc_complete(test_folder, tmpdir):
-    project_path = os.path.join(m2s.utils.repository_root(), test_folder)
+    project_path = os.path.join( os.path.dirname(__file__), '..', test_folder)
     test_dir = os.path.join(tmpdir, os.path.split(test_folder)[-1])
     shutil.copytree(project_path, test_dir)
     # delete all results

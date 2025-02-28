@@ -3,7 +3,7 @@
 
 ## mesh2scattering
 
-### Unreleased
+### Unreleased - major
 
 #### Added
 
