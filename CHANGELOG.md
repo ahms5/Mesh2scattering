@@ -18,6 +18,8 @@
 
 #### Removed
 
+- remove high performance computing support, due to maintaining difficulties ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
+
 ### v0.1.4
 
 - raise error for empty result files (#34)
