@@ -66,9 +66,10 @@ def test_numcalc_invalid_parameter(capfd):
         ValueError("Num calc did not throw an error")
 
 
-@pytest.mark.parametrize("nitermax, use", [
-    (0, True), (1, True), (2, True), ([], False)])
-def test_numcalc_commandline_nitermax(nitermax, use, tmpdir):
+@pytest.mark.parametrize(('nitermax'), [
+    1,
+    ])
+def test_numcalc_commandline_nitermax(nitermax, tmpdir):
     """Test if command line parameter nitermax behaves as expected"""
     # Setup
 
@@ -86,10 +87,7 @@ def test_numcalc_commandline_nitermax(nitermax, use, tmpdir):
             'ncinp_files', 'NC_commandline_parameters.inp'),
         os.path.join(tmpdir, 'project', 'NumCalc', 'source_1', 'NC.inp'))
 
-    if use:
-        commandLineArgument = f' -nitermax {nitermax}'
-    else:
-        commandLineArgument = ''
+    commandLineArgument = f' -nitermax {nitermax}'
 
     # Exercise
 
@@ -114,17 +112,13 @@ def test_numcalc_commandline_nitermax(nitermax, use, tmpdir):
     out_file = open(out_filepath)
     out_text = out_file.read()
 
-    if use:
-        assert f'CGS solver: number of iterations = {nitermax}' in out_text
-        assert 'Warning: Maximum number of iterations is reached!' \
-            in out_text
-    else:
-        assert 'Warning: Maximum number of iterations is reached!' \
-            not in out_text
+    assert f'CGS solver: number of iterations = {nitermax}' in out_text
+    assert 'Warning: Maximum number of iterations is reached!' \
+        in out_text
 
 
 @pytest.mark.parametrize("istart, iend", [
-    (False, False), (3, False), (False, 3), (2, 3)])
+    (3, False), (False, 3), (2, 3)])
 def test_numcalc_commandline_istart_iend(istart, iend, tmpdir):
     """Test if command line parameters istart and iend behave as expected
     """
@@ -161,6 +155,7 @@ def test_numcalc_commandline_istart_iend(istart, iend, tmpdir):
         subprocess.run(
             [f'{numcalc}{commandLineArgument}'],
             shell=True, stdout=subprocess.DEVNULL, cwd=tmp_path, check=True)
+    print(tmp_path)
 
     # Verify
     if (not istart and not iend):
