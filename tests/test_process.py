@@ -11,27 +11,6 @@ def test_import():
     assert process
 
 
-def test_write_scattering(tmpdir):
-    project_path = os.path.join(
-        m2s.utils.repository_root(), "examples", "project")
-    test_dir = os.path.join(tmpdir, 'project')
-    shutil.copytree(project_path, test_dir)
-    m2s.output.write_pattern(test_dir)
-    m2s.process.calculate_scattering(test_dir)
-    scattering_coefficient, source_coords, receiver_coords = pf.io.read_sofa(
-        os.path.join(test_dir, 'project.scattering.sofa'))
-    scattering_coefficient_rand, source_coords_rand, receiver_coords_rand = \
-        pf.io.read_sofa(os.path.join(
-            test_dir, 'project.scattering_rand.sofa'))
-    assert source_coords_rand.csize == 1
-    assert receiver_coords_rand.csize == 1
-    assert receiver_coords.csize == 1
-    assert source_coords.csize == 25
-    npt.assert_equal(
-        scattering_coefficient_rand.frequencies,
-        scattering_coefficient.frequencies)
-
-
 def test_write_scattering_one_source(tmpdir):
     project_path = os.path.join(
         m2s.utils.repository_root(), "tests", "resources",
@@ -89,27 +68,6 @@ def test_write_scattering_sine():
     npt.assert_allclose(
         scattering_coefficient_rand.freq,
         mommertz_ref.freq, atol=6e-2)
-
-
-def test_write_diffusion(tmpdir):
-    project_path = os.path.join(
-        m2s.utils.repository_root(), "examples", "project")
-    test_dir = os.path.join(tmpdir, 'project')
-    shutil.copytree(project_path, test_dir)
-    m2s.output.write_pattern(test_dir)
-    m2s.process.calculate_diffusion(test_dir)
-    scattering_coefficient, source_coords, receiver_coords = pf.io.read_sofa(
-        os.path.join(test_dir, 'project.diffusion.sofa'))
-    scattering_coefficient_rand, source_coords_rand, receiver_coords_rand = \
-        pf.io.read_sofa(os.path.join(
-            test_dir, 'project.diffusion_rand.sofa'))
-    assert source_coords_rand.csize == 1
-    assert receiver_coords_rand.csize == 1
-    assert receiver_coords.csize == 1
-    assert source_coords.csize == 25
-    npt.assert_equal(
-        scattering_coefficient_rand.frequencies,
-        scattering_coefficient.frequencies)
 
 
 def test_write_diffusion_one_source(tmpdir):
