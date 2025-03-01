@@ -627,7 +627,7 @@ def write_material(filename, kind, frequencies, data, comment=None):
 
 
 def write_evaluation_grid(
-        points, name, start=200000, discard=None):
+        points, folder_path, start=200000, discard=None):
     """
     Write evaluation grid for use in Mesh2HRTF.
 
@@ -636,12 +636,12 @@ def write_evaluation_grid(
 
     Parameters
     ----------
-    points : pyfar Coordinates, numpy array
-        pyfar Coordinates object or 2D numpy array containing the cartesian
+    points : pyfar.Coordinates
+        pyfar Coordinates object containing the cartesian
         points of the evaluation grid in meter. The array must be of shape
         (N, 3) with N > 2.
-    name : str
-        Name of the folder under which the evaluation grid is saved. If the
+    folder_path : str
+        folder path under which the evaluation grid is saved. If the
         folder does not exist, it is created.
     start : int, optional
         The nodes and elements of the evaluation grid are numbered and the
@@ -672,7 +672,11 @@ def write_evaluation_grid(
     """
 
     if isinstance(points, pf.Coordinates):
-        points = points.get_cart()
+        if points.cdim != 1:
+            raise ValueError("cdim of pyfar.Coordinates must be 1.")
+        points = points.cartesian
+    else:
+        raise ValueError("points must be a pyfar.Coordinates object.")
 
     if points.ndim != 2 or points.shape[0] < 3 \
             or points.shape[1] != 3:
@@ -696,8 +700,8 @@ def write_evaluation_grid(
         tri = Delaunay(points[:, mask])
 
     # check output directory
-    if not os.path.isdir(name):
-        os.mkdir(name)
+    if not os.path.isdir(folder_path):
+        os.mkdir(folder_path)
 
     # write nodes
     N = int(points.shape[0])
@@ -710,7 +714,7 @@ def write_evaluation_grid(
                   f"{points[nn, 1]} "
                   f"{points[nn, 2]}\n")
 
-    with open(os.path.join(name, "Nodes.txt"), "w") as f_id:
+    with open(os.path.join(folder_path, "Nodes.txt"), "w") as f_id:
         f_id.write(nodes)
 
     # write elements
@@ -723,49 +727,5 @@ def write_evaluation_grid(
                   f"{tri.simplices[nn, 2] + start} "
                   "2 0 1\n")
 
-    with open(os.path.join(name, "Elements.txt"), "w") as f_id:
+    with open(os.path.join(folder_path, "Elements.txt"), "w") as f_id:
         f_id.write(elems)
-
-
-def read_evaluation_grid(name):
-    """
-    Read Mesh2HRTF evaluation grid.
-
-    Parameters
-    ----------
-    name : str
-        Name of the folder containing the nodes of the evaluation grid in
-        Nodes.txt
-    show : bool, optional
-        If ``True`` the points of the evaluation grid are plotted. The default
-        is ``False``.
-
-    Returns
-    -------
-    coordinates : pyfar Coordinates
-        The points of the evaluation grid as a pyfar Coordinates object
-    """
-
-    # check if the grid exists
-    if not os.path.isfile(os.path.join(name, "Nodes.txt")):
-        raise ValueError(f"{os.path.join(name, 'Nodes.txt')} does not exist")
-
-    # read the nodes
-    with open(os.path.join(name, "Nodes.txt"), "r") as f_id:
-        nodes = f_id.readlines()
-
-    # get number of nodes
-    N = int(nodes[0].strip())
-    points = np.zeros((N, 3))
-
-    # get points (first entry is node number)
-    for nn in range(N):
-        node = nodes[nn+1].strip().split(" ")
-        points[nn, 0] = float(node[1])
-        points[nn, 1] = float(node[2])
-        points[nn, 2] = float(node[3])
-
-    # make coordinates object
-    coordinates = pf.Coordinates(points[:, 0], points[:, 1], points[:, 2])
-
-    return coordinates
