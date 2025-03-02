@@ -9,6 +9,7 @@ class SurfaceType(Enum):
 
     PERIODIC = "Periodic"
     STOCHASTIC = "Stochastic"
+    FLAT = "Flat"
 
 class SampleShape(Enum):
     """Defines the shape of a sample mesh.
@@ -71,7 +72,8 @@ class SurfaceDescription():
         model_scale : float, optional
             model scale, by default 1.
         symmetry_azimuth : list, optional
-            azimuth symmetry, by default [].
+            along which azimuth angles in degree is the surface symmetric,
+            by default [].
         symmetry_rotational : bool, optional
             rotational symmetry, by default False.
         comment : str, optional
@@ -82,14 +84,23 @@ class SurfaceDescription():
         SurfaceDescription
             surface description object.
         """
-        if not isinstance(structural_wavelength_x, (int, float)):
-            raise ValueError("structural_wavelength_x must be a float.")
-        if not isinstance(structural_wavelength_y, (int, float)):
-            raise ValueError("structural_wavelength_y must be a float.")
-        if not isinstance(model_scale, (int, float)):
-            raise ValueError("model_scale must be a float.")
+        if not isinstance(structural_wavelength_x, (int, float)) or \
+             structural_wavelength_x < 0:
+            raise ValueError(
+                "structural_wavelength_x must be a float and >= 0.")
+        if not isinstance(structural_wavelength_y, (int, float)) or \
+             structural_wavelength_y < 0:
+            raise ValueError(
+                "structural_wavelength_y must be a float and >= 0.")
+        if not isinstance(model_scale, (int, float)) or model_scale <= 0:
+            raise ValueError("model_scale must be a float and > 0.")
         if not isinstance(symmetry_azimuth, list):
             raise ValueError("symmetry_azimuth must be a list.")
+        for angle in symmetry_azimuth:
+            if not isinstance(angle, (int, float)) or angle < 0 or angle > 360:
+                raise ValueError(
+                    "elements of symmetry_azimuth must be a number between "
+                    "0° and 360°.")
         if not isinstance(symmetry_rotational, bool):
             raise ValueError("symmetry_rotational must be a bool.")
         if not isinstance(comment, str):
@@ -185,10 +196,26 @@ class SurfaceDescription():
 
 
 class SampleMesh():
+    """Initializes the SampleMesh object.
+
+    Parameters
+    ----------
+    mesh : trimesh.Trimesh
+        trimesh object representing the sample mesh.
+    surface_description : SurfaceDescription
+        surface description of the sample mesh.
+    sample_diameter : float, optional
+        diameter of the sample, by default 0.8
+    sample_shape : str, optional
+        shape of the sample, by default 'round'
+    """
+
     _mesh:trimesh.Trimesh = None
     _surface_description: SurfaceDescription = None
     _sample_diameter: float = 0.8
     _sample_shape: SampleShape = SampleShape.ROUND
+    _n_repetitions_x: int = 0
+    _n_repetitions_y: int = 0
 
     def __init__(
             self, mesh: trimesh.Trimesh,
@@ -215,8 +242,9 @@ class SampleMesh():
         """
         if not isinstance(mesh, trimesh.Trimesh):
             raise ValueError("mesh must be a trimesh.Trimesh object.")
-        if not isinstance(sample_diameter, (int, float)):
-            raise ValueError("sample_diameter must be a float or int.")
+        if not isinstance(
+                sample_diameter, (int, float)) or sample_diameter <= 0:
+            raise ValueError("sample_diameter must be a float or int and >0.")
         if not isinstance(sample_shape, SampleShape):
             raise ValueError("sample_shape must be a SampleShape.")
         if not isinstance(surface_description, SurfaceDescription):
@@ -227,6 +255,13 @@ class SampleMesh():
         self._surface_description = surface_description
         self._sample_diameter = sample_diameter
         self._sample_shape = sample_shape
+        # calculate Number of repetitions in x and y direction
+        Lambda_x = surface_description.structural_wavelength_x
+        Lambda_y = surface_description.structural_wavelength_y
+        self._n_repetitions_x = (
+            sample_diameter / Lambda_x) if Lambda_x > 0 else 0
+        self._n_repetitions_y = (
+            sample_diameter / Lambda_y) if Lambda_y > 0 else 0
 
     @property
     def mesh(self):
@@ -239,6 +274,16 @@ class SampleMesh():
         """
         return self._mesh
 
+    @property
+    def surface_description(self):
+        """Defines the surface description.
+
+        Returns
+        -------
+        SurfaceDescription
+            The surface description.
+        """
+        return self._surface_description
 
     @property
     def sample_diameter(self):
@@ -251,3 +296,59 @@ class SampleMesh():
         """
         return self._sample_diameter
 
+
+    @property
+    def sample_shape(self):
+        """Defines the shape of the sample.
+
+        Returns
+        -------
+        SampleShape
+            The shape of the sample.
+        """
+        return self._sample_shape
+
+    @property
+    def mesh_faces(self):
+        """Defines the faces of the mesh.
+
+        Returns
+        -------
+        numpy.ndarray
+            The faces of the mesh.
+        """
+        return self._mesh.faces
+
+    @property
+    def mesh_vertices(self):
+        """Defines the vertices of the mesh.
+
+        Returns
+        -------
+        numpy.ndarray
+            The vertices of the mesh.
+        """
+        return self._mesh.vertices
+
+    @property
+    def n_repetitions_x(self):
+        """Defines the number of repetitions in x direction.
+
+        Returns
+        -------
+        int
+            The number of repetitions in x direction.
+        """
+        return self._n_repetitions_x
+
+    @property
+    def n_repetitions_y(self):
+        """Defines the number of repetitions in y direction.
+
+        Returns
+        -------
+        int
+            The number of repetitions in y direction.
+        """
+        return self._n_repetitions_y
+    
