@@ -1,61 +1,14 @@
 import mesh2scattering as m2s
 import os
-import trimesh
-import filecmp
 import pytest
 import numpy as np
-import numpy.testing as npt
-from tempfile import TemporaryDirectory
 import pyfar as pf
-import json
-from pathlib import Path
 
 
 def test_import():
     from mesh2scattering import input  # noqa: A004
     assert input
 
-
-def test_sound_source_initialization():
-    coords = pf.Coordinates(
-        [0, 1, 2], [3, 4, 5], [6, 7, 8], weights=[1, 1, 1])
-    source = m2s.input.SoundSource(
-        coords, m2s.input.SoundSourceType.POINT_SOURCE)
-    assert source.source_type == m2s.input.SoundSourceType.POINT_SOURCE
-    npt.assert_almost_equal(
-        source.source_coordinates.cartesian, coords.cartesian)
-    npt.assert_almost_equal(
-        source.source_coordinates.weights, coords.weights)
-
-def test_sound_source_invalid_type():
-    coords = pf.Coordinates([0, 1, 2], [3, 4, 5], [6, 7, 8])
-    with pytest.raises(
-            ValueError, match="source_type must be a SoundSourceType object."):
-        m2s.input.SoundSource(coords, "InvalidType")
-
-
-def test_sound_source_invalid_coordinates():
-    with pytest.raises(
-            ValueError,
-            match="source_coordinates must be a pyfar.Coordinates object."):
-        m2s.input.SoundSource(
-            "InvalidCoordinates", m2s.input.SoundSourceType.POINT_SOURCE)
-
-
-def test_sound_source_coordinates_without_weights():
-    coords = pf.Coordinates([0, 1, 2], [3, 4, 5], [6, 7, 8])
-    coords.weights = None
-    with pytest.raises(
-            ValueError, match="source_coordinates must contain weights."):
-        m2s.input.SoundSource(coords, m2s.input.SoundSourceType.POINT_SOURCE)
-
-
-def test_sound_source_str():
-    coords = pf.Coordinates(
-        [0, 1, 2], [3, 4, 5], [6, 7, 8], weights=[1, 1, 1])
-    source = m2s.input.SoundSource(
-        coords, m2s.input.SoundSourceType.POINT_SOURCE)
-    assert str(source) == 'A set of Point sources containing 3 sources.'
 
 @pytest.mark.parametrize("start", [2000, 200024])
 @pytest.mark.parametrize("discard", ['x', 'y', 'z', None])

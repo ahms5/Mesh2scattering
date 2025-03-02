@@ -5,16 +5,28 @@ from .input import (
     write_mesh,
     write_evaluation_grid,
     write_scattering_project,
-    SoundSourceType,
-    SoundSource,
     )
 
+from .SoundSource import (
+    SoundSourceType,
+    SoundSource,
+)
+
+from .SampleMesh import (
+    SampleShape,
+    SampleMesh,
+    SurfaceType,
+    SurfaceDescription,
+)
 
 __all__ = [
     'write_mesh',
     'write_evaluation_grid',
     'write_scattering_project',
-    'read_evaluation_grid',
     'SoundSourceType',
     'SoundSource',
+    'SampleShape',
+    'SampleMesh',
+    'SurfaceType',
+    'SurfaceDescription',
     ]
