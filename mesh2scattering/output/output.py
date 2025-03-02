@@ -22,7 +22,7 @@ def write_pattern(folder):
     1. Read project parameter `from parameters.json`
     2. use :py:func:`~write_output_report` to parse files in
        project_folder/NumCalc/source_*/NC*.out, write project report to
-       project_folder/Output2HRTF/report_source_*.csv. Raise a warning if any
+       project_folder/report/report_source_*.csv. Raise a warning if any
        issues were detected and write report_issues.txt to the same folder
     3. Read simulated pressures from project_folder/NumCalc/source_*/be.out.
        This and the following steps are done, even if an issue was detected in
@@ -45,14 +45,15 @@ def write_pattern(folder):
     print('\n Writing the project report ...')
     found_issues, report = write_output_report(folder)
 
+    if found_issues:
+        warnings.warn(report, stacklevel=2)
+
     # read sample data
     evaluationGrids, params = read_numcalc(
-        folder, False)
+        folder)
 
     # process BEM data for writing HRTFs and HRIRs to SOFA files
-    i = 0
-    counter_receiver = 0
-    for grid in evaluationGrids:
+    for i_grid, grid in enumerate(evaluationGrids):
 
         # get pressure as SOFA object (all following steps are run on SOFA
         # objects. This way they are available to other users as well)
@@ -72,9 +73,8 @@ def write_pattern(folder):
         receiver_coords = _cart_coordinates(receiver_position)
         source_coords = _cart_coordinates(source_position)
         source_coords.weights = params['sources_weights']
-        receiver_coords.weights = np.array(params['receiver_weights'])[
-            counter_receiver:counter_receiver+receiver_coords.csize]
-        data.freq = np.swapaxes(data.freq, 0, 1)
+        receiver_coords.weights = np.array(
+            params['evaluation_grids_weights'][i_grid])
 
         # write data
         c = float(params['speed_of_sound'])
@@ -97,11 +97,11 @@ def write_pattern(folder):
 
         sofa.GLOBAL_Title = folder.split(os.sep)[-1]
 
-        file_path = folder + os.sep + 'pattern_' + str(i) + '.sofa'
+        file_path = os.path.join(
+            folder, '..',
+            f'{params["project_title"]}_{grid}.pressure.sofa')
         # write scattered sound pressure to SOFA file
         sf.write_sofa(file_path, sofa)
-        i += 1
-        counter_receiver += receiver_coords.csize
 
 
 def _create_pressure_sofa(
@@ -109,16 +109,15 @@ def _create_pressure_sofa(
         structural_wavelength_x, structural_wavelength_y,
         sample_diameter, speed_of_sound,
         density_of_medium,mesh2scattering_version,
-        model_scale=1,symmetry_azimuth=[],
-        temperature=None, humidity=None):
-    """
-    Write complex pressure to a SOFA object.
+        model_scale=1, symmetry_azimuth=[],
+        ):
+    """Write complex pressure data to SOFA object from NumCalc simulation.
 
     Parameters
     ----------
-    data : numpy array
-        The data as an array of shape (MRE)
-    Lbyl : numpy array
+    data : pf.FrequencyData
+        _description_
+    Lbyl : _type_
         _description_
     sources : _type_
         _description_
@@ -136,14 +135,17 @@ def _create_pressure_sofa(
         _description_
     density_of_medium : _type_
         _description_
-    Mesh2HRTF_version : _type_
+    mesh2scattering_version : _type_
         _description_
     model_scale : int, optional
         _description_, by default 1
+    symmetry_azimuth : list, optional
+        _description_, by default []
 
     Returns
     -------
-    sofa : sofar.Sofa object
+    _type_
+        _description_
     """
     # create empty SOFA object
     convention = 'GeneralTF' if type(data) == pf.FrequencyData else 'GeneralFIR'
@@ -173,14 +175,6 @@ def _create_pressure_sofa(
     sofa.ReceiverPosition = receivers.cartesian
     sofa.ReceiverPosition_Units = 'meter'
     sofa.ReceiverPosition_Type = 'cartesian'
-
-    if temperature is not None:
-        sofa.add_variable(
-            'TemperaturAverage', np.mean(temperature), 'double', 'I')
-
-    if humidity is not None:
-        sofa.add_variable(
-            'HumidityAverage', np.mean(humidity), 'double', 'I')
 
     if type(data) == pf.FrequencyData:
         Lbyl = np.array(Lbyl)
@@ -245,8 +239,8 @@ def check_project(folder=None):
     .. note::
 
         The project reports are written to the files
-        `Output2HRTF/report_source_*.csv`. If issues were detected, they are
-        listed in `Output2HRTF/report_issues.csv`.
+        `report/report_source_*.csv`. If issues were detected, they are
+        listed in `report/report_issues.csv`.
 
     The report contain the following information
 
@@ -309,12 +303,12 @@ def check_project(folder=None):
 
     # parse all NC*.out files for all sources
     all_files, fundamentals, out, out_names = _parse_nc_out_files(
-        sources, num_sources, params["num_frequencies"])
+        sources, num_sources, len(params["frequencies"]))
 
     return all_files, fundamentals, out, out_names
 
 
-def read_numcalc(folder=None, is_ref=False):
+def read_numcalc(folder=None):
     """
     Process NumCalc output and write data to disk.
 
@@ -323,7 +317,7 @@ def read_numcalc(folder=None, is_ref=False):
     1. Read project parameter `from parameters.json`
     2. use :py:func:`~write_output_report` to parse files in
        project_folder/NumCalc/source_*/NC*.out, write project report to
-       project_folder/Output2HRTF/report_source_*.csv. Raise a warning if any
+       project_folder/report/report_source_*.csv. Raise a warning if any
        issues were detected and write report_issues.txt to the same folder
     3. Read simulated pressures from project_folder/NumCalc/source_*/be.out.
        This and the following steps are done, even if an issue was detected in
@@ -337,8 +331,6 @@ def read_numcalc(folder=None, is_ref=False):
         The path of the Mesh2HRTF project folder, i.e., the folder containing
         the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
         default, ``None`` uses the current working directory.
-    is_ref : bool, optional
-        If the data is from the reference sample. The default is False.
     """
 
     # check input
@@ -349,7 +341,7 @@ def read_numcalc(folder=None, is_ref=False):
     # Mesh2HRTF_version, reference, computeHRIRs, speedOfSound, densityOfAir,
     # sources_num, sourceType, sources, sourceArea,
     # num_frequencies, frequencies
-    params = os.path.join(folder, '..', 'parameters.json')
+    params = os.path.join(folder, 'parameters.json')
     if not os.path.isfile(params):
         raise ValueError((
             f"The folder {folder} is not a valid Mesh2scattering project. "
@@ -359,39 +351,20 @@ def read_numcalc(folder=None, is_ref=False):
         params = json.load(file)
 
     # get source positions
-    if params['sources_num'] > 1:
-        source_coords = np.transpose(np.array(params['sources']))
-    else:
-        source_coords = np.array(params['sources']).reshape((1, 3))
-    source_coords = pf.Coordinates(
-        source_coords[..., 0], source_coords[..., 1], source_coords[..., 2])
+    source_coords = pf.Coordinates()
+    source_coords.cartesian = np.array(params['sources'])
 
-    # output directory
-    if not os.path.exists(os.path.join(folder, 'Output2HRTF')):
-        os.makedirs(os.path.join(folder, 'Output2HRTF'))
-
-    # write the project report and check for issues
-    print('\n Writing the project report ...')
-    found_issues, report = write_output_report(folder)
-
-    if found_issues:
-        warnings.warn(report, stacklevel=2)
 
     # get the evaluation grids
     evaluationGrids, _ = _read_nodes_and_elements(
         os.path.join(folder, 'EvaluationGrids'))
 
     # Load EvaluationGrid data
-    if is_ref:
-        xyz = np.array(params["sources"])
-        coords = pf.Coordinates(xyz[..., 0], xyz[..., 1], xyz[..., 2])
-        num_sources = np.sum(np.abs(coords.azimuth) < 1e-12)
-    else:
-        num_sources = params["sources_num"]
+    num_sources = source_coords.csize
 
     if not len(evaluationGrids) == 0:
         pressure, _ = _read_numcalc_data(
-            num_sources, params["num_frequencies"],
+            num_sources, len(params["frequencies"]),
             folder, 'pEvalGrid')
 
     # save to struct
@@ -424,8 +397,8 @@ def write_output_report(folder=None):
     .. note::
 
         The project reports are written to the files
-        `Output2HRTF/report_source_*.csv`. If issues were detected, they are
-        listed in `Output2HRTF/report_issues.csv`.
+        `report/report_source_*.csv`. If issues were detected, they are
+        listed in `report/report_issues.csv`.
 
     The report contain the following information
 
@@ -475,8 +448,8 @@ def write_output_report(folder=None):
     sources = glob.glob(os.path.join(folder, "NumCalc", "source_*"))
     num_sources = len(sources)
 
-    if os.path.exists(os.path.join(folder, '..', "parameters.json")):
-        with open(os.path.join(folder, '..', "parameters.json"), "r") as file:
+    if os.path.exists(os.path.join(folder, "parameters.json")):
+        with open(os.path.join(folder, "parameters.json"), "r") as file:
             params = json.load(file)
     else:
         with open(os.path.join(folder, "parameters.json"), "r") as file:
@@ -489,7 +462,7 @@ def write_output_report(folder=None):
 
     # parse all NC*.out files for all sources
     all_files, fundamentals, out, out_names = _parse_nc_out_files(
-        sources, num_sources, params["num_frequencies"])
+        sources, num_sources, len(params["frequencies"]))
 
     # write report as csv file
     _write_project_reports(folder, all_files, out, out_names)
@@ -614,7 +587,7 @@ def _load_results(foldername, filename, num_frequencies):
         line = csv.reader(file, delimiter=' ', skipinitialspace=True)
         for _idx, li in enumerate(line):
             # read number of data points and head lines
-            if len(li) == 2 and not li[0].startswith("Mesh"):
+            if len(li) == 2 and not li[0].startswith("mesh2scattering"):
                 numDatalines = int(li[1])
 
             # read starting index
@@ -712,15 +685,15 @@ def _check_project_report(folder, fundamentals, out):
     if not report:
         report = ("\nDetected unknown issues\n"
                   "-----------------------\n"
-                  "Check the project reports in Output2HRTF,\n"
+                  "Check the project reports in report,\n"
                   "and the NC*.out files in NumCalc/source_*\n\n")
 
-    report += ("For more information check Output2HRTF/report_source_*.csv "
+    report += ("For more information check report/report_source_*.csv "
                "and the NC*.out files located at NumCalc/source_*")
 
     # write to disk
     report_name = os.path.join(
-        folder, "Output2HRTF", "report_issues.txt")
+        folder, "report", "report_issues.txt")
     with open(report_name, "w") as f_id:
         f_id.write(report)
 
@@ -729,11 +702,13 @@ def _check_project_report(folder, fundamentals, out):
 
 def _write_project_reports(folder, all_files, out, out_names):
     """
-    Write project report to disk at folder/Output2HRTF/report_source_*.csv.
+    Write project report to disk at folder/report/report_source_*.csv.
 
     For description of input parameter refer to write_output_report and
     _parse_nc_out_files
     """
+    if not os.path.exists(os.path.join(folder, 'report')):
+        os.mkdir(os.path.join(folder, 'report'))
 
     # loop sources
     for ss in range(out.shape[2]):
@@ -759,7 +734,7 @@ def _write_project_reports(folder, all_files, out, out_names):
 
         # write to disk
         report_name = os.path.join(
-            folder, "Output2HRTF", f"report_source_{ss + 1}.csv")
+            folder, "report", f"report_source_{ss + 1}.csv")
         with open(report_name, "w") as f_id:
             f_id.write(report)
 

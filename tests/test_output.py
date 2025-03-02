@@ -8,6 +8,33 @@ import numpy as np
 import re
 
 
+def test_write_pattern(tmpdir):
+    base_dir = os.path.dirname(__file__)
+    # copy test directory
+    test_dir = os.path.join(tmpdir, 'sine')
+    shutil.copytree(
+        os.path.join(
+            base_dir, 'resources', 'output', 'sine'),
+        test_dir)
+
+    m2s.output.write_pattern(test_dir)
+
+    reference, source_coords_ref, receiver_coords_ref = pf.io.read_sofa(
+        os.path.join(test_dir, 'reference.pattern.sofa'))
+    sample, source_coords, receiver_coords = pf.io.read_sofa(
+        os.path.join(test_dir, 'sample.pattern.sofa'))
+    assert sample.cshape[0] == source_coords.csize
+    assert sample.cshape[1] == receiver_coords.csize
+    assert sample.cshape[0] == source_coords.csize
+    assert sample.cshape[1] == receiver_coords.csize
+    assert reference.cshape[0] == source_coords_ref.csize
+    assert reference.cshape[1] == receiver_coords_ref.csize
+    assert reference.cshape[0] == source_coords_ref.csize
+    assert reference.cshape[1] == receiver_coords_ref.csize
+    assert reference.cshape == sample.cshape
+    npt.assert_equal(reference.frequencies, sample.frequencies)
+    
+
 def test_import():
     from mesh2scattering import output
     assert output
@@ -28,7 +55,7 @@ def test_import():
     (["case_3"], True,
      ["Frequency steps that were not calculated:\n59, 60",
       "Frequency steps with bad input:\n58"], []),
-    # no isses in source 1 but issues in source 2
+    # no issues in source 1 but issues in source 2
     (["case_0", "case_1"], True,
      ["Detected issues for source 2",
       "Frequency steps that were not calculated:\n59, 60"],
@@ -41,7 +68,7 @@ def test_project_report(folders, issue, errors, nots, tmpdir):
     data_nc = os.path.join(cwd, 'resources', 'nc.out')
     # create fake project structure
     os.mkdir(os.path.join(tmpdir, "NumCalc"))
-    os.mkdir(os.path.join(tmpdir, "Output2HRTF"))
+    os.mkdir(os.path.join(tmpdir, "report"))
     shutil.copyfile(os.path.join(data_nc, "parameters.json"),
                     os.path.join(tmpdir, "parameters.json"))
     for ff, folder in enumerate(folders):
@@ -59,34 +86,12 @@ def test_project_report(folders, issue, errors, nots, tmpdir):
         assert no not in report
     if issue:
         assert os.path.isfile(os.path.join(
-            tmpdir, "Output2HRTF", "report_issues.txt"))
-        assert ("For more information check Output2HRTF/report_source_*.csv "
+            tmpdir, "report", "report_issues.txt"))
+        assert ("For more information check report/report_source_*.csv "
                 "and the NC*.out files located at NumCalc/source_*") in report
     else:
         assert not os.path.isfile(os.path.join(
-            tmpdir, "Output2HRTF", "report_issues.txt"))
-
-
-def test_write_pattern(tmpdir):
-    project_path = os.path.join(
-        os.path.dirname(__file__), '..', "examples", "project")
-    test_dir = os.path.join(tmpdir, 'project_one_source')
-    shutil.copytree(project_path, test_dir)
-    m2s.output.write_pattern(test_dir)
-    reference, source_coords_ref, receiver_coords_ref = pf.io.read_sofa(
-        os.path.join(test_dir, 'reference.pattern.sofa'))
-    sample, source_coords, receiver_coords = pf.io.read_sofa(
-        os.path.join(test_dir, 'sample.pattern.sofa'))
-    assert sample.cshape[0] == source_coords.csize
-    assert sample.cshape[1] == receiver_coords.csize
-    assert sample.cshape[0] == source_coords.csize
-    assert sample.cshape[1] == receiver_coords.csize
-    assert reference.cshape[0] == source_coords_ref.csize
-    assert reference.cshape[1] == receiver_coords_ref.csize
-    assert reference.cshape[0] == source_coords_ref.csize
-    assert reference.cshape[1] == receiver_coords_ref.csize
-    assert reference.cshape == sample.cshape
-    npt.assert_equal(reference.frequencies, sample.frequencies)
+            tmpdir, "report", "report_issues.txt"))
 
 
 def test_write_pattern_one_source(tmpdir):

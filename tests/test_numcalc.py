@@ -202,7 +202,7 @@ def test_numcalc_commandline_estimate_ram(tmpdir):
 @pytest.mark.parametrize("grid", [(False), (True)])
 @pytest.mark.parametrize("log", [(False), (True)])
 def test_remove_outputs(boundary, grid, log, tmpdir):
-    """Test purging the processed data in Output2HRTF."""
+    """Test purging the processed data in report."""
     # copy test directory
     test_dir = os.path.join(tmpdir, 'project')
     shutil.copytree(
