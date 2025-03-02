@@ -10,7 +10,7 @@ import csv
 
 
 def remove_outputs(
-        paths, boundary=False, grid=False, scattering=False, log=False):
+        paths, boundary=False, grid=False, log=False):
     """
     Remove output data from scattering project folder.
 
@@ -31,9 +31,6 @@ def remove_outputs(
         Remove raw pressure and velocity simulated on the evaluation grid.This
         data is saved in
         `project_folder/NumCalc/source_*/be.out/be.*/*EvalGrid`
-    scattering : bool, optional
-        Remove scattering saved in SOFA files saved in
-        `project_folder/*.sofa`.
     log : bool, optional
         Remove log ``(*.txt, *.out)`` files in ``source_*`` dir.
     """
@@ -61,11 +58,6 @@ def remove_outputs(
             if has_numcalc:
                 numcalc = glob.glob(os.path.join(
                     folder, "NumCalc", "source_*"))
-
-            has_output = os.path.isdir(os.path.join(folder, "Output2HRTF"))
-            if has_output:
-                output = glob.glob(
-                    os.path.join(folder, "Output2HRTF", "*"))
 
             # data in source*/be.out/be.* folders -------------------------
             # delete entire be.out folders
@@ -95,15 +87,6 @@ def remove_outputs(
                     for be in glob.glob(os.path.join(nc, "*.out")):
                         if os.path.isfile(os.path.join(nc, be)):
                             os.remove(os.path.join(nc, be))
-
-            # data in scattering ------------------------------------------
-            if has_output:
-                for oo in output:
-                    base = os.path.basename(oo)
-                    # remove compressed boundary data
-                    if base.endswith(".sofa") and scattering:
-                        os.remove(oo)
-
 
 
 def manage_numcalc(project_path=None, numcalc_path=None,
@@ -728,82 +711,6 @@ def read_ram_estimates(folder: str):
         estimates.append(estimate)
 
     return np.asarray(estimates)
-
-
-def _load_results(foldername, filename, numFrequencies):
-    """
-    Load results of the BEM calculation.
-
-    Parameters
-    ----------
-    foldername : string
-        The folder from which the data is loaded. The data to be read is
-        located in the folder be.out inside NumCalc/source_*
-    filename : string
-        The kind of data that is loaded
-
-        pBoundary
-            The sound pressure on the object mesh
-        vBoundary
-            The sound velocity on the object mesh
-        pEvalGrid
-            The sound pressure on the evaluation grid
-        vEvalGrid
-            The sound velocity on the evaluation grid
-    numFrequencies : int
-        the number of simulated frequencies
-
-    Returns
-    -------
-    data : numpy array
-        Pressure or abs velocity values of shape (numFrequencies, numEntries)
-    """
-
-    # ---------------------check number of header and data lines---------------
-    current_file = os.path.join(foldername, 'be.1', filename)
-    numDatalines = None
-    with open(current_file) as file:
-        line = csv.reader(file, delimiter=' ', skipinitialspace=True)
-        for _idx, li in enumerate(line):
-            # read number of data points and head lines
-            if len(li) == 2 and not li[0].startswith("Mesh"):
-                numDatalines = int(li[1])
-
-            # read starting index
-            elif numDatalines and len(li) > 2:
-                start_index = int(li[0])
-                break
-
-    # ------------------------------load data----------------------------------
-    dtype = complex if filename.startswith("p") else float
-    data = np.zeros((numFrequencies, numDatalines), dtype=dtype)
-
-    for ii in range(numFrequencies):
-        tmpData = []
-        current_file = os.path.join(foldername, 'be.%d' % (ii+1), filename)
-        with open(current_file) as file:
-
-            line = csv.reader(file, delimiter=' ', skipinitialspace=True)
-
-            for li in line:
-
-                # data lines have 3 ore more entries
-                if len(li) < 3 or li[0].startswith("Mesh"):
-                    continue
-
-                if filename.startswith("p"):
-                    tmpData.append(complex(float(li[1]), float(li[2])))
-                elif filename == "vBoundary":
-                    tmpData.append(np.abs(complex(float(li[1]), float(li[2]))))
-                elif filename == "vEvalGrid":
-                    tmpData.append(np.sqrt(
-                        np.abs(complex(float(li[1]), float(li[2])))**2 +
-                        np.abs(complex(float(li[3]), float(li[4])))**2 +
-                        np.abs(complex(float(li[5]), float(li[6])))**2))
-
-        data[ii, :] = tmpData if tmpData else np.nan
-
-    return data, np.arange(start_index, numDatalines + start_index)
 
 
 def calc_and_read_ram(project_path, numcalc_executable):

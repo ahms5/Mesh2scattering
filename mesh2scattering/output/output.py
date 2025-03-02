@@ -9,188 +9,8 @@ import glob
 import sofar as sf
 from mesh2scattering import utils
 import csv
+import mesh2scattering as m2s
 import re
-
-
-def apply_symmetry_circular(
-        data_in: pf.FrequencyData, coords_mic: pf.Coordinates,
-        coords_inc: pf.Coordinates, coords_inc_out: pf.Coordinates):
-    """Apply symmetry for circular symmetrical surfaces.
-
-    Parameters
-    ----------
-    data_in : pf.FrequencyData
-        data which is rotated, cshape need to be (#theta_coords_inc,
-        #coords_mic)
-    coords_mic : pf.Coordinates
-        Coordinate object from the receiver positions of the current reference
-        plate of cshape (#theta_coords_inc)
-    coords_inc : pf.Coordinates
-        Coordinate object from the source positions of the reference of cshape
-        (#coords_inc_reference.
-    coords_inc_out : pf.Coordinates
-        Coordinate object from the source positions of the sample of cshape
-        (#coords_inc_sample).
-
-    Returns
-    -------
-    data_in_mirrored : pf.FrequencyData
-        _description_
-    """
-    if not isinstance(coords_inc, pf.Coordinates):
-        raise ValueError(
-            'coords_inc needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_inc)}.')
-    if not isinstance(coords_mic, pf.Coordinates):
-        raise ValueError(
-            'coords_mic needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_mic)}.')
-    if not isinstance(coords_inc_out, pf.Coordinates):
-        raise ValueError(
-            'coords_inc_out needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_inc_out)}.')
-    if not isinstance(data_in, pf.FrequencyData):
-        raise ValueError(
-            'data_in needs to be of type pf.FrequencyData, '
-            f'bit it is {type(data_in)}.')
-    if data_in.cshape[-2] != coords_inc.csize:
-        raise ValueError(
-            'data_in.cshape[-2] needs to have the dimension of coords_inc '
-            f'{data_in.cshape[-2]} != {coords_inc.csize}.')
-    if data_in.cshape[-1] != coords_mic.csize:
-        raise ValueError(
-            'data_in.cshape[-1] needs to have the dimension of coords_mic '
-            f'{data_in.cshape[-1]} != {coords_mic.csize}.')
-    if np.max(np.abs(np.diff(coords_inc.azimuth))) > 1e-5:
-        raise ValueError('coords_inc needs to have constant azimuth angle.')
-
-    data_raw = data_in.freq.copy()
-    shape = [coords_inc_out.cshape[0],
-             coords_mic.cshape[0],
-             len(data_in.frequencies)]
-    data_out = np.empty(shape, dtype=data_in.freq.dtype)
-
-    for idx in range(coords_inc_out.csize):
-        mirrored_coord = coords_inc_out[idx].copy()
-        corresponding_coord = mirrored_coord.copy()
-        corresponding_coord.azimuth = coords_inc[0].azimuth
-        delta_phi = -(mirrored_coord.azimuth - corresponding_coord.azimuth)
-        receiver_coords_new = coords_mic.copy()
-        receiver_coords_new.rotate('z', delta_phi, degrees=False)
-        i, _ = coords_mic.find_nearest_k(
-            receiver_coords_new.x.copy(), receiver_coords_new.y.copy(),
-            receiver_coords_new.z.copy())
-        i_source, _ = coords_inc.find_nearest_k(
-            corresponding_coord.x, corresponding_coord.y,
-            corresponding_coord.z)
-        data_out[..., idx, :, :] = data_raw[..., i_source, i, :]
-
-    data_in_mirrored = pf.FrequencyData(
-        data_out, data_in.frequencies, data_in.comment)
-
-    return data_in_mirrored
-
-
-def apply_symmetry_mirror(
-        data_in: pf.FrequencyData, coords_mic: pf.Coordinates,
-        coords_inc: pf.Coordinates, symmetry_azimuth_deg: float):
-    """Mirrors the data along a symmetry axe, defined by the azimuth_angle_deg.
-
-    Note: Angles on the symmetry axes will be skipped for mirroring.
-
-    Parameters
-    ----------
-    data_in : pf.FrequencyData
-        data object of cshape (..., #incident_coords, #coords_mic),
-        which should be rotated
-    coords_mic : pf.Coordinates
-        microphone positions
-    coords_inc : pf.Coordinates
-        Incident coordinates, which should be mirrored along
-    symmetry_azimuth_deg : float
-        azimuth angle in degree where the data should be mirrored.
-
-    Returns
-    -------
-    data_in_mirrored : pf.FrequencyData
-        mirrored data object for the coords_inc coordinates.
-    coords_inc_mirrored : pf.Coordinates
-        new coordinate object, angles on the symmetry axes will be skipped.
-    """
-    if not isinstance(coords_inc, pf.Coordinates):
-        raise ValueError(
-            'coords_inc needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_inc)}.')
-    if not isinstance(coords_mic, pf.Coordinates):
-        raise ValueError(
-            'coords_mic needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_mic)}.')
-    if not isinstance(data_in, pf.FrequencyData):
-        raise ValueError(
-            'data_in needs to be of type pf.FrequencyData, '
-            f'bit it is {type(data_in)}.')
-    if not isinstance(data_in, pf.FrequencyData):
-        raise ValueError(
-            'data needs to be of type pf.FrequencyData, '
-            f'bit it is {type(data_in)}.')
-    if symmetry_azimuth_deg <= 0 or symmetry_azimuth_deg >= 360:
-        raise ValueError(
-            '0 >= symmetry_azimuth_deg >= 360, but its '
-            f'{symmetry_azimuth_deg}.')
-    if data_in.cshape[-2] != coords_inc.csize:
-        raise ValueError(
-            'data_in.cshape[-2] needs to have the dimension of coords_inc '
-            f'{data_in.cshape[-2]} != {coords_inc.csize}.')
-    if data_in.cshape[-1] != coords_mic.csize:
-        raise ValueError(
-            'data_in.cshape[-1] needs to have the dimension of coords_mic '
-            f'{data_in.cshape[-1]} != {coords_mic.csize}.')
-
-    symmetry_angle_rad = symmetry_azimuth_deg*np.pi/180
-    if np.abs(symmetry_azimuth_deg - 180) < 1e-8:
-        idx = np.abs(coords_inc.azimuth % symmetry_angle_rad) > 1e-8
-    elif np.abs(symmetry_azimuth_deg - 90) < 1e-8:
-        idx = np.abs(coords_inc.azimuth - symmetry_angle_rad) > 1e-8
-    no_top_point = coords_inc.colatitude > 1e-8
-    idx = np.flip(np.where(idx & no_top_point)).flatten()
-    dim_inc = -3
-    coords_mirrored = coords_inc[idx].copy()
-    coords_mirrored.azimuth = 2*symmetry_angle_rad - coords_mirrored.azimuth
-    data_mirrored_shape = list(data_in.freq.shape)
-    data_mirrored_shape[dim_inc] = len(idx)
-    data_mirrored = np.zeros(data_mirrored_shape, dtype=data_in.freq.dtype)
-    data_raw = data_in.freq.copy()
-
-    for idx_mirror in range(coords_mirrored.csize):
-        mirrored_coord = coords_mirrored[idx_mirror].copy()
-        corresponding_coord = mirrored_coord.copy()
-        corresponding_coord.azimuth \
-            = 2*symmetry_angle_rad - corresponding_coord.azimuth
-        delta_phi = -(mirrored_coord.azimuth - corresponding_coord.azimuth)
-        receiver_coords_new = coords_mic.copy()
-        receiver_coords_new.rotate('z', delta_phi, degrees=False)
-        i, _ = coords_mic.find_nearest_k(
-            receiver_coords_new.x.copy(), receiver_coords_new.y.copy(),
-            receiver_coords_new.z.copy())
-        i_source, _ = coords_inc.find_nearest_k(
-            corresponding_coord.x, corresponding_coord.y,
-            corresponding_coord.z)
-        data_mirrored[..., idx_mirror, :, :] = data_raw[..., i_source, i, :]
-
-    coords_ = np.concatenate(
-        (coords_inc.cartesian, coords_mirrored.cartesian), axis=0).T
-    if coords_inc.weights is not None:
-        weights_ = np.concatenate(
-            (coords_inc.weights, coords_mirrored.weights), axis=0)
-    else:
-        weights_ = None
-    coords_inc_mirrored = pf.Coordinates(
-        coords_[0], coords_[1], coords_[2], weights=weights_)
-    new_data = np.concatenate((data_in.freq, data_mirrored), axis=dim_inc)
-    data_in_mirrored = pf.FrequencyData(
-        new_data, data_in.frequencies, data_in.comment)
-
-    return data_in_mirrored, coords_inc_mirrored
 
 
 def write_pattern(folder):
@@ -217,94 +37,195 @@ def write_pattern(folder):
         the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
         default, ``None`` uses the current working directory.
     """
-
-    if (not os.path.exists(folder)) \
-            or (not os.path.exists(os.path.join(folder))):
+    if not os.path.exists(folder):
         raise ValueError(
-            "Folder need to contain reference and sample folders.")
+            'Folder need to exists.')
+
+    # write the project report and check for issues
+    print('\n Writing the project report ...')
+    found_issues, report = write_output_report(folder)
 
     # read sample data
     evaluationGrids, params = read_numcalc(
         folder, False)
 
     # process BEM data for writing HRTFs and HRIRs to SOFA files
+    i = 0
+    counter_receiver = 0
     for grid in evaluationGrids:
-        print(f'\nWrite sample data "{grid}" ...\n')
+
         # get pressure as SOFA object (all following steps are run on SOFA
         # objects. This way they are available to other users as well)
-        source_position = np.array(params["sources"])
+        source_position = np.array(params['sources'])
+        source_type = params['source_type']
         if source_position.shape[1] != 3:
             source_position = np.transpose(source_position)
-        receiver_position = np.array(evaluationGrids[grid]["nodes"][:, 1:4])
+        if source_type == 'Plane wave':
+            source_position = -source_position*99
+        receiver_position = np.array(evaluationGrids[grid]['nodes'][:, 1:4])
         if receiver_position.shape[1] != 3:
             receiver_position = np.transpose(receiver_position)
 
         # apply symmetry of reference sample
-        data_raw = np.moveaxis(evaluationGrids[grid]["pressure"], 1, 0)
         data = pf.FrequencyData(
-            data_raw, params["frequencies"])
+            evaluationGrids[grid]['pressure'], params['frequencies'])
         receiver_coords = _cart_coordinates(receiver_position)
         source_coords = _cart_coordinates(source_position)
-        for i in params['symmetry_azimuth']:
-            data, source_coords = apply_symmetry_mirror(
-                data, receiver_coords, source_coords, i)
+        source_coords.weights = params['sources_weights']
+        receiver_coords.weights = np.array(params['receiver_weights'])[
+            counter_receiver:counter_receiver+receiver_coords.csize]
+        data.freq = np.swapaxes(data.freq, 0, 1)
 
         # write data
-        sofa = utils._get_sofa_object(
-            data.freq,
-            source_coords.cartesian,
-            receiver_position,
-            params["mesh2scattering_version"],
-            frequencies=params["frequencies"])
-
-        sofa.GLOBAL_Title = folder.split(os.sep)[-1]
-
-        # write scattered sound pressure to SOFA file
-        sf.write_sofa(os.path.join(
-            folder, 'sample.pattern.sofa'), sofa)
-
-    evaluationGrids, params = read_numcalc(
-        os.path.join(folder, 'reference'), True)
-
-    # process BEM data for writing scattered sound pressure to SOFA files
-    for grid in evaluationGrids:
-        print(f'\nWrite sample data "{grid}" ...\n')
-        # get pressure as SOFA object (all following steps are run on SOFA
-        # objects. This way they are available to other users as well)
-        # read source and receiver positions
-        receiver_position_ref = np.array(
-            evaluationGrids[grid]["nodes"][:, 1:4])
-        if receiver_position_ref.shape[1] != 3:
-            receiver_position_ref = np.transpose(receiver_position_ref)
-
-        # apply symmetry of reference sample
-        source_position_ref = source_coords[
-            np.abs(source_coords.azimuth) < 1e-14]
-        data = evaluationGrids[grid]["pressure"]
-        if source_coords.csize != source_position_ref.cshape[0]:
-            data = np.swapaxes(data, 0, 1)
-            data = apply_symmetry_circular(
-                pf.FrequencyData(data, params["frequencies"]),
-                _cart_coordinates(receiver_position_ref),
-                source_position_ref,
-                source_coords).freq
-
-        # create sofa file
-        sofa = utils._get_sofa_object(
+        c = float(params['speed_of_sound'])
+        Lbyl = params['structural_wavelength'] / c * data.frequencies
+        sofa = _create_pressure_sofa(
             data,
-            source_coords.cartesian,
-            receiver_position_ref,
-            params["mesh2scattering_version"],
-            frequencies=params["frequencies"])
+            Lbyl,
+            source_coords,
+            receiver_coords,
+            structural_wavelength=params['structural_wavelength'],
+            structural_wavelength_x=params['structural_wavelength_x'],
+            structural_wavelength_y=params['structural_wavelength_y'],
+            sample_diameter=params['sample_diameter'],
+            speed_of_sound=params['speed_of_sound'],
+            density_of_medium=params['density_of_medium'],
+            mesh2scattering_version=params['mesh2scattering_version'],
+            model_scale=params['model_scale'],
+            symmetry_azimuth=params['symmetry_azimuth'],
+            )
 
         sofa.GLOBAL_Title = folder.split(os.sep)[-1]
 
-        # write HRTF data to SOFA file
-        sf.write_sofa(os.path.join(
-            folder, 'reference.pattern.sofa'), sofa)
+        file_path = folder + os.sep + 'pattern_' + str(i) + '.sofa'
+        # write scattered sound pressure to SOFA file
+        sf.write_sofa(file_path, sofa)
+        i += 1
+        counter_receiver += receiver_coords.csize
 
-    print('Done\n')
 
+def _create_pressure_sofa(
+        data, Lbyl, sources, receivers, structural_wavelength,
+        structural_wavelength_x, structural_wavelength_y,
+        sample_diameter, speed_of_sound,
+        density_of_medium,mesh2scattering_version,
+        model_scale=1,symmetry_azimuth=[],
+        temperature=None, humidity=None):
+    """
+    Write complex pressure to a SOFA object.
+
+    Parameters
+    ----------
+    data : numpy array
+        The data as an array of shape (MRE)
+    Lbyl : numpy array
+        _description_
+    sources : _type_
+        _description_
+    receivers : _type_
+        _description_
+    structural_wavelength : _type_
+        _description_
+    structural_wavelength_x : _type_
+        _description_
+    structural_wavelength_y : _type_
+        _description_
+    sample_diameter : _type_
+        _description_
+    speed_of_sound : _type_
+        _description_
+    density_of_medium : _type_
+        _description_
+    Mesh2HRTF_version : _type_
+        _description_
+    model_scale : int, optional
+        _description_, by default 1
+
+    Returns
+    -------
+    sofa : sofar.Sofa object
+    """
+    # create empty SOFA object
+    convention = 'GeneralTF' if type(data) == pf.FrequencyData else 'GeneralFIR'
+
+    assert speed_of_sound is not None
+    assert speed_of_sound > 250
+    assert speed_of_sound < 350
+
+    sofa = sf.Sofa(convention)
+
+    # write meta data
+    sofa.GLOBAL_ApplicationName = 'Mesh2scattering'
+    sofa.GLOBAL_ApplicationVersion = mesh2scattering_version
+    sofa.GLOBAL_History = 'numerically simulated data'
+
+    # Source and receiver data
+    sofa.EmitterPosition = sources.cartesian
+    sofa.EmitterPosition_Units = 'meter'
+    sofa.EmitterPosition_Type = 'cartesian'
+
+    sources_sph = sources.spherical_elevation
+    sources_sph = pf.rad2deg(sources_sph)
+    sofa.SourcePosition = sources_sph
+    sofa.SourcePosition_Units = 'degree, degree, metre'
+    sofa.SourcePosition_Type = 'spherical'
+
+    sofa.ReceiverPosition = receivers.cartesian
+    sofa.ReceiverPosition_Units = 'meter'
+    sofa.ReceiverPosition_Type = 'cartesian'
+
+    if temperature is not None:
+        sofa.add_variable(
+            'TemperaturAverage', np.mean(temperature), 'double', 'I')
+
+    if humidity is not None:
+        sofa.add_variable(
+            'HumidityAverage', np.mean(humidity), 'double', 'I')
+
+    if type(data) == pf.FrequencyData:
+        Lbyl = np.array(Lbyl)
+        if structural_wavelength == 0:
+            f = Lbyl
+        else:
+            f = Lbyl/structural_wavelength*speed_of_sound
+        sofa.N = f
+        sofa.add_variable(
+            'OriginalFrequencies', f, 'double', 'N')
+        sofa.add_variable(
+            'RealScaleFrequencies', f/model_scale, 'double', 'N')
+        sofa.add_variable(
+            'Lbyl', Lbyl, 'double', 'N')
+        # HRTF/HRIR data
+        if data.cshape[0] != sources.csize:
+            data.freq = np.swapaxes(data.freq, 0, 1)
+        sofa.Data_Real = np.real(data.freq)
+        sofa.Data_Imag = np.imag(data.freq)
+    else:
+        sofa.Data_IR = data.time
+        sofa.Data_SamplingRate = data.sampling_rate
+        sofa.Data_Delay = np.zeros((1, receivers.csize))
+
+
+    sofa.add_variable(
+        'SampleStructuralWavelength', structural_wavelength, 'double', 'I')
+    sofa.add_variable(
+        'SampleStructuralWavelengthX', structural_wavelength_x, 'double', 'I')
+    sofa.add_variable(
+        'SampleStructuralWavelengthY', structural_wavelength_y, 'double', 'I')
+    sofa.add_variable(
+        'SampleModelScale', model_scale, 'double', 'I')
+    sofa.add_variable(
+        'SampleDiameter', sample_diameter, 'double', 'I')
+    sofa.add_variable(
+        'SpeedOfSound', speed_of_sound, 'double', 'I')
+    sofa.add_variable(
+        'DensityOfMedium', density_of_medium, 'double', 'I')
+    sofa.add_variable(
+        'ReceiverWeights', receivers.weights, 'double', 'R')
+    sofa.add_variable(
+        'SourceWeights', sources.weights, 'double', 'E')
+
+    return sofa
 
 def _cart_coordinates(xyz):
     return pf.Coordinates(xyz[:, 0], xyz[:, 1], xyz[:, 2])
@@ -391,43 +312,6 @@ def check_project(folder=None):
         sources, num_sources, params["num_frequencies"])
 
     return all_files, fundamentals, out, out_names
-
-
-def merge_frequency_data(data_list):
-    """
-    Merge multiple FrequencyData objects into one.
-
-    Parameters
-    ----------
-    data_list : list of pyfar.FrequencyData
-        List of FrequencyData objects to be merged.
-
-    Returns
-    -------
-    data_out : pyfar.FrequencyData
-        Merged FrequencyData object.
-    """
-    data_out = data_list[0].copy()
-    frequencies = data_out.frequencies.copy()
-    for idx in range(1, len(data_list)):
-        data = data_list[idx]
-        assert data_out.cshape == data.cshape
-        frequencies = np.append(frequencies, data.frequencies)
-        frequencies = np.array(list(set(frequencies)))
-        frequencies = np.sort(frequencies)
-
-        data_new = []
-        for f in frequencies:
-            if any(data_out.frequencies == f):
-                freq_index = np.where(data_out.frequencies == f)
-                data_new.append(data_out.freq[..., freq_index[0][0]])
-            elif any(data.frequencies == f):
-                freq_index = np.where(data.frequencies == f)
-                data_new.append(data.freq[..., freq_index[0][0]])
-
-        data_new = np.moveaxis(np.array(data_new), 0, -1)
-        data_out = pf.FrequencyData(data_new, frequencies)
-    return data_out
 
 
 def read_numcalc(folder=None, is_ref=False):

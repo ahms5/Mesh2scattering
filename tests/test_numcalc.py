@@ -200,9 +200,8 @@ def test_numcalc_commandline_estimate_ram(tmpdir):
 
 @pytest.mark.parametrize("boundary", [(False), (True)])
 @pytest.mark.parametrize("grid", [(False), (True)])
-@pytest.mark.parametrize("scattering", [(False), (True)])
 @pytest.mark.parametrize("log", [(False), (True)])
-def test_remove_outputs(boundary, grid, scattering, log, tmpdir):
+def test_remove_outputs(boundary, grid, log, tmpdir):
     """Test purging the processed data in Output2HRTF."""
     # copy test directory
     test_dir = os.path.join(tmpdir, 'project')
@@ -213,7 +212,7 @@ def test_remove_outputs(boundary, grid, scattering, log, tmpdir):
 
     m2s.numcalc.remove_outputs(
         test_dir,
-        boundary=boundary, grid=grid, scattering=scattering, log=log)
+        boundary=boundary, grid=grid, log=log)
 
     assert len(glob.glob(
             os.path.join(test_dir, "*.sofa"))) == 0
