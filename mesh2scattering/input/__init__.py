@@ -1,15 +1,13 @@
 """
 This module provides functions to write input files for Mesh2HRTF.
 """
+
 from .input import (
-    write_mesh,
-    write_evaluation_grid,
-    write_scattering_project,
+    write_scattering_project_numcalc,
     )
 
-from .SoundSource import (
-    SoundSourceType,
-    SoundSource,
+from .EvaluationGrid import (
+    EvaluationGrid,
 )
 
 from .SampleMesh import (
@@ -19,14 +17,18 @@ from .SampleMesh import (
     SurfaceDescription,
 )
 
+from .SoundSource import (
+    SoundSourceType,
+    SoundSource,
+)
+
 __all__ = [
-    'write_mesh',
-    'write_evaluation_grid',
-    'write_scattering_project',
+    'write_scattering_project_numcalc',
+    'EvaluationGrid',
     'SoundSourceType',
+    'SurfaceType',
+    'SurfaceDescription',
     'SoundSource',
     'SampleShape',
     'SampleMesh',
-    'SurfaceType',
-    'SurfaceDescription',
     ]

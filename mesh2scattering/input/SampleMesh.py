@@ -1,4 +1,5 @@
 import trimesh
+import os
 from enum import Enum
 
 class SurfaceType(Enum):
@@ -57,11 +58,13 @@ class SurfaceDescription():
     _symmetry_rotational: bool = False
     _surface_type: SurfaceType = SurfaceType.PERIODIC
     _comment: str = ""
+    _structural_depth: float = 0
 
     def __init__(
             self,
             structural_wavelength_x: float=0,
             structural_wavelength_y: float=0,
+            structural_depth: float=0,
             surface_type: SurfaceType=SurfaceType.PERIODIC,
             model_scale: float=1,
             symmetry_azimuth: list=[],
@@ -75,6 +78,8 @@ class SurfaceDescription():
             structural wavelength in x direction, by default 0.
         structural_wavelength_y : float, optional
             structural wavelength in y direction, by default 0.
+        structural_depth : float, optional
+            structural depth in meters, by default 0.
         surface_type : SurfaceType, optional
             surface type, by default SurfaceType.PERIODIC.
         model_scale : float, optional
@@ -115,6 +120,9 @@ class SurfaceDescription():
             raise ValueError("comment must be a string.")
         if not isinstance(surface_type, SurfaceType):
             raise ValueError("surface_type must be a SurfaceType.")
+        if not isinstance(structural_depth, (int, float)) or \
+                structural_depth < 0:
+            raise ValueError("structural_depth must be a float and >= 0.")
 
         self._structural_wavelength_x = structural_wavelength_x
         self._structural_wavelength_y = structural_wavelength_y
@@ -123,6 +131,7 @@ class SurfaceDescription():
         self._symmetry_rotational = symmetry_rotational
         self._comment = comment
         self._surface_type = surface_type
+        self._structural_depth = structural_depth
 
 
     @property
@@ -146,6 +155,17 @@ class SurfaceDescription():
             The structural wavelength in y direction.
         """
         return self._structural_wavelength_y
+
+    @property
+    def structural_depth(self):
+        """Defines the structural depth.
+
+        Returns
+        -------
+        float
+            The structural depth.
+        """
+        return self._structural_depth
 
     @property
     def surface_type(self):
@@ -339,6 +359,28 @@ class SampleMesh():
         return self._mesh.vertices
 
     @property
+    def n_mesh_elements(self):
+        """Number of mesh elements/faces.
+
+        Returns
+        -------
+        int
+            number of mesh elements/faces.
+        """
+        return self.mesh_faces.shape[0]
+
+    @property
+    def n_mesh_nodes(self):
+        """Number of mesh nodes/vertices.
+
+        Returns
+        -------
+        int
+            number of mesh nodes/vertices.
+        """
+        return self.mesh_vertices.shape[0]
+
+    @property
     def n_repetitions_x(self):
         """Defines the number of repetitions in x direction.
 
@@ -359,4 +401,60 @@ class SampleMesh():
             The number of repetitions in y direction.
         """
         return self._n_repetitions_y
-    
+
+    def export_numcalc(self, folder_path, start=200000):
+        """
+        Write mesh to Mesh2HRTF input format.
+
+        Mesh2HRTF meshes consist of two text files Nodes.txt and Elements.txt.
+        The Nodes.txt file contains the coordinates of the vertices and the
+        Elements.txt file contains the indices of the vertices that form the
+        faces of the mesh.
+
+        Parameters
+        ----------
+        folder_path : str
+            Path to the directory where the mesh is saved. The mesh is saved in
+            'Nodes.txt' and 'Elements.txt' files.
+        start : int, optional
+            The nodes and elements of the mesh are numbered and the first
+            element will have the number `start`. In Mesh2HRTF, each Node
+            must have a unique number. The nodes/elements of the mesh for
+            which the HRTFs are simulated start at 1. Thus `start` must
+            at least be greater than the number of nodes/elements in the mesh.
+
+        """
+        vertices = self.mesh_vertices
+        faces = self.mesh_faces
+
+        # check output directory
+        if not os.path.isdir(folder_path):
+            os.mkdir(folder_path)
+
+        # write nodes
+        N = int(self.mesh.vertices.shape[0])
+        start = int(start)
+
+        nodes = f"{N}\n"
+        for nn in range(N):
+            nodes += (f"{int(start + nn)} "
+                    f"{vertices[nn, 0]} "
+                    f"{vertices[nn, 1]} "
+                    f"{vertices[nn, 2]}\n")
+
+        with open(os.path.join(folder_path, "Nodes.txt"), "w") as f_id:
+            f_id.write(nodes)
+
+        # write elements
+        N = int(faces.shape[0])
+        elements = f"{N}\n"
+        for nn in range(N):
+            elements += (
+                f"{int(start + nn)} "
+                f"{faces[nn, 0] + start} "
+                f"{faces[nn, 1] + start} "
+                f"{faces[nn, 2] + start} "
+                "0 0 0\n")
+
+        with open(os.path.join(folder_path, "Elements.txt"), "w") as f_id:
+            f_id.write(elements)

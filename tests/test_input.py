@@ -1,8 +1,12 @@
 import mesh2scattering as m2s
 import os
-import pytest
 import numpy as np
 import pyfar as pf
+import trimesh
+import filecmp
+import json
+import numpy.testing as npt
+
 
 
 def test_import():
@@ -10,93 +14,253 @@ def test_import():
     assert input
 
 
-@pytest.mark.parametrize("start", [2000, 200024])
-@pytest.mark.parametrize("discard", ['x', 'y', 'z', None])
-def test_write_evaluation_grid(discard, start, tmpdir):
-    x = np.arange(0, 50, 10)
-    y = x
-    xx, yy = np.meshgrid(x, y)
-    if discard == 'z':
-        points = pf.Coordinates(xx.flatten(), yy.flatten(), 0)
-    elif discard == 'y':
-        points = pf.Coordinates(xx.flatten(), 0, yy.flatten())
-    elif discard == 'x':
-        points = pf.Coordinates(0, xx.flatten(), yy.flatten())
-    elif discard is None:
-        points = pf.Coordinates.from_spherical_elevation(
-            xx.flatten()/180*np.pi, yy.flatten()/180*np.pi, 1)
+def test_write_project(tmpdir, simple_mesh):
+    project_path = os.path.join(tmpdir, 'project')
+    project_title = 'test_project'
+    frequencies = np.array([500])
+    sound_sources = m2s.input.SoundSource(
+        pf.Coordinates(1, 0, 1, weights=1),
+        m2s.input.SoundSourceType.POINT_SOURCE)
+    points = pf.samplings.sph_lebedev(sh_order=10)
+    evaluation_grid = m2s.input.EvaluationGrid.from_spherical(
+        points,
+        'example_grid')
+    surface_description = m2s.input.SurfaceDescription()
+    sample_mesh = m2s.input.SampleMesh(
+        simple_mesh,
+        surface_description,
+        0.8,
+        m2s.input.SampleShape.ROUND,
+    )
+    bem_method = 'ML-FMM BEM'
+    m2s.input.write_scattering_project_numcalc(
+        project_path,
+        project_title,
+        frequencies,
+        sound_sources,
+        [evaluation_grid],
+        sample_mesh,
+        bem_method,
+        speed_of_sound=346.18,
+        density_of_medium=1.1839,
+        )
 
-    filename = os.path.join(tmpdir, "test_evaluation_grid")
+    # check create project folders
+    assert os.path.isdir(os.path.join(
+        project_path, 'sample'))
+    assert os.path.isdir(os.path.join(
+        project_path, 'sample', 'ObjectMeshes'))
+    assert os.path.isdir(os.path.join(
+        project_path, 'sample', 'EvaluationGrids'))
+    assert os.path.isdir(os.path.join(
+        project_path, 'sample', 'NumCalc'))
 
-    # write data
-    m2s.input.write_evaluation_grid(
-        points, filename, start=start, discard=discard)
+    # check mesh files
+    assert os.path.isfile(os.path.join(
+        project_path, 'sample', 'ObjectMeshes', 'Reference.stl'))
+    assert os.path.isfile(os.path.join(
+        project_path, 'sample', 'ObjectMeshes', 'Reference', 'Nodes.txt'))
+    assert os.path.isfile(os.path.join(
+        project_path, 'sample', 'ObjectMeshes', 'Reference', 'Elements.txt'))
 
-    # read and check Nodes
-    with open(filename + "/Nodes.txt", "r") as f_id:
-        file = f_id.readlines()
-    file = "".join(file)
+    # check evaluation grid files
+    assert os.path.isfile(os.path.join(
+        project_path, 'sample', 'EvaluationGrids',
+        evaluation_grid.name, 'Nodes.txt'))
+    assert os.path.isfile(os.path.join(
+        project_path, 'sample', 'EvaluationGrids',
+        evaluation_grid.name, 'Elements.txt'))
 
-    x = points.x
-    y = points.y
-    z = points.z
-    first_row = f"{points.csize}\n"
-    second_row = f"{start} {x[0]} {y[0]} {z[0]}\n"
-    assert file.startswith(first_row+second_row)
-    assert file.endswith(
-        f"\n{start+points.csize-1} {x[-1]} {y[-1]} {z[-1]}\n")
+    # check numcalc files
+    assert os.path.isfile(os.path.join(
+        project_path, 'sample', 'NumCalc', 'source_1', 'NC.inp'))
+    assert not os.path.isfile(os.path.join(
+        project_path, 'sample', 'NumCalc', 'source_2', 'NC.inp'))
 
-    # read and check Elements
-    with open(filename + "/Elements.txt", "r") as f_id:
-        file = f_id.readlines()
-    assert len(file) == int(file[0]) + 1
+    # check parameters.json
+    json_path = os.path.join(
+        project_path, 'parameters.json')
+    assert os.path.isfile(json_path)
+
+    with open(json_path, 'r') as file:
+        params = json.load(file)
+
+    assert params['project_title'] == project_title
+    assert params['bem_method'] == bem_method
+
+    assert params['speed_of_sound'] == 346.18
+    assert params['density_of_medium'] == 1.1839
+    surf = surface_description
+    assert params['structural_wavelength'] == surf.structural_wavelength_x
+    assert params['structural_wavelength_x'] == surf.structural_wavelength_x
+    assert params['structural_wavelength_y'] == surf.structural_wavelength_y
+    assert params['model_scale'] == surf.model_scale
+    assert params['symmetry_azimuth'] == surf.symmetry_azimuth
+    assert params['symmetry_rotational'] == surf.symmetry_rotational
+    assert params['sample_diameter'] == sample_mesh.sample_diameter
+
+    npt.assert_array_almost_equal(params['frequencies'], frequencies)
+
+    assert params['source_type'] == 'Point source'
+    npt.assert_array_almost_equal(
+        params['sources'], sound_sources.source_coordinates.cartesian)
+    npt.assert_array_almost_equal(
+        params['sources_weights'], sound_sources.source_coordinates.weights)
+
+    evaluation_grids = [
+        np.array(r) for r in params['evaluation_grids_coordinates']]
+    npt.assert_array_almost_equal(
+        evaluation_grids[0], points.cartesian)
+    evaluation_grids_weights = np.array(params['evaluation_grids_weights'])
+    npt.assert_array_almost_equal(
+        evaluation_grids_weights[0], points.weights)
+    assert evaluation_grids_weights[0].shape[0] == evaluation_grids[0].shape[0]
 
 
-def test_write_evaluation_grid_error(tmpdir):
-    x = np.arange(0, 50, 10)
-    y = x
-    xx, yy = np.meshgrid(x, y)
-    points = pf.Coordinates.from_spherical_elevation(
-        xx.flatten()/180*np.pi, yy.flatten()/180*np.pi, 1)
-    points_2d = pf.Coordinates.from_spherical_elevation(
-        xx/180*np.pi, yy/180*np.pi, 1)
+def test__write_nc_inp(tmpdir):
+    # test write nc inp file vs online documentation
+    # https://github.com/Any2HRTF/Mesh2HRTF/wiki/Structure_of_NC.inp
+    version = '0.1.0'
+    project_path = os.path.join(tmpdir, 'project')
+    project_title = 'test_project'
+    speed_of_sound = 346.18
+    density_of_medium = 1.1839
+    frequencies = np.array([500])
+    evaluation_grid_names = ['example_grid']
+    source_type = m2s.input.SoundSourceType.POINT_SOURCE
+    source_positions = pf.Coordinates(1, 0, 1, weights=1)
+    n_mesh_elements = 100
+    n_mesh_nodes = 50
+    n_grid_elements = 200
+    n_grid_nodes = 70
+    method = 'ML-FMM BEM'
+    os.mkdir(project_path)
+    os.mkdir(os.path.join(project_path, 'NumCalc'))
+    m2s.input.input._write_nc_inp(
+        project_path, version, project_title,
+        speed_of_sound, density_of_medium,
+        frequencies,
+        evaluation_grid_names,
+        source_type, source_positions,
+        n_mesh_elements, n_mesh_nodes, n_grid_elements, n_grid_nodes, method)
 
-    filename = os.path.join(tmpdir, "test_evaluation_grid")
+    # test if files are there
+    assert os.path.isdir(os.path.join(project_path, 'NumCalc', 'source_1'))
+    assert not os.path.isdir(os.path.join(project_path, 'NumCalc', 'source_2'))
+    assert os.path.isfile(os.path.join(
+        project_path, 'NumCalc', 'source_1', 'NC.inp'))
+    assert not os.path.isfile(os.path.join(
+        project_path, 'NumCalc', 'source_2', 'NC.inp'))
 
-    with pytest.raises(
-            ValueError, match="points must be a pyfar.Coordinates object."):
-        m2s.input.write_evaluation_grid(
-            points.cartesian, filename)
+    # test if the file is correct
+    n_bins = frequencies.size
+    NC_path = os.path.join(project_path, 'NumCalc', 'source_1', 'NC.inp')
+    with open(NC_path, 'r') as f:
+        content = "".join(f.readlines())
 
-    with pytest.raises(
-            ValueError, match="cdim of pyfar.Coordinates must be 1."):
-        m2s.input.write_evaluation_grid(
-            points_2d, filename)
+    # Controlparameter I [%d]
+    assert (
+        '## Controlparameter I\n'
+        '0\n') in content
 
-    with pytest.raises(
-            ValueError, match="start must be a positive integer."):
-        m2s.input.write_evaluation_grid(
-            points, filename, start=-1)
+    # Controlparameter II [%d %d %f %f]
+    assert (
+        '## Controlparameter II\n'
+        f'1 {n_bins} 0.000001 0.00e+00 1 0 0\n') in content
 
-    with pytest.raises(
-            ValueError, match="discard must be None, 'x', 'y', or 'z'."):
-        m2s.input.write_evaluation_grid(
-            points, filename, discard='a')
+    # check Frequency Curve
+    frequency_curve = (
+        '## Load Frequency Curve \n'
+        f'0 {n_bins+1}\n'
+        '0.000000 0.000000e+00 0.0\n')
+    frequency_curve += ''.join([
+        f'0.{i+1:06d} {(frequencies[i]/10000):04f}e+04 0.0\n' for i in range(n_bins)])
+    assert frequency_curve in content
 
-# def test_write_mesh(tmpdir):
-#     path = os.path.join(
-#         m2s.utils.program_root(), '..', 'tests', 'references', 'Mesh')
-#     mesh_path = os.path.join(path, 'sample.stl')
-#     mesh = trimesh.load(mesh_path)
-#     m2s.input.write_mesh(mesh.vertices, mesh.faces, tmpdir, start=0)
-#     assert filecmp.cmp(
-#         os.path.join(path, 'Elements.txt'),
-#         os.path.join(tmpdir, 'Elements.txt'),
-#     )
-#     assert filecmp.cmp(
-#         os.path.join(path, 'Nodes.txt'),
-#         os.path.join(tmpdir, 'Nodes.txt'),
-#     )
+    # Main Parameters I [%d %d %d %d %d %d %d %d]
+    bem_method_id = 0 if method == 'BEM' else 1 if method == 'SL-FMM BEM' else 4
+    n_nodes = n_mesh_nodes + n_grid_nodes
+    n_elements = n_mesh_elements + n_grid_elements
+    main_1 = (
+        '## 1. Main Parameters I\n'
+        f'2 {n_elements} {n_nodes} 0 0 2 1 {bem_method_id} 0\n')
+    assert main_1 in content
+
+    # MainParameters II [%d %d %d %d %d]
+    n_plane_waves = source_positions.csize if (
+        source_type == m2s.input.SoundSourceType.PLANE_WAVE) else 0
+    n_point_sources = source_positions.csize if (
+        source_type == m2s.input.SoundSourceType.POINT_SOURCE) else 0
+    main_2 = (
+        '## 2. Main Parameters II\n'
+        f'{n_plane_waves} {n_point_sources} 0 0.0000e+00 0 0\n')
+    assert main_2 in content
+
+    #Main Parameters III [%d]
+    main_3 = (
+        '## 3. Main Parameters III\n'
+        '0\n')
+    assert main_3 in content
+
+    #Main Parameters IV [%f %f %f]
+    main_4 = (
+        '## 4. Main Parameters IV\n'
+        f'{speed_of_sound} {density_of_medium} 1.0\n')
+    assert main_4 in content
+
+    #NODES [%s ... %s]
+    nodes = (
+        'NODES\n'
+        '../../ObjectMeshes/Reference/Nodes.txt\n')
+    nodes += ''.join([
+        f'../../EvaluationGrids/{grid}/Nodes.txt\n' \
+            for grid in evaluation_grid_names])
+    assert nodes in content
+
+    #ELEMENTS [%s ... %s]
+    elements = (
+        'ELEMENTS\n'
+        '../../ObjectMeshes/Reference/Elements.txt\n')
+    elements += ''.join([
+        f'../../EvaluationGrids/{grid}/Elements.txt\n' \
+            for grid in evaluation_grid_names])
+    assert elements in content
+
+    #SYMMETRY [%d %d %d %f %f %f]
+    symmetry = (
+        '# SYMMETRY\n'
+        '# 0 0 0\n'
+        '# 0.0000e+00 0.0000e+00 0.0000e+00\n')
+    assert symmetry in content
+
+    #BOUNDARY : ELEM [%d] TO [%d %s %f %d %f %d]
+    boundary = '##\nBOUNDARY\nRETU\n'
+    assert boundary in content
+
+    #PLANE WAVES [%d %f %f %f %d %f %d %f]
+    xx = source_positions.x
+    yy = source_positions.y
+    zz = source_positions.z
+    if n_plane_waves:
+        plane_waves = (
+            'PLANE WAVES\n')
+        plane_waves += ''.join([
+            f'{i} {xx[i]} {yy[i]} {zz[i]} 0.1 -1 0.0 -1\n' \
+                for i in range(source_positions.csize)])
+        assert plane_waves in content
+
+    if n_point_sources:
+        point_sources = (
+            'POINT SOURCES\n')
+        point_sources += ''.join([
+            f'{i} {xx[i]} {yy[i]} {zz[i]} 0.1 -1 0.0 -1\n' \
+                for i in range(source_positions.csize)])
+        assert point_sources in content
+
+    # no curves in this case
+    assert '\n# CURVES\n' in content
+    assert '\nPOST PROCESS\n' in content
+    assert '\nEND\n' in content
 
 
 # @pytest.mark.parametrize("n_dim", [3, 2])
