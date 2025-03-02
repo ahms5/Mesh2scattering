@@ -1,0 +1,44 @@
+istart= 2 iend = 2
+
+---------- NumCalc started: 2/3/2025 20:25:59 ----------
+
+Running on:         YOGA-MVO1.ITA.AKUSTIK.RWTH-AACHEN.DE
+
+3D analysis
+Job title: low_complexity_project_solved
+
+Step 2, Frequency = 200 Hz
+
+Single level fast multipole BEM
+
+Number of equations = 888
+
+Informations about clusters:
+   Level    Num. of clusters    Maximum radius   Minimum radius
+     0           16                0.186019         0.141724
+ resu. nets     170                     0              0
+
+Informations about the FMM expansion:
+   Level    N. expa. terms    N. p. theta    N. p. phi    N. p. sphere
+     0           8               8              16           128
+
+CGS: err_ori = 0.000133895
+10 0.00152652
+10 Abs Error:2.04392e-07
+19 3.24445e-10
+
+Assembling the equation system         : 1
+Solving the equation system            : 0
+Post processing                        : 0
+Total                                  : 1
+
+
+Time Statistic for the job (in second):
+Input ............................ 0
+Address computation .............. 0
+Assembling the equation system ... 1
+Solving the equation system ...... 0
+Post processing .................. 0
+The whole job .................... 1
+
+---------- NumCalc ended: 2/3/2025 20:26:0 ----------
