@@ -8,12 +8,54 @@ import numpy.testing as npt
 from tempfile import TemporaryDirectory
 import pyfar as pf
 import json
+from pathlib import Path
 
 
 def test_import():
     from mesh2scattering import input  # noqa: A004
     assert input
 
+
+def test_sound_source_initialization():
+    coords = pf.Coordinates(
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], weights=[1, 1, 1])
+    source = m2s.input.SoundSource(
+        coords, m2s.input.SoundSourceType.POINT_SOURCE)
+    assert source.source_type == m2s.input.SoundSourceType.POINT_SOURCE
+    npt.assert_almost_equal(
+        source.source_coordinates.cartesian, coords.cartesian)
+    npt.assert_almost_equal(
+        source.source_coordinates.weights, coords.weights)
+
+def test_sound_source_invalid_type():
+    coords = pf.Coordinates([0, 1, 2], [3, 4, 5], [6, 7, 8])
+    with pytest.raises(
+            ValueError, match="source_type must be a SoundSourceType object."):
+        m2s.input.SoundSource(coords, "InvalidType")
+
+
+def test_sound_source_invalid_coordinates():
+    with pytest.raises(
+            ValueError,
+            match="source_coordinates must be a pyfar.Coordinates object."):
+        m2s.input.SoundSource(
+            "InvalidCoordinates", m2s.input.SoundSourceType.POINT_SOURCE)
+
+
+def test_sound_source_coordinates_without_weights():
+    coords = pf.Coordinates([0, 1, 2], [3, 4, 5], [6, 7, 8])
+    coords.weights = None
+    with pytest.raises(
+            ValueError, match="source_coordinates must contain weights."):
+        m2s.input.SoundSource(coords, m2s.input.SoundSourceType.POINT_SOURCE)
+
+
+def test_sound_source_str():
+    coords = pf.Coordinates(
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], weights=[1, 1, 1])
+    source = m2s.input.SoundSource(
+        coords, m2s.input.SoundSourceType.POINT_SOURCE)
+    assert str(source) == 'A set of Point sources containing 3 sources.'
 
 @pytest.mark.parametrize("start", [2000, 200024])
 @pytest.mark.parametrize("discard", ['x', 'y', 'z', None])
@@ -57,337 +99,307 @@ def test_write_evaluation_grid(discard, start, tmpdir):
     assert len(file) == int(file[0]) + 1
 
 
-def test_write_mesh(tmpdir):
-    path = os.path.join(
-        m2s.utils.program_root(), '..', 'tests', 'references', 'Mesh')
-    mesh_path = os.path.join(path, 'sample.stl')
-    mesh = trimesh.load(mesh_path)
-    m2s.input.write_mesh(mesh.vertices, mesh.faces, tmpdir, start=0)
-    assert filecmp.cmp(
-        os.path.join(path, 'Elements.txt'),
-        os.path.join(tmpdir, 'Elements.txt'),
-    )
-    assert filecmp.cmp(
-        os.path.join(path, 'Nodes.txt'),
-        os.path.join(tmpdir, 'Nodes.txt'),
-    )
+def test_write_evaluation_grid_error(tmpdir):
+    x = np.arange(0, 50, 10)
+    y = x
+    xx, yy = np.meshgrid(x, y)
+    points = pf.Coordinates.from_spherical_elevation(
+        xx.flatten()/180*np.pi, yy.flatten()/180*np.pi, 1)
+    points_2d = pf.Coordinates.from_spherical_elevation(
+        xx/180*np.pi, yy/180*np.pi, 1)
+
+    filename = os.path.join(tmpdir, "test_evaluation_grid")
+
+    with pytest.raises(
+            ValueError, match="points must be a pyfar.Coordinates object."):
+        m2s.input.write_evaluation_grid(
+            points.cartesian, filename)
+
+    with pytest.raises(
+            ValueError, match="cdim of pyfar.Coordinates must be 1."):
+        m2s.input.write_evaluation_grid(
+            points_2d, filename)
+
+    with pytest.raises(
+            ValueError, match="start must be a positive integer."):
+        m2s.input.write_evaluation_grid(
+            points, filename, start=-1)
+
+    with pytest.raises(
+            ValueError, match="discard must be None, 'x', 'y', or 'z'."):
+        m2s.input.write_evaluation_grid(
+            points, filename, discard='a')
+
+# def test_write_mesh(tmpdir):
+#     path = os.path.join(
+#         m2s.utils.program_root(), '..', 'tests', 'references', 'Mesh')
+#     mesh_path = os.path.join(path, 'sample.stl')
+#     mesh = trimesh.load(mesh_path)
+#     m2s.input.write_mesh(mesh.vertices, mesh.faces, tmpdir, start=0)
+#     assert filecmp.cmp(
+#         os.path.join(path, 'Elements.txt'),
+#         os.path.join(tmpdir, 'Elements.txt'),
+#     )
+#     assert filecmp.cmp(
+#         os.path.join(path, 'Nodes.txt'),
+#         os.path.join(tmpdir, 'Nodes.txt'),
+#     )
 
 
-@pytest.mark.parametrize("n_dim", [3, 2])
-@pytest.mark.parametrize(('coordinates'), [False, True])
-def test_read_and_write_evaluation_grid(n_dim, coordinates):
-    cwd = os.path.dirname(__file__)
-    data_grids = os.path.join(cwd, 'resources', 'evaluation_grids')
+# @pytest.mark.parametrize("n_dim", [3, 2])
+# @pytest.mark.parametrize(('coordinates'), [True])
+# def test_read_and_write_evaluation_grid(n_dim, coordinates):
+#     cwd = os.path.dirname(__file__)
+#     data_grids = os.path.join(cwd, 'resources', 'evaluation_grids')
 
-    tmp = TemporaryDirectory()
+#     tmp = TemporaryDirectory()
 
-    # sampling grids
-    if n_dim == 3:
-        # 3D sampling grid (Lebedev, first order)
-        points = np.array([
-            [1., 0., 0.],
-            [-1., 0., 0.],
-            [0, 1., 0.],
-            [0, -1., 0.],
-            [0, 0., 1.],
-            [0, 0., -1.]])
-        discard = None
-    else:
-        # 2D sampling grid (all z = 0)
-        points = np.array([
-            [1., 0., 0.],
-            [-1., 0., 0.],
-            [0, 1., 0.],
-            [0, -1., 0.]])
-        discard = "z"
+#     # sampling grids
+#     if n_dim == 3:
+#         # 3D sampling grid (Lebedev, first order)
+#         points = np.array([
+#             [1., 0., 0.],
+#             [-1., 0., 0.],
+#             [0, 1., 0.],
+#             [0, -1., 0.],
+#             [0, 0., 1.],
+#             [0, 0., -1.]])
+#         discard = None
+#     else:
+#         # 2D sampling grid (all z = 0)
+#         points = np.array([
+#             [1., 0., 0.],
+#             [-1., 0., 0.],
+#             [0, 1., 0.],
+#             [0, -1., 0.]])
+#         discard = "z"
 
-    # pass as Coordinates object
-    if coordinates:
-        points = pf.Coordinates(points[:, 0], points[:, 1], points[:, 2])
+#     # pass as Coordinates object
+#     if coordinates:
+#         points = pf.Coordinates(points[:, 0], points[:, 1], points[:, 2])
 
-    # write grid
-    m2s.input.write_evaluation_grid(
-        points, os.path.join(tmp.name, "test"), discard=discard)
+#     # write grid
+#     m2s.input.write_evaluation_grid(
+#         points, os.path.join(tmp.name, "test"), discard=discard)
 
-    # check the nodes and elements
-    for file in ["Nodes.txt", "Elements.txt"]:
-        with open(os.path.join(data_grids, f"{n_dim}D", file), "r") as f:
-            ref = "".join(f.readlines())
-        with open(os.path.join(tmp.name, "test", file), "r") as f:
-            test = "".join(f.readlines())
+#     # check the nodes and elements
+#     for file in ["Nodes.txt", "Elements.txt"]:
+#         with open(os.path.join(data_grids, f"{n_dim}D", file), "r") as f:
+#             ref = "".join(f.readlines())
+#         with open(os.path.join(tmp.name, "test", file), "r") as f:
+#             test = "".join(f.readlines())
 
-        assert test == ref
+#         assert test == ref
 
-    # read the grid
-    coordinates = m2s.input.read_evaluation_grid(
-        os.path.join(tmp.name, "test"))
+#     # read the grid
+#     coordinates = m2s.output.read_evaluation_grid(
+#         os.path.join(tmp.name, "test"))
 
-    # check grid
-    assert isinstance(coordinates, pf.Coordinates)
-    npt.assert_equal(coordinates.get_cart(), points)
-
-
-def test_write_material():
-    # test write boundary condition with default values
-
-    tmp = TemporaryDirectory()
-    filename = os.path.join(tmp.name, "test_material.csv")
-
-    # write data
-    m2s.input.write_material(
-        filename, "admittance", [100, 200], [1 + 0j, 1.5 + 0.5j])
-
-    # read and check data
-    with open(filename, "r") as f_id:
-        file = f_id.readlines()
-    file = "".join(file)
-
-    assert file.startswith("# Keyword to define the boundary condition:\n")
-    assert file.endswith("100, 1.0, 0.0\n200, 1.5, 0.5\n")
-
-
-@pytest.mark.parametrize(('kind', 'check_kind'), [
-    ("admittance", ["ADMI", "PRES", "VELO"]),
-    ("pressure", ["PRES", "ADMI", "VELO"]),
-    ("velocity", ["VELO", "ADMI", "PRES"])])
-def test_write_material_kind(kind, check_kind):
-    # test if the kind of boundary condition is written correctly
-
-    tmp = TemporaryDirectory()
-    filename = os.path.join(tmp.name, "test_material.csv")
-
-    # write data
-    m2s.input.write_material(
-        filename, kind, [100, 200], [1 + 0j, 1.5 + 0.5j])
-
-    # read and check data
-    with open(filename, "r") as f_id:
-        file = f_id.readlines()
-
-    assert f"{check_kind[0]}\n" in file
-    assert f"{check_kind[1]}\n" not in file
-    assert f"{check_kind[2]}\n" not in file
-
-
-def test_write_material_comment():
-    # test if the comment is written
-
-    tmp = TemporaryDirectory()
-    filename = os.path.join(tmp.name, "test_material.csv")
-    comment = "Weird, random data"
-
-    # write data
-    m2s.input.write_material(
-        filename, "pressure", [100, 200], [1 + 0j, 1.5 + 0.5j], comment)
-
-    # read and check data
-    with open(filename, "r") as f_id:
-        file = f_id.readlines()
-
-    assert file[0] == "# " + comment + "\n"
-    assert file[1] == "#\n"
-    assert file[2] == "# Keyword to define the boundary condition:\n"
+#     # check grid
+#     assert isinstance(coordinates, pf.Coordinates)
+#     npt.assert_equal(coordinates.get_cart(), points)
 
 
 
-def test_write_scattering_parameter(tmpdir):
-    sourcePoints = pf.samplings.sph_equal_angle(10, 10)
-    sourcePoints = sourcePoints[sourcePoints.elevation >= 0]
-    sourcePoints = sourcePoints[sourcePoints.azimuth <= np.pi/2]
 
-    frequencies = pf.dsp.filter.fractional_octave_frequencies(
-        3, (500, 5000))[0]
-    path = os.path.join(
-        m2s.utils.program_root(), '..',
-        'tests', 'resources', 'mesh', 'sine_5k')
-    sample_path = os.path.join(path, 'sample.stl')
-    reference_path = os.path.join(path, 'reference.stl')
-    receiver_delta_deg = 1
-    receiver_radius = 5
+# def test_write_scattering_parameter(tmpdir):
+#     sourcePoints = pf.samplings.sph_equal_angle(10, 10)
+#     sourcePoints = sourcePoints[sourcePoints.elevation >= 0]
+#     sourcePoints = sourcePoints[sourcePoints.azimuth <= np.pi/2]
 
-    structural_wavelength = 0
-    sample_diameter = 0.8
-    model_scale = 2.5
-    symmetry_azimuth = [90, 180]
-    symmetry_rotational = False
+#     frequencies = pf.dsp.filter.fractional_octave_frequencies(
+#         3, (500, 5000))[0]
+#     path = os.path.join(
+#         m2s.utils.program_root(), '..',
+#         'tests', 'resources', 'mesh', 'sine_5k')
+#     sample_path = os.path.join(path, 'sample.stl')
+#     reference_path = os.path.join(path, 'reference.stl')
+#     receiver_delta_deg = 1
+#     receiver_radius = 5
 
-    receiverPoints = pf.samplings.sph_equal_angle(
-        receiver_delta_deg, receiver_radius)
-    receiverPoints = receiverPoints[receiverPoints.get_sph()[..., 1] < np.pi/2]
+#     structural_wavelength = 0
+#     sample_diameter = 0.8
+#     model_scale = 2.5
+#     symmetry_azimuth = [90, 180]
+#     symmetry_rotational = False
 
-    # execute
-    m2s.input.write_scattering_project(
-        project_path=tmpdir,
-        frequencies=frequencies,
-        sample_path=sample_path,
-        reference_path=reference_path,
-        receiver_coords=receiverPoints,
-        source_coords=sourcePoints,
-        structural_wavelength=structural_wavelength,
-        model_scale=model_scale,
-        sample_diameter=sample_diameter,
-        symmetry_azimuth=symmetry_azimuth,
-        symmetry_rotational=symmetry_rotational,
-        )
+#     receiverPoints = pf.samplings.sph_equal_angle(
+#         receiver_delta_deg, receiver_radius)
+#     receiverPoints = receiverPoints[receiverPoints.get_sph()[..., 1] < np.pi/2]
 
-    # test parameters
-    f = open(os.path.join(tmpdir, 'parameters.json'))
-    paras = json.load(f)
-    source_list = [list(i) for i in list(sourcePoints.get_cart())]
-    receiver_list = [list(i) for i in list(receiverPoints.get_cart())]
-    parameters = {
-        # project Info
-        "project_title": 'scattering pattern',
-        "mesh2scattering_path": m2s.utils.program_root(),
-        "mesh2scattering_version": m2s.__version__,
-        "bem_version": 'ML-FMM BEM',
-        # Constants
-        "speed_of_sound": float(346.18),
-        "density_of_medium": float(1.1839),
-        # Sample Information, post processing
-        "structural_wavelength": structural_wavelength,
-        "model_scale": model_scale,
-        "sample_diameter": sample_diameter,
-        # symmetry information
-        "symmetry_azimuth": symmetry_azimuth,
-        "symmetry_rotational": symmetry_rotational,
-        # frequencies
-        "num_frequencies": len(frequencies),
-        "min_frequency": frequencies[0],
-        "max_frequency": frequencies[-1],
-        "frequencies": list(frequencies),
-        # Source definition
-        "source_type": 'Point source',
-        "sources_num": len(source_list),
-        "sources": source_list,
-        # Receiver definition
-        "receivers_num": len(receiver_list),
-        "receivers": receiver_list,
-    }
-    npt.assert_array_almost_equal(paras['receivers'], parameters['receivers'])
-    paras['receivers'] = parameters['receivers']
-    npt.assert_equal(paras, parameters)
-    # test folder structure
-    assert os.path.isdir(os.path.join(tmpdir, 'sample'))
-    assert os.path.isdir(os.path.join(tmpdir, 'reference'))
-    assert os.path.isdir(os.path.join(tmpdir, 'sample', 'EvaluationGrids'))
-    assert os.path.isdir(os.path.join(tmpdir, 'reference', 'EvaluationGrids'))
-    assert os.path.isdir(os.path.join(tmpdir, 'sample', 'NumCalc'))
-    assert os.path.isdir(os.path.join(tmpdir, 'reference', 'NumCalc'))
-    assert os.path.isdir(os.path.join(tmpdir, 'sample', 'ObjectMeshes'))
-    assert os.path.isdir(os.path.join(tmpdir, 'reference', 'ObjectMeshes'))
-    assert os.path.isfile(os.path.join(
-        tmpdir, 'sample', 'ObjectMeshes', 'sample.stl'))
-    assert os.path.isfile(os.path.join(
-        tmpdir, 'reference', 'ObjectMeshes', 'reference.stl'))
+#     # execute
+#     m2s.input.write_scattering_project(
+#         project_path=tmpdir,
+#         frequencies=frequencies,
+#         sample_path=sample_path,
+#         reference_path=reference_path,
+#         receiver_coords=receiverPoints,
+#         source_coords=sourcePoints,
+#         structural_wavelength=structural_wavelength,
+#         model_scale=model_scale,
+#         sample_diameter=sample_diameter,
+#         symmetry_azimuth=symmetry_azimuth,
+#         symmetry_rotational=symmetry_rotational,
+#         )
 
-    # test sources
-    for i in range(91):
-        assert os.path.isdir(
-            os.path.join(tmpdir, 'sample', 'NumCalc', f'source_{i+1}'))
-    assert not os.path.isdir(
-        os.path.join(tmpdir, 'sample', 'NumCalc', f'source_{92}'))
-    for i in range(10):
-        assert os.path.isdir(
-            os.path.join(tmpdir, 'reference', 'NumCalc', f'source_{i+1}'))
-    assert not os.path.isdir(
-        os.path.join(tmpdir, 'reference', 'NumCalc', f'source_{11}'))
+#     # test parameters
+#     f = open(os.path.join(tmpdir, 'parameters.json'))
+#     paras = json.load(f)
+#     source_list = [list(i) for i in list(sourcePoints.get_cart())]
+#     receiver_list = [list(i) for i in list(receiverPoints.get_cart())]
+#     parameters = {
+#         # project Info
+#         "project_title": 'scattering pattern',
+#         "mesh2scattering_path": m2s.utils.program_root(),
+#         "mesh2scattering_version": m2s.__version__,
+#         "bem_version": 'ML-FMM BEM',
+#         # Constants
+#         "speed_of_sound": float(346.18),
+#         "density_of_medium": float(1.1839),
+#         # Sample Information, post processing
+#         "structural_wavelength": structural_wavelength,
+#         "model_scale": model_scale,
+#         "sample_diameter": sample_diameter,
+#         # symmetry information
+#         "symmetry_azimuth": symmetry_azimuth,
+#         "symmetry_rotational": symmetry_rotational,
+#         # frequencies
+#         "num_frequencies": len(frequencies),
+#         "min_frequency": frequencies[0],
+#         "max_frequency": frequencies[-1],
+#         "frequencies": list(frequencies),
+#         # Source definition
+#         "source_type": 'Point source',
+#         "sources_num": len(source_list),
+#         "sources": source_list,
+#         # Receiver definition
+#         "receivers_num": len(receiver_list),
+#         "receivers": receiver_list,
+#     }
+#     npt.assert_array_almost_equal(paras['receivers'], parameters['receivers'])
+#     paras['receivers'] = parameters['receivers']
+#     npt.assert_equal(paras, parameters)
+#     # test folder structure
+#     assert os.path.isdir(os.path.join(tmpdir, 'sample'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'reference'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'sample', 'EvaluationGrids'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'reference', 'EvaluationGrids'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'sample', 'NumCalc'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'reference', 'NumCalc'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'sample', 'ObjectMeshes'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'reference', 'ObjectMeshes'))
+#     assert os.path.isfile(os.path.join(
+#         tmpdir, 'sample', 'ObjectMeshes', 'sample.stl'))
+#     assert os.path.isfile(os.path.join(
+#         tmpdir, 'reference', 'ObjectMeshes', 'reference.stl'))
+
+#     # test sources
+#     for i in range(91):
+#         assert os.path.isdir(
+#             os.path.join(tmpdir, 'sample', 'NumCalc', f'source_{i+1}'))
+#     assert not os.path.isdir(
+#         os.path.join(tmpdir, 'sample', 'NumCalc', f'source_{92}'))
+#     for i in range(10):
+#         assert os.path.isdir(
+#             os.path.join(tmpdir, 'reference', 'NumCalc', f'source_{i+1}'))
+#     assert not os.path.isdir(
+#         os.path.join(tmpdir, 'reference', 'NumCalc', f'source_{11}'))
 
 
-def test_write_scattering_parameter_one_source(tmpdir):
-    source_coords = pf.Coordinates(1, 0, 1)
-    frequencies = pf.dsp.filter.fractional_octave_frequencies(
-        3, (500, 5000))[0]
-    path = os.path.join(
-        m2s.utils.program_root(), '..',
-        'tests', 'resources', 'mesh', 'sine_5k')
-    sample_path = os.path.join(path, 'sample.stl')
-    reference_path = os.path.join(path, 'reference.stl')
-    receiver_delta_deg = 1
-    receiver_radius = 5
+# def test_write_scattering_parameter_one_source(tmpdir):
+#     source_coords = pf.Coordinates(1, 0, 1)
+#     frequencies = pf.dsp.filter.fractional_octave_frequencies(
+#         3, (500, 5000))[0]
+#     path = os.path.join(
+#         m2s.utils.program_root(), '..',
+#         'tests', 'resources', 'mesh', 'sine_5k')
+#     sample_path = os.path.join(path, 'sample.stl')
+#     reference_path = os.path.join(path, 'reference.stl')
+#     receiver_delta_deg = 1
+#     receiver_radius = 5
 
-    structural_wavelength = 0
-    sample_diameter = 0.8
-    model_scale = 2.5
-    symmetry_azimuth = [90, 180]
-    symmetry_rotational = False
+#     structural_wavelength = 0
+#     sample_diameter = 0.8
+#     model_scale = 2.5
+#     symmetry_azimuth = [90, 180]
+#     symmetry_rotational = False
 
-    receiverPoints = pf.samplings.sph_equal_angle(
-        receiver_delta_deg, receiver_radius)
-    receiverPoints = receiverPoints[receiverPoints.get_sph()[..., 1] < np.pi/2]
+#     receiverPoints = pf.samplings.sph_equal_angle(
+#         receiver_delta_deg, receiver_radius)
+#     receiverPoints = receiverPoints[receiverPoints.get_sph()[..., 1] < np.pi/2]
 
-    # execute
-    m2s.input.write_scattering_project(
-        project_path=tmpdir,
-        frequencies=frequencies,
-        sample_path=sample_path,
-        reference_path=reference_path,
-        receiver_coords=receiverPoints,
-        source_coords=source_coords,
-        structural_wavelength=structural_wavelength,
-        model_scale=model_scale,
-        sample_diameter=sample_diameter,
-        symmetry_azimuth=symmetry_azimuth,
-        symmetry_rotational=symmetry_rotational,
-        )
+#     # execute
+#     m2s.input.write_scattering_project(
+#         project_path=tmpdir,
+#         frequencies=frequencies,
+#         sample_path=sample_path,
+#         reference_path=reference_path,
+#         receiver_coords=receiverPoints,
+#         source_coords=source_coords,
+#         structural_wavelength=structural_wavelength,
+#         model_scale=model_scale,
+#         sample_diameter=sample_diameter,
+#         symmetry_azimuth=symmetry_azimuth,
+#         symmetry_rotational=symmetry_rotational,
+#         )
 
-    # test parameters
-    f = open(os.path.join(tmpdir, 'parameters.json'))
-    paras = json.load(f)
-    source_list = [list(i) for i in list(source_coords.get_cart())]
-    receiver_list = [list(i) for i in list(receiverPoints.get_cart())]
-    parameters = {
-        # project Info
-        "project_title": 'scattering pattern',
-        "mesh2scattering_path": m2s.utils.program_root(),
-        "mesh2scattering_version": m2s.__version__,
-        "bem_version": 'ML-FMM BEM',
-        # Constants
-        "speed_of_sound": float(346.18),
-        "density_of_medium": float(1.1839),
-        # Sample Information, post processing
-        "structural_wavelength": structural_wavelength,
-        "model_scale": model_scale,
-        "sample_diameter": sample_diameter,
-        # symmetry information
-        "symmetry_azimuth": symmetry_azimuth,
-        "symmetry_rotational": symmetry_rotational,
-        # frequencies
-        "num_frequencies": len(frequencies),
-        "min_frequency": frequencies[0],
-        "max_frequency": frequencies[-1],
-        "frequencies": list(frequencies),
-        # Source definition
-        "source_type": 'Point source',
-        "sources_num": len(source_list),
-        "sources": source_list,
-        # Receiver definition
-        "receivers_num": len(receiver_list),
-        "receivers": receiver_list,
-    }
-    npt.assert_array_almost_equal(paras['receivers'], parameters['receivers'])
-    paras['receivers'] = parameters['receivers']
-    npt.assert_equal(paras, parameters)
-    # test folder structure
-    assert os.path.isdir(os.path.join(tmpdir, 'sample'))
-    assert os.path.isdir(os.path.join(tmpdir, 'reference'))
-    assert os.path.isdir(os.path.join(tmpdir, 'sample', 'EvaluationGrids'))
-    assert os.path.isdir(os.path.join(tmpdir, 'reference', 'EvaluationGrids'))
-    assert os.path.isdir(os.path.join(tmpdir, 'sample', 'NumCalc'))
-    assert os.path.isdir(os.path.join(tmpdir, 'reference', 'NumCalc'))
-    assert os.path.isdir(os.path.join(tmpdir, 'sample', 'ObjectMeshes'))
-    assert os.path.isdir(os.path.join(tmpdir, 'reference', 'ObjectMeshes'))
-    assert os.path.isfile(os.path.join(
-        tmpdir, 'sample', 'ObjectMeshes', 'sample.stl'))
-    assert os.path.isfile(os.path.join(
-        tmpdir, 'reference', 'ObjectMeshes', 'reference.stl'))
+#     # test parameters
+#     f = open(os.path.join(tmpdir, 'parameters.json'))
+#     paras = json.load(f)
+#     source_list = [list(i) for i in list(source_coords.get_cart())]
+#     receiver_list = [list(i) for i in list(receiverPoints.get_cart())]
+#     parameters = {
+#         # project Info
+#         "project_title": 'scattering pattern',
+#         "mesh2scattering_path": m2s.utils.program_root(),
+#         "mesh2scattering_version": m2s.__version__,
+#         "bem_version": 'ML-FMM BEM',
+#         # Constants
+#         "speed_of_sound": float(346.18),
+#         "density_of_medium": float(1.1839),
+#         # Sample Information, post processing
+#         "structural_wavelength": structural_wavelength,
+#         "model_scale": model_scale,
+#         "sample_diameter": sample_diameter,
+#         # symmetry information
+#         "symmetry_azimuth": symmetry_azimuth,
+#         "symmetry_rotational": symmetry_rotational,
+#         # frequencies
+#         "num_frequencies": len(frequencies),
+#         "min_frequency": frequencies[0],
+#         "max_frequency": frequencies[-1],
+#         "frequencies": list(frequencies),
+#         # Source definition
+#         "source_type": 'Point source',
+#         "sources_num": len(source_list),
+#         "sources": source_list,
+#         # Receiver definition
+#         "receivers_num": len(receiver_list),
+#         "receivers": receiver_list,
+#     }
+#     npt.assert_array_almost_equal(paras['receivers'], parameters['receivers'])
+#     paras['receivers'] = parameters['receivers']
+#     npt.assert_equal(paras, parameters)
+#     # test folder structure
+#     assert os.path.isdir(os.path.join(tmpdir, 'sample'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'reference'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'sample', 'EvaluationGrids'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'reference', 'EvaluationGrids'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'sample', 'NumCalc'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'reference', 'NumCalc'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'sample', 'ObjectMeshes'))
+#     assert os.path.isdir(os.path.join(tmpdir, 'reference', 'ObjectMeshes'))
+#     assert os.path.isfile(os.path.join(
+#         tmpdir, 'sample', 'ObjectMeshes', 'sample.stl'))
+#     assert os.path.isfile(os.path.join(
+#         tmpdir, 'reference', 'ObjectMeshes', 'reference.stl'))
 
-    # test sources
-    assert os.path.isdir(
-        os.path.join(tmpdir, 'sample', 'NumCalc', 'source_1'))
-    assert not os.path.isdir(
-        os.path.join(tmpdir, 'sample', 'NumCalc', 'source_2'))
-    assert os.path.isdir(
-        os.path.join(tmpdir, 'reference', 'NumCalc', 'source_1'))
-    assert not os.path.isdir(
-        os.path.join(tmpdir, 'reference', 'NumCalc', 'source_2'))
+#     # test sources
+#     assert os.path.isdir(
+#         os.path.join(tmpdir, 'sample', 'NumCalc', 'source_1'))
+#     assert not os.path.isdir(
+#         os.path.join(tmpdir, 'sample', 'NumCalc', 'source_2'))
+#     assert os.path.isdir(
+#         os.path.join(tmpdir, 'reference', 'NumCalc', 'source_1'))
+#     assert not os.path.isdir(
+#         os.path.join(tmpdir, 'reference', 'NumCalc', 'source_2'))

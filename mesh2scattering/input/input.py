@@ -1,5 +1,5 @@
 """
-This module provides functions to write input files for Mesh2HRTF.
+This module provides functions to write input files for NumCalc.
 """
 import os
 import numpy as np
@@ -10,15 +10,113 @@ import json
 import datetime
 import mesh2scattering as m2s
 from packaging import version
+from pathlib import Path
+from enum import Enum
+
+class SoundSourceType(Enum):
+    """Defines the type of a sound source.
+
+    Can be a point source or a plane wave.
+    """
+
+    POINT_SOURCE = "Point source"
+    PLANE_WAVE = "Plane wave"
+
+class SoundSource():
+    """Defines a sound source including its type and coordinates.
+
+    Returns
+    -------
+    SoundSource
+        sound source object.
+    """
+
+    _source_type: SoundSourceType = None
+    _source_coordinates: pf.Coordinates = None
+
+    def __init__(
+            self,
+            source_coordinates: pf.Coordinates,
+            source_type: SoundSourceType=SoundSourceType.POINT_SOURCE,
+            ) -> None:
+        """Initializes the SoundSource object.
+
+        Parameters
+        ----------
+        source_coordinates : pf.Coordinates
+            source coordinates, if the sound source type is Point source,
+            it reflects the positions in space, and it the source type is
+            plane wave it reflects the direction of the sound wave.
+        source_type : SoundSourceType, optional
+            sound source type, see SoundSourceType, by default
+            SoundSourceType.POINT_SOURCE
+
+        Returns
+        -------
+        SoundSource
+            sound source object.
+        """
+        if not isinstance(source_type, SoundSourceType):
+            raise ValueError(
+                "source_type must be a SoundSourceType object.")
+        self._source_type = source_type
+
+        self.source_coordinates = source_coordinates
+
+    @property
+    def source_type(self):
+        """Defines the source type.
+
+        Can be a point source or a plane wave.
+
+        Returns
+        -------
+        SoundSourceType
+            The source type.
+        """
+        return self._source_type
+
+    @property
+    def source_coordinates(self):
+        """Defines the source coordinates in meter.
+
+        Returns
+        -------
+        pf.Coordinates
+            The source coordinates in meter.
+        """
+        return self._source_coordinates
+
+    @source_coordinates.setter
+    def source_coordinates(self, source_coordinates):
+        if not isinstance(source_coordinates, pf.Coordinates):
+            raise ValueError(
+                "source_coordinates must be a pyfar.Coordinates object.")
+        if source_coordinates.weights is None:
+            raise ValueError("source_coordinates must contain weights.")
+        self._source_coordinates = source_coordinates
+
+    def __str__(self):
+        """Return a string representation of the SoundSource object.
+        """
+        return (
+            f'A set of {self.source_type.value}s containing '
+            f'{self.source_coordinates.csize} sources.')
 
 
 def write_scattering_project(
-        project_path, frequencies, sample_path,
-        receiver_coords, source_coords,
-        sourceType='Point source',
+        project_path, frequencies,
+        
+        receiver_coords,
+        # sources
+        source_coords,
+        sourceType,
+        # sample
+        sample_path,
         structural_wavelength_x=0, structural_wavelength_y=0,
         model_scale=1, symmetry_azimuth=[90, 180],
         symmetry_rotational=False, sample_diameter=0.8,
+
         speed_of_sound='346.18',
         density_of_medium='1.1839',
         sample_offset_z=0):
@@ -235,16 +333,52 @@ def write_mesh(vertices, faces, path, start=200000):
 
 
 def _write_nc_inp(
-        filepath1, version, title, speedOfSound, densityOfMedium, frequencies,
-        evaluationGrids, materials, method, sourceType, sourcePositions,
-        numElementsMesh, numNodesMesh):
+        project_path: str, version: str, project_title: str,
+        speed_of_sound: float, density_of_medium: float,
+        frequencies: np.ndarray,
+        evaluation_grid_names: list[str],
+        source_type: str, source_positions: pf.Coordinates,
+        n_mesh_elements: int, n_mesh_nodes: int, method:str='ML-FMM BEM',
+        materials: dict=None):
     """Write NC.inp file that is read by NumCalc to start the simulation.
 
     The file format is documented at:
     https://github.com/Any2HRTF/Mesh2HRTF/wiki/Structure_of_NC.inp
+
+    Parameters
+    ----------
+    project_path : str, Path
+        root path of the NumCalc project.
+    version : str
+        current version of Mesh2scattering.
+    project_title : str
+        project title.
+    speed_of_sound : float
+        Speed of sound in m/s.
+    density_of_medium : float
+        density of the medium in kg/m^3.
+    frequencies : np.ndarray
+        frequency vector in Hz for NumCalc.
+    evaluation_grid_names : list[str]
+        evaluation grid names. Evaluation grids need to be written before the
+        NC.inp file.
+    source_type : str
+        Type of the sound source. Options are 'Point source' or 'Plane wave'.
+    source_positions : pf.Coordinates
+        source positions in meter.
+    n_mesh_elements : int
+        number of mesh elements.
+    n_mesh_nodes : int
+        number of mesh nodes.
+    method : str
+        solving method for the NumCalc. Options are 'BEM', 'SL-FMM BEM', or
+        'ML-FMM BEM'. By default 'ML-FMM BEM' is used.
+    materials : dict, None
+        _description_
     """
-    if isinstance(sourcePositions, pf.Coordinates):
-        sourcePositions = sourcePositions.get_cart()
+    if not isinstance(source_positions, pf.Coordinates):
+        raise ValueError(
+            "source_positions must be a pyfar.Coordinates object.")
 
     # check the BEM method
     if method == 'BEM':
@@ -257,11 +391,11 @@ def _write_nc_inp(
         ValueError(
             f"Method must be BEM, SL-FMM BEM or ML-FMM BEM but is {method}")
 
-    for source in range(sourcePositions.shape[0]):
+    for i_source in range(source_positions.cshape[0]):
 
         # create directory
         filepath2 = os.path.join(
-            filepath1, "NumCalc", f"source_{source+1}")
+            project_path, "NumCalc", f"source_{i_source+1}")
         if not os.path.exists(filepath2):
             os.mkdir(filepath2)
 
@@ -272,12 +406,12 @@ def _write_nc_inp(
 
         # header --------------------------------------------------------------
         fw("##-------------------------------------------\n")
-        fw("## This file was created by mesh2input\n")
+        fw("## This file was created by mesh2scattering\n")
         fw("## Date: %s\n" % datetime.date.today())
         fw("##-------------------------------------------\n")
-        fw("Mesh2HRTF %s\n" % version)
+        fw("mesh2scattering %s\n" % version)
         fw("##\n")
-        fw("%s\n" % title)
+        fw("%s\n" % project_title)
         fw("##\n")
 
         # control parameter I (hard coded, not documented) --------------------
@@ -303,32 +437,32 @@ def _write_nc_inp(
         fw("## 1. Main Parameters I\n")
         numNodes = 0
         numElements = 0
-        for evaluationGrid in evaluationGrids:
+        for evaluationGrid in evaluation_grid_names:
             # read number of nodes
             nodes = open(os.path.join(
-                filepath1, "EvaluationGrids", evaluationGrid,
+                project_path, "EvaluationGrids", evaluationGrid,
                 "Nodes.txt"))
             line = nodes.readline()
             numNodes = numNodes+int(line)
             # read number of elements
             elements = open(os.path.join(
-                filepath1, "EvaluationGrids", evaluationGrid,
+                project_path, "EvaluationGrids", evaluationGrid,
                 "Elements.txt"))
             line = elements.readline()
             numElements = numElements+int(line)
-        fw("2 %d " % (numElementsMesh+numElements))
-        fw("%d 0 " % (numNodesMesh+numNodes))
+        fw("2 %d " % (n_mesh_elements+numElements))
+        fw("%d 0 " % (n_mesh_nodes+numNodes))
         fw("0")
         fw(" 2 1 %s 0\n" % (method_id))
         fw("##\n")
 
         # main parameters II --------------------------------------------------
         fw("## 2. Main Parameters II\n")
-        if "plane" in sourceType:
+        if "plane" in source_type:
             fw("1 ")
         else:
             fw("0 ")
-        if "ear" in sourceType:
+        if "ear" in source_type:
             fw("0 ")
         else:
             fw("1 ")
@@ -343,21 +477,21 @@ def _write_nc_inp(
         # main parameters IV --------------------------------------------------
         fw("## 4. Main Parameters IV\n")
         fw("%s %se+00 1.0 0.0e+00 0.0 e+00 0.0e+00 0.0e+00\n" % (
-            speedOfSound, densityOfMedium))
+            speed_of_sound, density_of_medium))
         fw("##\n")
 
         # nodes ---------------------------------------------------------------
         fw("NODES\n")
         fw("../../ObjectMeshes/Reference/Nodes.txt\n")
         # write file path of nodes to input file
-        for grid in evaluationGrids:
-            fw("../../EvaluationGrids/%s/Nodes.txt\n" % grid)
+        for grid in evaluation_grid_names:
+            fw(f"../../EvaluationGrids/{grid}/Nodes.txt\n")
         fw("##\n")
         fw("ELEMENTS\n")
         fw("../../ObjectMeshes/Reference/Elements.txt\n")
         # write file path of elements to input file
-        for grid in evaluationGrids:
-            fw("../../EvaluationGrids/%s/Elements.txt\n" % grid)
+        for grid in evaluation_grid_names:
+            fw(f"../../EvaluationGrids/{grid}/Elements.txt\n")
         fw("##\n")
 
         # SYMMETRY ------------------------------------------------------------
@@ -371,9 +505,9 @@ def _write_nc_inp(
         fw("BOUNDARY\n")
         # write velocity condition for the ears if using vibrating
         # elements as the sound source
-        if "ear" in sourceType:
-            if source == 0 and \
-                    sourceType in ['Both ears', 'Left ear']:
+        if "ear" in source_type:
+            if i_source == 0 and \
+                    source_type in ['Both ears', 'Left ear']:
                 tmpEar = 'Left ear'
             else:
                 tmpEar = 'Right ear'
@@ -403,14 +537,14 @@ def _write_nc_inp(
         fw("##\n")
 
         # source information: point source and plane wave ---------------------
-        if sourceType == "Point source":
+        if source_type == "Point source":
             fw("POINT SOURCES\n")
-        elif sourceType == "Plane wave":
+        elif source_type == "Plane wave":
             fw("PLANE WAVES\n")
-        if sourceType in ["Point source", "Plane wave"]:
+        if source_type in ["Point source", "Plane wave"]:
             fw("0 %s %s %s 0.1 -1 0.0 -1\n" % (
-                sourcePositions[source, 0], sourcePositions[source, 1],
-                sourcePositions[source, 2]))
+                source_positions.x[i_source], source_positions.y[i_source],
+                source_positions.z[i_source]))
         fw("##\n")
 
         # curves defining boundary conditions of the mesh ---------------------
@@ -446,185 +580,6 @@ def _write_nc_inp(
         file.close()
 
 
-def read_material_data(materials):
-    """
-    Read material data from file.
-
-    Mesh2HRTF supports non-rigid boundary conditions in the form of text files.
-
-    Parameters
-    ----------
-    materials : dict
-        Dictionary containing the materials. The keys are the names of the
-        materials and the values are dictionaries containing the path to the
-        material file.
-
-    Returns
-    -------
-    materials : dict
-        Dictionary containing the materials. The keys are the names of the
-        materials and the values are dictionaries containing the path to the
-        material file and the boundary condition, frequencies, real, and
-        imaginary values.
-    """
-
-    for material in materials:
-        # current material file
-        file = materials[material]["path"]
-        # check if the file exists
-        if file is None:
-            continue
-
-        # initialize data
-        boundary = None
-        freqs = []
-        real = []
-        imag = []
-
-        # read the csv material file
-        with open(file, 'r') as m:
-            lines = m.readlines()
-
-        # parse the file
-        for line in lines:
-            line = line.strip('\n')
-            # skip empty lines and comments
-            if not len(line):
-                continue
-            if line[0] == '#':
-                continue
-
-            # detect boundary keyword
-            if line in ['ADMI', 'IMPE', 'VELO', 'PRES']:
-                boundary = line
-            # read curve value
-            else:
-                line = line.split(',')
-                if not len(line) == 3:
-                    raise ValueError(
-                        (f'Expected three values in {file} '
-                         f'definition but found {len(line)}'))
-                freqs.append(line[0].strip())
-                real.append(line[1].strip())
-                imag.append(line[2].strip())
-
-        # check if boundary keyword was found
-        if boundary is None:
-            raise ValueError(
-                (f"No boundary definition found in {file}. "
-                 "Must be 'ADMI', 'IMPE', 'VELO', or 'PRES'"))
-        # check if frequency vector is value
-        for i in range(len(freqs)-1):
-            if float(freqs[i+1]) <= float(freqs[i]):
-                raise ValueError((f'Frequencies in {file} '
-                                  'do not increase monotonously'))
-
-        # create output
-        materials[material]['boundary'] = boundary
-        materials[material]['freqs'] = freqs
-        materials[material]['real'] = real
-        materials[material]['imag'] = imag
-
-    return materials
-
-
-def write_material(filename, kind, frequencies, data, comment=None):
-    """
-    Write boundary condition to file.
-
-    Mesh2HRTF supports non-rigid boundary conditions in the form of text files.
-    Such files can be written with this function.
-
-    Parameters
-    ----------
-    filename : str
-        Name of the material file that is written to disk. Must end with ".csv"
-    kind : str
-        Defines the kind of boundary condition
-
-        ``"pressure"``
-            A pressure boundary condition can be used to force a certain
-            pressure on the boundary of the mesh. E.g., a pressure of 0 would
-            define a sound soft boundary.
-        ``"velocity"``
-            A velocity boundary condition can be used to force a certain
-            velocity on the boundary of the mesh. E.g., a velocity of 0 would
-            define a sound hard boundary.
-        ``admittance``
-            A normalized admittance boundary condition can be used to define
-            arbitrary boundaries. The admittance must be normalized, i.e.,
-            admittance/(rho*c) has to be provided, which rho being the density
-            of air in kg/m**3 and c the speed of sound in m/s.
-    frequencies : array like
-        The frequencies for which the boundary condition is given
-    data : array like
-        The values of the boundary condition at the frequencies given above.
-    comment : str, optional
-        A comment that is written to the beginning of the material file. The
-        default ``None`` does omit the comment.
-
-    Notes
-    -----
-    Mesh2HRTF performs an interpolation in case the boundary condition is
-    required at frequencies that are not specified. The interpolation is linear
-    between the lowest and highest provided frequency and uses the nearest
-    neighbor outside this range.
-    """
-
-    # check input
-    if not filename.endswith(".csv"):
-        raise ValueError("The filename must end with .csv")
-
-    if len(frequencies) != len(data):
-        raise ValueError("frequencies and data must have the same lengths")
-
-    # write the comment
-    file = ""
-    if comment is not None:
-        file += "# " + comment + "\n#\n"
-
-    # write the kind of boundary condition
-    file += ("# Keyword to define the boundary condition:\n"
-             "# ADMI: Normalized admittance boundary condition\n"
-             "# PRES: Pressure boundary condition\n"
-             "# VELO: Velocity boundary condition\n"
-             "# NOTE: Mesh2HRTF expects normalized admittances, i.e., "
-             "admittance/(rho*c).\n"
-             "#       rho is the density of air and c the speed of sound. "
-             "The normalization is\n"
-             "#       beneficial because a single material file can be used "
-             "for simulations\n"
-             "#       with differing speed of sound and density of air.\n")
-
-    if kind == "admittance":
-        file += "ADMI\n"
-    elif kind == "pressure":
-        file += "PRES\n"
-    elif kind == "velocity":
-        file += "VELO\n"
-    else:
-        raise ValueError("kind must be admittance, pressure, or velocity")
-
-    file += ("#\n"
-             "# Frequency curve:\n"
-             "# Mesh2HRTF performs an interpolation in case the boundary "
-             "condition is required\n"
-             "# at frequencies that are not specified. The interpolation is "
-             "linear between the\n"
-             "# lowest and highest provided frequency and uses the nearest "
-             "neighbor outside\n"
-             "# this range.\n"
-             "#\n"
-             "# Frequency in Hz, real value, imaginary value\n")
-
-    # write data
-    for f, d in zip(frequencies, data):
-        file += f"{f}, {np.real(d)}, {np.imag(d)}\n"
-
-    # write to file
-    with open(filename, "w") as f_id:
-        f_id.write(file)
-
 
 def write_evaluation_grid(
         points, folder_path, start=200000, discard=None):
@@ -649,7 +604,7 @@ def write_evaluation_grid(
         must have a unique number. The nodes/elements of the mesh for which the
         HRTFs are simulated start at 1. Thus `start` must at least be greater
         than the number of nodes/elements in the evaluation grid.
-    discard : "x", "y", "z", optional
+    discard : "x", "y", "z", None optional
         In case all values of the evaluation grid are constant for one
         dimension, this dimension has to be discarded during the
         triangularization. E.g. if all points have a z-value of 0 (or any other
@@ -678,10 +633,11 @@ def write_evaluation_grid(
     else:
         raise ValueError("points must be a pyfar.Coordinates object.")
 
-    if points.ndim != 2 or points.shape[0] < 3 \
-            or points.shape[1] != 3:
-        raise ValueError(
-            "points must be a 2D array of shape (N, 3) with N > 2")
+    if not isinstance(start, int) or  start < 0:
+        raise ValueError("start must be a positive integer.")
+
+    if discard not in (None, "x", "y", "z"):
+        raise ValueError("discard must be None, 'x', 'y', or 'z'.")
 
     # discard dimension
     if discard == "x":
