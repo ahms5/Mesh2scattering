@@ -1,15 +1,9 @@
-"""
-This module contains the functions to calculate the scattering and diffusion
-coefficients from SOFA files.
-"""
+"""Write output for Mesh2HRTF."""
 
-from .process import (
-    calculate_scattering,
-    calculate_diffusion,
+from .scattering import (
+    freefield,
     )
 
-
 __all__ = [
-    'calculate_scattering',
-    'calculate_diffusion',
+    'freefield',
     ]

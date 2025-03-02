@@ -26,7 +26,7 @@ def write_pressure(folder):
        This and the following steps are done, even if an issue was detected in
        the previous step
     4. save the sound pressure for each evaluation grid to
-    save the a SOFA file
+       save the a SOFA file
 
     Parameters
     ----------
@@ -146,8 +146,8 @@ def _create_pressure_sofa(
 
     Returns
     -------
-    _type_
-        _description_
+    sf.Sofa
+        sofa file.
     """
     # create empty SOFA object
     convention = 'GeneralTF' if type(

@@ -25,9 +25,8 @@ functionality and [read the docs](https://mesh2scattering.readthedocs.io/en/late
 Use pip to install mesh2scattering
 
     pip install mesh2scattering
-    pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
 
-(Requires Python 3.8 or higher)
+(Requires Python 3.9 or higher)
 
 Note that NumCalc need to be build on Linux and MacOS. For Windows it can be downloaded.
 
