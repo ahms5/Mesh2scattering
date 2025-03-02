@@ -218,14 +218,14 @@ def write_pattern(folder):
         default, ``None`` uses the current working directory.
     """
 
-    if (not os.path.exists(os.path.join(folder, 'reference'))) \
-            or (not os.path.exists(os.path.join(folder, 'sample'))):
+    if (not os.path.exists(folder)) \
+            or (not os.path.exists(os.path.join(folder))):
         raise ValueError(
             "Folder need to contain reference and sample folders.")
 
     # read sample data
     evaluationGrids, params = read_numcalc(
-        os.path.join(folder, 'sample'), False)
+        folder, False)
 
     # process BEM data for writing HRTFs and HRIRs to SOFA files
     for grid in evaluationGrids:

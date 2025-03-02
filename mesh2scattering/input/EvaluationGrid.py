@@ -1,3 +1,4 @@
+"""All classes related to EvaluationGrid."""
 import pyfar as pf
 import numpy as np
 import os

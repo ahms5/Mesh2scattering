@@ -1,3 +1,4 @@
+"""All classes related to SampleMesh."""
 import trimesh
 import os
 from enum import Enum

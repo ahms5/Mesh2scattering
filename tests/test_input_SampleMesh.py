@@ -169,7 +169,8 @@ def test_sample_mesh_invalid_sample_diameter(simple_mesh):
 
 def test_sample_mesh_invalid_sample_shape(simple_mesh):
     surface_desc = SurfaceDescription()
-    with pytest.raises(ValueError, match="sample_shape must be a SampleShape."):
+    with pytest.raises(
+        ValueError, match="sample_shape must be a SampleShape."):
         SampleMesh(
             mesh=simple_mesh,
             surface_description=surface_desc,

@@ -4,14 +4,11 @@ This module provides functions to write input files for NumCalc.
 import os
 import numpy as np
 import pyfar as pf
-from scipy.spatial import Delaunay, ConvexHull
-import trimesh
 import json
 import datetime
 import mesh2scattering as m2s
 from packaging import version
 from pathlib import Path
-from enum import Enum
 from .SampleMesh import SampleMesh
 from .SoundSource import SoundSourceType, SoundSource
 from .EvaluationGrid import EvaluationGrid
@@ -28,6 +25,30 @@ def write_scattering_project_numcalc(
         speed_of_sound=346.18,
         density_of_medium=1.1839,
         ):
+    """Generate a NumCalc Project to determine scattering patterns.
+
+    Parameters
+    ----------
+    project_path : str
+        Project path where the project should be created.
+    project_title : str
+        Project title, required for meta data files.
+    frequencies : np.ndarray
+        frequency vector to be solved.
+    sound_sources : SoundSource
+        sound sources.
+    evaluation_grids : list[EvaluationGrid]
+        list of evaluation grids.
+    sample_mesh : SampleMesh
+        Mesh and mesh meta data.
+    bem_method : str, optional
+        Method of BEM solver, can be 'BEM', 'SL-FMM BEM', or 'ML-FMM BEM'.
+        By default 'ML-FMM BEM'
+    speed_of_sound : float, optional
+        speed of sound in m/s, by default 346.18
+    density_of_medium : float, optional
+        density of air in kg/m^3, by default 1.1839
+    """
     # check inputs
     if not isinstance(sound_sources, SoundSource):
         raise ValueError("sound_sources must be a SoundSource object.")
@@ -58,21 +79,20 @@ def write_scattering_project_numcalc(
     # create project directory if not existing
     if not os.path.isdir(project_path):
         os.mkdir(project_path)
-    project_path_sample = os.path.join(project_path, 'sample')
-    if not os.path.isdir(project_path_sample):
-        os.mkdir(project_path_sample)
-    if not os.path.isdir(os.path.join(project_path_sample, 'ObjectMeshes')):
-        os.mkdir(os.path.join(project_path_sample, 'ObjectMeshes'))
-    if not os.path.isdir(os.path.join(project_path_sample, 'NumCalc')):
-        os.mkdir(os.path.join(project_path_sample, 'NumCalc'))
-    if not os.path.isdir(os.path.join(project_path_sample, 'EvaluationGrids')):
-        os.mkdir(os.path.join(project_path_sample, 'EvaluationGrids'))
+    if not os.path.isdir(project_path):
+        os.mkdir(project_path)
+    if not os.path.isdir(os.path.join(project_path, 'ObjectMeshes')):
+        os.mkdir(os.path.join(project_path, 'ObjectMeshes'))
+    if not os.path.isdir(os.path.join(project_path, 'NumCalc')):
+        os.mkdir(os.path.join(project_path, 'NumCalc'))
+    if not os.path.isdir(os.path.join(project_path, 'EvaluationGrids')):
+        os.mkdir(os.path.join(project_path, 'EvaluationGrids'))
 
     # write sample mesh
-    mesh_path = os.path.join(project_path_sample, 'ObjectMeshes', 'Reference')
+    mesh_path = os.path.join(project_path, 'ObjectMeshes', 'Reference')
     sample_mesh.export_numcalc(mesh_path, start=0)
     sample_mesh.mesh.export(os.path.join(
-        project_path_sample, 'ObjectMeshes', 'Reference.stl'))
+        project_path, 'ObjectMeshes', 'Reference.stl'))
     n_mesh_elements = len(sample_mesh.mesh_vertices)
 
     # write evaluation grid
@@ -80,7 +100,7 @@ def write_scattering_project_numcalc(
     for evaluation_grid in evaluation_grids:
         evaluation_grid.export_numcalc(
             os.path.join(
-                project_path_sample, 'EvaluationGrids', evaluation_grid.name),
+                project_path, 'EvaluationGrids', evaluation_grid.name),
             start=i_start)
         i_start += evaluation_grid.coordinates.csize
 
@@ -94,7 +114,7 @@ def write_scattering_project_numcalc(
     n_grid_elements = sum([grid.faces.shape[0] for grid in evaluation_grids])
     n_grid_nodes = sum([grid.coordinates.csize for grid in evaluation_grids])
     _write_nc_inp(
-        project_path_sample, version_m2s, project_title,
+        project_path, version_m2s, project_title,
         speed_of_sound, density_of_medium,
         frequencies,
         evaluation_grid_names,
@@ -258,14 +278,14 @@ def _write_nc_inp(
 
         # main parameters II --------------------------------------------------
         fw("## 2. Main Parameters II\n")
-        if "plane" in source_type.value:
+        if source_type == SoundSourceType.PLANE_WAVE:
             fw("1 ")
         else:
             fw("0 ")
-        if "ear" in source_type.value:
-            fw("0 ")
-        else:
+        if source_type == SoundSourceType.POINT_SOURCE:
             fw("1 ")
+        else:
+            fw("0 ")
         fw("0 0.0000e+00 0 0\n")
         fw("##\n")
 
@@ -301,20 +321,7 @@ def _write_nc_inp(
         fw("##\n")
 
         # assign mesh elements to boundary conditions -------------------------
-        # (including both, left, right ear)
         fw("BOUNDARY\n")
-        # write velocity condition for the ears if using vibrating
-        # elements as the sound source
-        if "ear" in source_type.value:
-            if i_source == 0 and \
-                    source_type.value in ['Both ears', 'Left ear']:
-                tmpEar = 'Left ear'
-            else:
-                tmpEar = 'Right ear'
-            fw(f"# {tmpEar} velocity source\n")
-            fw("ELEM %i TO %i VELO 0.1 -1 0.0 -1\n" % (
-                materials[tmpEar]["index_start"],
-                materials[tmpEar]["index_end"]))
         # remaining conditions defined by frequency curves
         curves = 0
         steps = 0
