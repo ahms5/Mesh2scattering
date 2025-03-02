@@ -8,8 +8,13 @@ class SurfaceType(Enum):
     """
 
     PERIODIC = "Periodic"
+    """The surface is periodic."""
+
     STOCHASTIC = "Stochastic"
+    """The surface is stochastic."""
+
     FLAT = "Flat"
+    """The surface is flat, basically for the reference surface."""
 
 class SampleShape(Enum):
     """Defines the shape of a sample mesh.
@@ -18,7 +23,10 @@ class SampleShape(Enum):
     """
 
     ROUND = "Round"
+    """The sample shape is round."""
+
     SQUARE = "Square"
+    """The sample shape is square."""
 
 
 class SurfaceDescription():

@@ -11,7 +11,10 @@ class SoundSourceType(Enum):
     """
 
     POINT_SOURCE = "Point source"
+    """Point source sound source type."""
+
     PLANE_WAVE = "Plane wave"
+    """Plane wave sound source type."""
 
 class SoundSource():
     """Defines a sound source including its type and coordinates.
