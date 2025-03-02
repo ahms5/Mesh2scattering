@@ -25,10 +25,10 @@ from .SoundSource import (
 __all__ = [
     'write_scattering_project_numcalc',
     'EvaluationGrid',
-    'SoundSourceType',
-    'SurfaceType',
-    'SurfaceDescription',
-    'SoundSource',
     'SampleShape',
     'SampleMesh',
+    'SurfaceType',
+    'SurfaceDescription',
+    'SoundSourceType',
+    'SoundSource',
     ]

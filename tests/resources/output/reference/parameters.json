@@ -10,11 +10,8 @@
   "structural_wavelength_y": 0,
   "model_scale": 1,
   "sample_diameter": 0.5,
-  "symmetry_azimuth": [
-    90,
-    180
-  ],
-  "symmetry_rotational": false,
+  "symmetry_azimuth": [],
+  "symmetry_rotational": true,
   "frequencies": [
     500.0,
     1000.0

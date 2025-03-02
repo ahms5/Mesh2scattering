@@ -33,7 +33,6 @@ class EvaluationGrid():
         >>> points = pf.samplings.sph_lebedev(sh_order=10)
         >>> grid = m2s.input.EvaluationGrid.from_spherical(
         ...     points, "Lebedev_N10")
-        >>> grid.write(".")
     """
 
     _coordinates: pf.Coordinates

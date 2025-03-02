@@ -7,19 +7,17 @@ import numpy as np
 import pyfar as pf
 import glob
 import sofar as sf
-from mesh2scattering import utils
 import csv
-import mesh2scattering as m2s
 import re
 
 
-def write_pattern(folder):
+def write_pressure(folder):
     """
     Process NumCalc output and write data to disk.
 
     Processing the data is done in the following steps
 
-    1. Read project parameter `from parameters.json`
+    1. Read project parameter from `parameters.json`
     2. use :py:func:`~write_output_report` to parse files in
        project_folder/NumCalc/source_*/NC*.out, write project report to
        project_folder/report/report_source_*.csv. Raise a warning if any
@@ -27,15 +25,14 @@ def write_pattern(folder):
     3. Read simulated pressures from project_folder/NumCalc/source_*/be.out.
        This and the following steps are done, even if an issue was detected in
        the previous step
-    4. use :py:func:`~mesh2hrtf.reference_hrtfs` and
-       :py:func:`~mesh2hrtf.compute_hrirs` to save the results to SOFA files
+    4. save the sound pressure for each evaluation grid to
+    save the a SOFA file
 
     Parameters
     ----------
     folder : str, optional
-        The path of the Mesh2HRTF project folder, i.e., the folder containing
-        the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
-        default, ``None`` uses the current working directory.
+        The path of the NumCalc project folder, i.e., the folder containing
+        the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes.
     """
     if not os.path.exists(folder):
         raise ValueError(
@@ -49,7 +46,7 @@ def write_pattern(folder):
         warnings.warn(report, stacklevel=2)
 
     # read sample data
-    evaluationGrids, params = read_numcalc(
+    evaluationGrids, params = _read_numcalc(
         folder)
 
     # process BEM data for writing HRTFs and HRIRs to SOFA files
@@ -93,6 +90,7 @@ def write_pattern(folder):
             mesh2scattering_version=params['mesh2scattering_version'],
             model_scale=params['model_scale'],
             symmetry_azimuth=params['symmetry_azimuth'],
+            symmetry_rotational=params['symmetry_rotational'],
             )
 
         sofa.GLOBAL_Title = folder.split(os.sep)[-1]
@@ -110,37 +108,41 @@ def _create_pressure_sofa(
         sample_diameter, speed_of_sound,
         density_of_medium,mesh2scattering_version,
         model_scale=1, symmetry_azimuth=[],
+        symmetry_rotational=False,
         ):
     """Write complex pressure data to SOFA object from NumCalc simulation.
 
     Parameters
     ----------
     data : pf.FrequencyData
-        _description_
-    Lbyl : _type_
-        _description_
-    sources : _type_
-        _description_
-    receivers : _type_
-        _description_
-    structural_wavelength : _type_
-        _description_
-    structural_wavelength_x : _type_
-        _description_
-    structural_wavelength_y : _type_
-        _description_
-    sample_diameter : _type_
-        _description_
-    speed_of_sound : _type_
-        _description_
-    density_of_medium : _type_
-        _description_
-    mesh2scattering_version : _type_
-        _description_
+        the complex pressure data.
+    Lbyl : np.ndarray
+        structural wavelength over wavelength of sound.
+    sources : pf.Coordinates
+        source positions in cartesian coordinates.
+    receivers : pf.Coordinates
+        Receivers positions in cartesian coordinates.
+    structural_wavelength : float
+        structural wavelength in main direction (x) in meters.
+    structural_wavelength_x : float
+        structural wavelength in x direction in meters.
+    structural_wavelength_y : float
+        structural wavelength in y direction in meters.
+    sample_diameter : float
+        diameter of the sample in meters.
+    speed_of_sound : float
+        speed of sound in m/s
+    density_of_medium : float
+        density of the medium in kg/m^3.
+    mesh2scattering_version : str
+        version string of mesh2scattering
     model_scale : int, optional
-        _description_, by default 1
+        scale of the surface, by default 1.
     symmetry_azimuth : list, optional
-        _description_, by default []
+        the azimuth angles in degree, where the symmetry axes are,
+        by default [].
+    symmetry_rotational : bool, optional
+        Whether the surface is rotational symmetric, by default False
 
     Returns
     -------
@@ -148,7 +150,8 @@ def _create_pressure_sofa(
         _description_
     """
     # create empty SOFA object
-    convention = 'GeneralTF' if type(data) == pf.FrequencyData else 'GeneralFIR'
+    convention = 'GeneralTF' if type(
+        data) is pf.FrequencyData else 'GeneralFIR'
 
     assert speed_of_sound is not None
     assert speed_of_sound > 250
@@ -176,7 +179,7 @@ def _create_pressure_sofa(
     sofa.ReceiverPosition_Units = 'meter'
     sofa.ReceiverPosition_Type = 'cartesian'
 
-    if type(data) == pf.FrequencyData:
+    if type(data) is pf.FrequencyData:
         Lbyl = np.array(Lbyl)
         if structural_wavelength == 0:
             f = Lbyl
@@ -218,6 +221,15 @@ def _create_pressure_sofa(
         'ReceiverWeights', receivers.weights, 'double', 'R')
     sofa.add_variable(
         'SourceWeights', sources.weights, 'double', 'E')
+    if len(symmetry_azimuth)>0:
+        symmetry_azimuth_str = ','.join([f'{a}' for a in symmetry_azimuth])
+    else:
+        symmetry_azimuth_str = ''
+    sofa.add_variable(
+        'SampleSymmetryAzimuth', symmetry_azimuth_str, 'string', 'S')
+    sofa.add_variable(
+        'SampleSymmetryRotational',
+        1 if symmetry_rotational else 0, 'double', 'I')
 
     return sofa
 
@@ -225,90 +237,7 @@ def _cart_coordinates(xyz):
     return pf.Coordinates(xyz[:, 0], xyz[:, 1], xyz[:, 2])
 
 
-def check_project(folder=None):
-    r"""
-    Generate project report from NumCalc output files.
-
-    NumCalc (Mesh2HRTF's numerical core) writes information about the
-    simulations to the files `NC*.out` located under `NumCalc/source_*`. The
-    file `NC.out` exists if NumCalc was ran without the additional command line
-    parameters ``-istart`` and ``-iend``. If these parameters were used, there
-    is at least one `NC\*-\*.out`. If this is the case, information from
-    `NC\*-\*.out` overwrites information from NC.out in the project report.
-
-    .. note::
-
-        The project reports are written to the files
-        `report/report_source_*.csv`. If issues were detected, they are
-        listed in `report/report_issues.csv`.
-
-    The report contain the following information
-
-    Frequency step
-        The index of the frequency.
-    Frequency in Hz
-        The frequency in Hz.
-    NC input
-        Name of the input file from which the information was taken.
-    Input check passed
-        Contains a 1 if the check of the input data passed and a 0 otherwise.
-        If the check failed for one frequency, the following frequencies might
-        be affected as well.
-    Converged
-        Contains a 1 if the simulation converged and a 0 otherwise. If the
-        simulation did not converge, the relative error might be high.
-    Num. iterations
-        The number of iterations that were required to converge
-    relative error
-        The relative error of the final simulation
-    Comp. time total
-        The total computation time in seconds
-    Comp. time assembling
-        The computation time for assembling the matrices in seconds
-    Comp. time solving
-        The computation time for solving the matrices in seconds
-    Comp. time post-proc
-        The computation time for post-processing the results in seconds
-
-
-    Parameters
-    ----------
-    folder : str, optional
-        The path of the Mesh2HRTF project folder, i.e., the folder containing
-        the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
-        default, ``None`` uses the current working directory.
-
-    Returns
-    -------
-    found_issues : bool
-        ``True`` if issues were found, ``False`` otherwise
-    report : str
-        The report or an empty string if no issues were found
-    """
-
-    if folder is None:
-        folder = os.getcwd()
-
-    # get sources and number of sources and frequencies
-    sources = glob.glob(os.path.join(folder, "NumCalc", "source_*"))
-    num_sources = len(sources)
-
-    with open(os.path.join(folder, '..', "parameters.json"), "r") as file:
-        params = json.load(file)
-
-    # sort source files (not read in correct order in some cases)
-    nums = [int(source.split("_")[-1]) for source in sources]
-    sources = np.array(sources)
-    sources = sources[np.argsort(nums)]
-
-    # parse all NC*.out files for all sources
-    all_files, fundamentals, out, out_names = _parse_nc_out_files(
-        sources, num_sources, len(params["frequencies"]))
-
-    return all_files, fundamentals, out, out_names
-
-
-def read_numcalc(folder=None):
+def _read_numcalc(folder=None):
     """
     Process NumCalc output and write data to disk.
 
@@ -444,16 +373,15 @@ def write_output_report(folder=None):
         The report or an empty string if no issues were found
     """
 
+    if folder is None:
+        folder = os.getcwd()
+
     # get sources and number of sources and frequencies
     sources = glob.glob(os.path.join(folder, "NumCalc", "source_*"))
     num_sources = len(sources)
 
-    if os.path.exists(os.path.join(folder, "parameters.json")):
-        with open(os.path.join(folder, "parameters.json"), "r") as file:
-            params = json.load(file)
-    else:
-        with open(os.path.join(folder, "parameters.json"), "r") as file:
-            params = json.load(file)
+    with open(os.path.join(folder, "parameters.json"), "r") as file:
+        params = json.load(file)
 
     # sort source files (not read in correct order in some cases)
     nums = [int(source.split("_")[-1]) for source in sources]
@@ -529,7 +457,7 @@ def _read_nodes_and_elements(folder, objects=None):
     return grids, gridsNumNodes
 
 
-def _read_numcalc_data(sources_num, num_frequencies, folder, data):
+def _read_numcalc_data(n_sources, n_frequencies, folder, data):
     """Read the sound pressure on the object meshes or evaluation grid."""
     pressure = []
 
@@ -537,12 +465,12 @@ def _read_numcalc_data(sources_num, num_frequencies, folder, data):
         raise ValueError(
             'data must be pBoundary, pEvalGrid, vBoundary, or vEvalGrid')
 
-    for source in range(sources_num):
+    for source in range(n_sources):
 
         tmpFilename = os.path.join(
             folder, 'NumCalc', f'source_{source+1}', 'be.out')
         tmpPressure, indices = _load_results(
-            tmpFilename, data, num_frequencies)
+            tmpFilename, data, n_frequencies)
 
         pressure.append(tmpPressure)
 

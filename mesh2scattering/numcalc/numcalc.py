@@ -6,7 +6,6 @@ import psutil
 import subprocess
 import numpy as np
 import shutil
-import csv
 
 
 def remove_outputs(
@@ -423,7 +422,9 @@ def manage_numcalc(project_path=None, numcalc_path=None,
                 continue
 
             # find frequency step with the highest possible RAM consumption
-            for idx, ram_required in enumerate(instances_to_run[:, 3]):
+            idx = -1
+            for i, ram_required in enumerate(instances_to_run[:, 3]):
+                idx = i
                 if ram_required <= ram_available:
                     break
 
