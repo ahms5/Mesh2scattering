@@ -194,7 +194,7 @@ def test__write_nc_inp(source_type, bem_method, tmpdir):
         f'0 {n_bins+1}\n'
         '0.000000 0.000000e+00 0.0\n')
     frequency_curve += ''.join([
-        f'0.{i+1:06d} {(
+        f'0.{(i+1):06d} {(
             frequencies[i]/10000):04f}e+04 0.0\n' for i in range(n_bins)])
     assert frequency_curve in content
 

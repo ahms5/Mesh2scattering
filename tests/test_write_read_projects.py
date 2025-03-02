@@ -59,8 +59,9 @@ def test_write_project(tmpdir):
                     .08, 0, 0.051/2.5, symmetry_azimuth=[90, 180])
                 base_path = os.path.join(
                     m2s.utils.repository_root(), 'tests', 'resources')
-                sample = f'reference_{source_type.name}_s{
-                    sources.csize}_f{frequencies.size}'
+                sample = (
+                    f'reference_{source_type.name}_s{sources.csize}_'
+                    f'f{frequencies.size}')
                 project_path = os.path.join(
                     tmpdir, sample)
                 project_title = sample
