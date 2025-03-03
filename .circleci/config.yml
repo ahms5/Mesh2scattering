@@ -43,7 +43,6 @@ jobs:
       - run:
           command: |
             pip install ".[tests]"
-            pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
       - run:
           name: Run tests
           command: pytest
@@ -66,7 +65,6 @@ jobs:
           name: install dependencies
           command: |
             pip install ".[tests]"
-            pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
       - run:
           name: Ruff
           command: ruff check
@@ -90,7 +88,6 @@ jobs:
           name: install dependencies
           command: |
             pip install ".[tests]"
-            pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
       - run:
           name: Build numcalc
           command: |
@@ -117,7 +114,6 @@ jobs:
           name: Sphinx
           command: |
             pip install ".[docs]"
-            pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
             cd docs/
             make html SPHINXOPTS="-W"
 
@@ -138,7 +134,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            pip install ".[tests]" git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
+            pip install ".[tests]"
       - run:
           name: Build numcalc
           command: |
@@ -169,7 +165,6 @@ jobs:
           name: Setup testing environment
           command: |
             pip install ".[tests]"
-            pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
       - run:
           name: Build numcalc
           command: |
@@ -202,7 +197,6 @@ jobs:
           name: install dependencies
           command: |
             pip install ".[deploy]"
-            pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
       - run:
           name: deploy
           command: |  # create whl, install twine and publish to Test PyPI
@@ -227,7 +221,6 @@ jobs:
           name: install dependencies
           command: |
             pip install ".[deploy]"
-            pip install git+https://github.com/pyfar/imkar.git@9770ad090196b73f3202a187784470d3f9f9e995
       - run:
           name: deploy
           command: |  # create whl, install twine and publish to Test PyPI
@@ -245,7 +238,6 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.8"
                 - "3.9"
                 - "3.10"
                 - "3.11"
@@ -256,7 +248,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
 
@@ -264,7 +256,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
 
@@ -272,7 +264,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
 
@@ -280,7 +272,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
 
@@ -288,7 +280,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
 
@@ -296,7 +288,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
 
@@ -308,7 +300,6 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.8"
                 - "3.9"
                 - "3.10"
                 - "3.11"
@@ -326,7 +317,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
 
@@ -334,7 +325,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
           filters:
@@ -348,7 +339,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
           filters:
@@ -362,7 +353,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
           filters:
@@ -376,7 +367,7 @@ workflows:
           matrix:
             parameters:
               version:
-                - "3.9"
+                - "3.13"
           requires:
             - build_and_test
             - ruff

@@ -5,20 +5,29 @@
 
 ### Unreleased - major
 
+breaking changes, not compatibly with mesh2scattering versions below v1.0.0
+
 #### Added
+
+- modules input, output, process was newly designed and make sure all the related metadata are collected. ([#52](https://github.com/ahms5/Mesh2scattering/pulls/52))
+- all modules and public methods are tested ([#52](https://github.com/ahms5/Mesh2scattering/pulls/52))
 
 #### Fixed
 
 #### Changed
 
-- add numcalc code to build ([#46](https://github.com/ahms5/Mesh2scattering/issues/46))
+- Deploy: add numcalc code to build ([#46](https://github.com/ahms5/Mesh2scattering/issues/46))
 - Deploy: changed to ``pyproject.toml`` ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
-- Documentation: updated documentation style ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
+- Documentation: updated documentation style based on pyfar ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
 - CI: replaced ``flake8`` by ``ruff`` and add additional rules ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48), #49)
 
 #### Removed
 
 - remove high performance computing support, due to maintaining difficulties ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
+- remove unstable imkar dependency ([#52](https://github.com/ahms5/Mesh2scattering/pulls/52))
+- remove unused data in testing and in input from Mesh2HRTF ([#52](https://github.com/ahms5/Mesh2scattering/pulls/52))
+- diffusion coefficient is not supported anymore ([#52](https://github.com/ahms5/Mesh2scattering/pulls/52))
+- Python 3.8 is no longer supported ([#52](https://github.com/ahms5/Mesh2scattering/pulls/52))
 
 ### v0.1.4
 

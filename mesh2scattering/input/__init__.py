@@ -1,23 +1,34 @@
 """
-This module provides functions to write input files for Mesh2HRTF.
+This module provides functions to write input files for mesh2scattering.
 """
+
 from .input import (
-    write_mesh,
-    write_evaluation_grid,
-    write_material,
-    write_scattering_project,
-    create_source_positions,
-    read_evaluation_grid,
-    read_material_data,
+    write_scattering_project_numcalc,
     )
 
+from .EvaluationGrid import (
+    EvaluationGrid,
+)
+
+from .SampleMesh import (
+    SampleShape,
+    SampleMesh,
+    SurfaceType,
+    SurfaceDescription,
+)
+
+from .SoundSource import (
+    SoundSourceType,
+    SoundSource,
+)
 
 __all__ = [
-    'write_mesh',
-    'write_evaluation_grid',
-    'write_material',
-    'write_scattering_project',
-    'create_source_positions',
-    'read_evaluation_grid',
-    'read_material_data',
+    'write_scattering_project_numcalc',
+    'EvaluationGrid',
+    'SampleShape',
+    'SampleMesh',
+    'SurfaceType',
+    'SurfaceDescription',
+    'SoundSourceType',
+    'SoundSource',
     ]

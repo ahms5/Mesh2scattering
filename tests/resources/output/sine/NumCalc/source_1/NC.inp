@@ -1,0 +1,55 @@
+##-------------------------------------------
+## This file was created by mesh2scattering
+## Date: 2025-03-02
+##-------------------------------------------
+mesh2scattering 0.1.4
+##
+sine
+##
+## Controlparameter I
+0
+##
+## Controlparameter II
+1 2 0.000001 0.00e+00 1 0 0
+##
+## Load Frequency Curve 
+0 3
+0.000000 0.000000e+00 0.0
+0.000001 0.050000e+04 0.0
+0.000002 0.100000e+04 0.0
+##
+## 1. Main Parameters I
+2 34966 17487 0 0 2 1 4 0
+##
+## 2. Main Parameters II
+0 1 0 0.0000e+00 0 0
+##
+## 3. Main Parameters III
+0
+##
+## 4. Main Parameters IV
+346.18 1.1839 1.0
+##
+NODES
+../../ObjectMeshes/Reference/Nodes.txt
+../../EvaluationGrids/gaussian_63/Nodes.txt
+##
+ELEMENTS
+../../ObjectMeshes/Reference/Elements.txt
+../../EvaluationGrids/gaussian_63/Elements.txt
+##
+# SYMMETRY
+# 0 0 0
+# 0.0000e+00 0.0000e+00 0.0000e+00
+##
+BOUNDARY
+RETU
+##
+POINT SOURCES
+0 0.0 0.0 3.0 0.1 -1 0.0 -1
+##
+# CURVES
+##
+POST PROCESS
+##
+END

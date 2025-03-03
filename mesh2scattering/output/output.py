@@ -1,4 +1,4 @@
-"""Write output for Mesh2HRTF."""
+"""Write output for NumCalc."""
 
 import os
 import warnings
@@ -7,430 +7,233 @@ import numpy as np
 import pyfar as pf
 import glob
 import sofar as sf
-from mesh2scattering import utils
 import csv
 import re
 
 
-def apply_symmetry_circular(
-        data_in: pf.FrequencyData, coords_mic: pf.Coordinates,
-        coords_inc: pf.Coordinates, coords_inc_out: pf.Coordinates):
-    """Apply symmetry for circular symmetrical surfaces.
-
-    Parameters
-    ----------
-    data_in : pf.FrequencyData
-        data which is rotated, cshape need to be (#theta_coords_inc,
-        #coords_mic)
-    coords_mic : pf.Coordinates
-        Coordinate object from the receiver positions of the current reference
-        plate of cshape (#theta_coords_inc)
-    coords_inc : pf.Coordinates
-        Coordinate object from the source positions of the reference of cshape
-        (#coords_inc_reference.
-    coords_inc_out : pf.Coordinates
-        Coordinate object from the source positions of the sample of cshape
-        (#coords_inc_sample).
-
-    Returns
-    -------
-    data_in_mirrored : pf.FrequencyData
-        _description_
-    """
-    if not isinstance(coords_inc, pf.Coordinates):
-        raise ValueError(
-            'coords_inc needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_inc)}.')
-    if not isinstance(coords_mic, pf.Coordinates):
-        raise ValueError(
-            'coords_mic needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_mic)}.')
-    if not isinstance(coords_inc_out, pf.Coordinates):
-        raise ValueError(
-            'coords_inc_out needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_inc_out)}.')
-    if not isinstance(data_in, pf.FrequencyData):
-        raise ValueError(
-            'data_in needs to be of type pf.FrequencyData, '
-            f'bit it is {type(data_in)}.')
-    if data_in.cshape[-2] != coords_inc.csize:
-        raise ValueError(
-            'data_in.cshape[-2] needs to have the dimension of coords_inc '
-            f'{data_in.cshape[-2]} != {coords_inc.csize}.')
-    if data_in.cshape[-1] != coords_mic.csize:
-        raise ValueError(
-            'data_in.cshape[-1] needs to have the dimension of coords_mic '
-            f'{data_in.cshape[-1]} != {coords_mic.csize}.')
-    if np.max(np.abs(np.diff(coords_inc.azimuth))) > 1e-5:
-        raise ValueError('coords_inc needs to have constant azimuth angle.')
-
-    data_raw = data_in.freq.copy()
-    shape = [coords_inc_out.cshape[0],
-             coords_mic.cshape[0],
-             len(data_in.frequencies)]
-    data_out = np.empty(shape, dtype=data_in.freq.dtype)
-
-    for idx in range(coords_inc_out.csize):
-        mirrored_coord = coords_inc_out[idx].copy()
-        corresponding_coord = mirrored_coord.copy()
-        corresponding_coord.azimuth = coords_inc[0].azimuth
-        delta_phi = -(mirrored_coord.azimuth - corresponding_coord.azimuth)
-        receiver_coords_new = coords_mic.copy()
-        receiver_coords_new.rotate('z', delta_phi, degrees=False)
-        i, _ = coords_mic.find_nearest_k(
-            receiver_coords_new.x.copy(), receiver_coords_new.y.copy(),
-            receiver_coords_new.z.copy())
-        i_source, _ = coords_inc.find_nearest_k(
-            corresponding_coord.x, corresponding_coord.y,
-            corresponding_coord.z)
-        data_out[..., idx, :, :] = data_raw[..., i_source, i, :]
-
-    data_in_mirrored = pf.FrequencyData(
-        data_out, data_in.frequencies, data_in.comment)
-
-    return data_in_mirrored
-
-
-def apply_symmetry_mirror(
-        data_in: pf.FrequencyData, coords_mic: pf.Coordinates,
-        coords_inc: pf.Coordinates, symmetry_azimuth_deg: float):
-    """Mirrors the data along a symmetry axe, defined by the azimuth_angle_deg.
-
-    Note: Angles on the symmetry axes will be skipped for mirroring.
-
-    Parameters
-    ----------
-    data_in : pf.FrequencyData
-        data object of cshape (..., #incident_coords, #coords_mic),
-        which should be rotated
-    coords_mic : pf.Coordinates
-        microphone positions
-    coords_inc : pf.Coordinates
-        Incident coordinates, which should be mirrored along
-    symmetry_azimuth_deg : float
-        azimuth angle in degree where the data should be mirrored.
-
-    Returns
-    -------
-    data_in_mirrored : pf.FrequencyData
-        mirrored data object for the coords_inc coordinates.
-    coords_inc_mirrored : pf.Coordinates
-        new coordinate object, angles on the symmetry axes will be skipped.
-    """
-    if not isinstance(coords_inc, pf.Coordinates):
-        raise ValueError(
-            'coords_inc needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_inc)}.')
-    if not isinstance(coords_mic, pf.Coordinates):
-        raise ValueError(
-            'coords_mic needs to be of type pf.Coordinates, '
-            f'bit it is {type(coords_mic)}.')
-    if not isinstance(data_in, pf.FrequencyData):
-        raise ValueError(
-            'data_in needs to be of type pf.FrequencyData, '
-            f'bit it is {type(data_in)}.')
-    if not isinstance(data_in, pf.FrequencyData):
-        raise ValueError(
-            'data needs to be of type pf.FrequencyData, '
-            f'bit it is {type(data_in)}.')
-    if symmetry_azimuth_deg <= 0 or symmetry_azimuth_deg >= 360:
-        raise ValueError(
-            '0 >= symmetry_azimuth_deg >= 360, but its '
-            f'{symmetry_azimuth_deg}.')
-    if data_in.cshape[-2] != coords_inc.csize:
-        raise ValueError(
-            'data_in.cshape[-2] needs to have the dimension of coords_inc '
-            f'{data_in.cshape[-2]} != {coords_inc.csize}.')
-    if data_in.cshape[-1] != coords_mic.csize:
-        raise ValueError(
-            'data_in.cshape[-1] needs to have the dimension of coords_mic '
-            f'{data_in.cshape[-1]} != {coords_mic.csize}.')
-
-    symmetry_angle_rad = symmetry_azimuth_deg*np.pi/180
-    if np.abs(symmetry_azimuth_deg - 180) < 1e-8:
-        idx = np.abs(coords_inc.azimuth % symmetry_angle_rad) > 1e-8
-    elif np.abs(symmetry_azimuth_deg - 90) < 1e-8:
-        idx = np.abs(coords_inc.azimuth - symmetry_angle_rad) > 1e-8
-    no_top_point = coords_inc.colatitude > 1e-8
-    idx = np.flip(np.where(idx & no_top_point)).flatten()
-    dim_inc = -3
-    coords_mirrored = coords_inc[idx].copy()
-    coords_mirrored.azimuth = 2*symmetry_angle_rad - coords_mirrored.azimuth
-    data_mirrored_shape = list(data_in.freq.shape)
-    data_mirrored_shape[dim_inc] = len(idx)
-    data_mirrored = np.zeros(data_mirrored_shape, dtype=data_in.freq.dtype)
-    data_raw = data_in.freq.copy()
-
-    for idx_mirror in range(coords_mirrored.csize):
-        mirrored_coord = coords_mirrored[idx_mirror].copy()
-        corresponding_coord = mirrored_coord.copy()
-        corresponding_coord.azimuth \
-            = 2*symmetry_angle_rad - corresponding_coord.azimuth
-        delta_phi = -(mirrored_coord.azimuth - corresponding_coord.azimuth)
-        receiver_coords_new = coords_mic.copy()
-        receiver_coords_new.rotate('z', delta_phi, degrees=False)
-        i, _ = coords_mic.find_nearest_k(
-            receiver_coords_new.x.copy(), receiver_coords_new.y.copy(),
-            receiver_coords_new.z.copy())
-        i_source, _ = coords_inc.find_nearest_k(
-            corresponding_coord.x, corresponding_coord.y,
-            corresponding_coord.z)
-        data_mirrored[..., idx_mirror, :, :] = data_raw[..., i_source, i, :]
-
-    coords_ = np.concatenate(
-        (coords_inc.cartesian, coords_mirrored.cartesian), axis=0).T
-    if coords_inc.weights is not None:
-        weights_ = np.concatenate(
-            (coords_inc.weights, coords_mirrored.weights), axis=0)
-    else:
-        weights_ = None
-    coords_inc_mirrored = pf.Coordinates(
-        coords_[0], coords_[1], coords_[2], weights=weights_)
-    new_data = np.concatenate((data_in.freq, data_mirrored), axis=dim_inc)
-    data_in_mirrored = pf.FrequencyData(
-        new_data, data_in.frequencies, data_in.comment)
-
-    return data_in_mirrored, coords_inc_mirrored
-
-
-def write_pattern(folder):
+def write_pressure(folder):
     """
     Process NumCalc output and write data to disk.
 
     Processing the data is done in the following steps
 
-    1. Read project parameter `from parameters.json`
+    1. Read project parameter from `parameters.json`
     2. use :py:func:`~write_output_report` to parse files in
        project_folder/NumCalc/source_*/NC*.out, write project report to
-       project_folder/Output2HRTF/report_source_*.csv. Raise a warning if any
+       project_folder/report/report_source_*.csv. Raise a warning if any
        issues were detected and write report_issues.txt to the same folder
     3. Read simulated pressures from project_folder/NumCalc/source_*/be.out.
        This and the following steps are done, even if an issue was detected in
        the previous step
-    4. use :py:func:`~mesh2hrtf.reference_hrtfs` and
-       :py:func:`~mesh2hrtf.compute_hrirs` to save the results to SOFA files
+    4. save the sound pressure for each evaluation grid to
+       save the a SOFA file
 
     Parameters
     ----------
     folder : str, optional
-        The path of the Mesh2HRTF project folder, i.e., the folder containing
-        the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
-        default, ``None`` uses the current working directory.
+        The path of the NumCalc project folder, i.e., the folder containing
+        the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes.
     """
-
-    if (not os.path.exists(os.path.join(folder, 'reference'))) \
-            or (not os.path.exists(os.path.join(folder, 'sample'))):
+    if not os.path.exists(folder):
         raise ValueError(
-            "Folder need to contain reference and sample folders.")
+            'Folder need to exists.')
+
+    # write the project report and check for issues
+    print('\n Writing the project report ...')
+    found_issues, report = write_output_report(folder)
+
+    if found_issues:
+        warnings.warn(report, stacklevel=2)
 
     # read sample data
-    evaluationGrids, params = read_numcalc(
-        os.path.join(folder, 'sample'), False)
+    evaluationGrids, params = _read_numcalc(
+        folder)
 
     # process BEM data for writing HRTFs and HRIRs to SOFA files
-    for grid in evaluationGrids:
-        print(f'\nWrite sample data "{grid}" ...\n')
+    for i_grid, grid in enumerate(evaluationGrids):
+
         # get pressure as SOFA object (all following steps are run on SOFA
         # objects. This way they are available to other users as well)
-        source_position = np.array(params["sources"])
-        if source_position.shape[1] != 3:
-            source_position = np.transpose(source_position)
-        receiver_position = np.array(evaluationGrids[grid]["nodes"][:, 1:4])
-        if receiver_position.shape[1] != 3:
-            receiver_position = np.transpose(receiver_position)
+        source_position = np.array(params['sources'])
+        source_type = params['source_type']
+        if source_type == 'Plane wave':
+            source_position = -source_position*99
+        receiver_position = np.array(evaluationGrids[grid]['nodes'][:, 1:4])
 
         # apply symmetry of reference sample
-        data_raw = np.moveaxis(evaluationGrids[grid]["pressure"], 1, 0)
         data = pf.FrequencyData(
-            data_raw, params["frequencies"])
+            evaluationGrids[grid]['pressure'], params['frequencies'])
         receiver_coords = _cart_coordinates(receiver_position)
         source_coords = _cart_coordinates(source_position)
-        for i in params['symmetry_azimuth']:
-            data, source_coords = apply_symmetry_mirror(
-                data, receiver_coords, source_coords, i)
+        source_coords.weights = params['sources_weights']
+        receiver_coords.weights = np.array(
+            params['evaluation_grids_weights'][i_grid])
 
         # write data
-        sofa = utils._get_sofa_object(
-            data.freq,
-            source_coords.cartesian,
-            receiver_position,
-            params["mesh2scattering_version"],
-            frequencies=params["frequencies"])
-
-        sofa.GLOBAL_Title = folder.split(os.sep)[-1]
-
-        # write scattered sound pressure to SOFA file
-        sf.write_sofa(os.path.join(
-            folder, 'sample.pattern.sofa'), sofa)
-
-    evaluationGrids, params = read_numcalc(
-        os.path.join(folder, 'reference'), True)
-
-    # process BEM data for writing scattered sound pressure to SOFA files
-    for grid in evaluationGrids:
-        print(f'\nWrite sample data "{grid}" ...\n')
-        # get pressure as SOFA object (all following steps are run on SOFA
-        # objects. This way they are available to other users as well)
-        # read source and receiver positions
-        receiver_position_ref = np.array(
-            evaluationGrids[grid]["nodes"][:, 1:4])
-        if receiver_position_ref.shape[1] != 3:
-            receiver_position_ref = np.transpose(receiver_position_ref)
-
-        # apply symmetry of reference sample
-        source_position_ref = source_coords[
-            np.abs(source_coords.azimuth) < 1e-14]
-        data = evaluationGrids[grid]["pressure"]
-        if source_coords.csize != source_position_ref.cshape[0]:
-            data = np.swapaxes(data, 0, 1)
-            data = apply_symmetry_circular(
-                pf.FrequencyData(data, params["frequencies"]),
-                _cart_coordinates(receiver_position_ref),
-                source_position_ref,
-                source_coords).freq
-
-        # create sofa file
-        sofa = utils._get_sofa_object(
+        c = float(params['speed_of_sound'])
+        Lbyl = params['structural_wavelength'] / c * data.frequencies
+        sofa = _create_pressure_sofa(
             data,
-            source_coords.cartesian,
-            receiver_position_ref,
-            params["mesh2scattering_version"],
-            frequencies=params["frequencies"])
+            Lbyl,
+            source_coords,
+            receiver_coords,
+            structural_wavelength=params['structural_wavelength'],
+            structural_wavelength_x=params['structural_wavelength_x'],
+            structural_wavelength_y=params['structural_wavelength_y'],
+            sample_diameter=params['sample_diameter'],
+            speed_of_sound=params['speed_of_sound'],
+            density_of_medium=params['density_of_medium'],
+            mesh2scattering_version=params['mesh2scattering_version'],
+            model_scale=params['model_scale'],
+            symmetry_azimuth=params['symmetry_azimuth'],
+            symmetry_rotational=params['symmetry_rotational'],
+            )
 
         sofa.GLOBAL_Title = folder.split(os.sep)[-1]
 
-        # write HRTF data to SOFA file
-        sf.write_sofa(os.path.join(
-            folder, 'reference.pattern.sofa'), sofa)
+        file_path = os.path.join(
+            folder, '..',
+            f'{params["project_title"]}_{grid}.pressure.sofa')
+        # write scattered sound pressure to SOFA file
+        sf.write_sofa(file_path, sofa)
 
-    print('Done\n')
 
+def _create_pressure_sofa(
+        data, Lbyl, sources, receivers, structural_wavelength,
+        structural_wavelength_x, structural_wavelength_y,
+        sample_diameter, speed_of_sound,
+        density_of_medium,mesh2scattering_version,
+        model_scale=1, symmetry_azimuth=[],
+        symmetry_rotational=False,
+        ):
+    """Write complex pressure data to SOFA object from NumCalc simulation.
+
+    Parameters
+    ----------
+    data : :py:class:`~pyfar.classes.audio.FrequencyData`
+        the complex pressure data.
+    Lbyl : numpy.ndarray
+        structural wavelength over wavelength of sound.
+    sources : :py:class:`~pyfar.classes.coordinates.Coordinates`
+        source positions in cartesian coordinates.
+    receivers : :py:class:`~pyfar.classes.coordinates.Coordinates`
+        Receivers positions in cartesian coordinates.
+    structural_wavelength : float
+        structural wavelength in main direction (x) in meters.
+    structural_wavelength_x : float
+        structural wavelength in x direction in meters.
+    structural_wavelength_y : float
+        structural wavelength in y direction in meters.
+    sample_diameter : float
+        diameter of the sample in meters.
+    speed_of_sound : float
+        speed of sound in m/s
+    density_of_medium : float
+        density of the medium in kg/m^3.
+    mesh2scattering_version : str
+        version string of mesh2scattering
+    model_scale : int, optional
+        scale of the surface, by default 1.
+    symmetry_azimuth : list, optional
+        the azimuth angles in degree, where the symmetry axes are,
+        by default [].
+    symmetry_rotational : bool, optional
+        Whether the surface is rotational symmetric, by default False
+
+    Returns
+    -------
+    sf.Sofa
+        sofa file.
+    """
+    # create empty SOFA object
+    convention = 'GeneralTF' if type(
+        data) is pf.FrequencyData else 'GeneralFIR'
+
+    assert speed_of_sound is not None
+    assert speed_of_sound > 250
+    assert speed_of_sound < 350
+
+    sofa = sf.Sofa(convention)
+
+    # write meta data
+    sofa.GLOBAL_ApplicationName = 'Mesh2scattering'
+    sofa.GLOBAL_ApplicationVersion = mesh2scattering_version
+    sofa.GLOBAL_History = 'numerically simulated data'
+
+    # Source and receiver data
+    sofa.EmitterPosition = sources.cartesian
+    sofa.EmitterPosition_Units = 'meter'
+    sofa.EmitterPosition_Type = 'cartesian'
+
+    sources_sph = sources.spherical_elevation
+    sources_sph = pf.rad2deg(sources_sph)
+    sofa.SourcePosition = sources_sph
+    sofa.SourcePosition_Units = 'degree, degree, metre'
+    sofa.SourcePosition_Type = 'spherical'
+
+    sofa.ReceiverPosition = receivers.cartesian
+    sofa.ReceiverPosition_Units = 'meter'
+    sofa.ReceiverPosition_Type = 'cartesian'
+
+    if type(data) is pf.FrequencyData:
+        Lbyl = np.array(Lbyl)
+        if structural_wavelength == 0:
+            f = Lbyl
+        else:
+            f = Lbyl/structural_wavelength*speed_of_sound
+        sofa.N = f
+        sofa.add_variable(
+            'OriginalFrequencies', f, 'double', 'N')
+        sofa.add_variable(
+            'RealScaleFrequencies', f/model_scale, 'double', 'N')
+        sofa.add_variable(
+            'Lbyl', Lbyl, 'double', 'N')
+        # HRTF/HRIR data
+        if data.cshape[0] != sources.csize:
+            data.freq = np.swapaxes(data.freq, 0, 1)
+        sofa.Data_Real = np.real(data.freq)
+        sofa.Data_Imag = np.imag(data.freq)
+    else:
+        sofa.Data_IR = data.time
+        sofa.Data_SamplingRate = data.sampling_rate
+        sofa.Data_Delay = np.zeros((1, receivers.csize))
+
+
+    sofa.add_variable(
+        'SampleStructuralWavelength', structural_wavelength, 'double', 'I')
+    sofa.add_variable(
+        'SampleStructuralWavelengthX', structural_wavelength_x, 'double', 'I')
+    sofa.add_variable(
+        'SampleStructuralWavelengthY', structural_wavelength_y, 'double', 'I')
+    sofa.add_variable(
+        'SampleModelScale', model_scale, 'double', 'I')
+    sofa.add_variable(
+        'SampleDiameter', sample_diameter, 'double', 'I')
+    sofa.add_variable(
+        'SpeedOfSound', speed_of_sound, 'double', 'I')
+    sofa.add_variable(
+        'DensityOfMedium', density_of_medium, 'double', 'I')
+    sofa.add_variable(
+        'ReceiverWeights', receivers.weights, 'double', 'R')
+    sofa.add_variable(
+        'SourceWeights', sources.weights, 'double', 'E')
+    if len(symmetry_azimuth)>0:
+        symmetry_azimuth_str = ','.join([f'{a}' for a in symmetry_azimuth])
+    else:
+        symmetry_azimuth_str = ''
+    sofa.add_variable(
+        'SampleSymmetryAzimuth', symmetry_azimuth_str, 'string', 'S')
+    sofa.add_variable(
+        'SampleSymmetryRotational',
+        1 if symmetry_rotational else 0, 'double', 'I')
+
+    return sofa
 
 def _cart_coordinates(xyz):
     return pf.Coordinates(xyz[:, 0], xyz[:, 1], xyz[:, 2])
 
 
-def check_project(folder=None):
-    r"""
-    Generate project report from NumCalc output files.
-
-    NumCalc (Mesh2HRTF's numerical core) writes information about the
-    simulations to the files `NC*.out` located under `NumCalc/source_*`. The
-    file `NC.out` exists if NumCalc was ran without the additional command line
-    parameters ``-istart`` and ``-iend``. If these parameters were used, there
-    is at least one `NC\*-\*.out`. If this is the case, information from
-    `NC\*-\*.out` overwrites information from NC.out in the project report.
-
-    .. note::
-
-        The project reports are written to the files
-        `Output2HRTF/report_source_*.csv`. If issues were detected, they are
-        listed in `Output2HRTF/report_issues.csv`.
-
-    The report contain the following information
-
-    Frequency step
-        The index of the frequency.
-    Frequency in Hz
-        The frequency in Hz.
-    NC input
-        Name of the input file from which the information was taken.
-    Input check passed
-        Contains a 1 if the check of the input data passed and a 0 otherwise.
-        If the check failed for one frequency, the following frequencies might
-        be affected as well.
-    Converged
-        Contains a 1 if the simulation converged and a 0 otherwise. If the
-        simulation did not converge, the relative error might be high.
-    Num. iterations
-        The number of iterations that were required to converge
-    relative error
-        The relative error of the final simulation
-    Comp. time total
-        The total computation time in seconds
-    Comp. time assembling
-        The computation time for assembling the matrices in seconds
-    Comp. time solving
-        The computation time for solving the matrices in seconds
-    Comp. time post-proc
-        The computation time for post-processing the results in seconds
-
-
-    Parameters
-    ----------
-    folder : str, optional
-        The path of the Mesh2HRTF project folder, i.e., the folder containing
-        the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
-        default, ``None`` uses the current working directory.
-
-    Returns
-    -------
-    found_issues : bool
-        ``True`` if issues were found, ``False`` otherwise
-    report : str
-        The report or an empty string if no issues were found
-    """
-
-    if folder is None:
-        folder = os.getcwd()
-
-    # get sources and number of sources and frequencies
-    sources = glob.glob(os.path.join(folder, "NumCalc", "source_*"))
-    num_sources = len(sources)
-
-    with open(os.path.join(folder, '..', "parameters.json"), "r") as file:
-        params = json.load(file)
-
-    # sort source files (not read in correct order in some cases)
-    nums = [int(source.split("_")[-1]) for source in sources]
-    sources = np.array(sources)
-    sources = sources[np.argsort(nums)]
-
-    # parse all NC*.out files for all sources
-    all_files, fundamentals, out, out_names = _parse_nc_out_files(
-        sources, num_sources, params["num_frequencies"])
-
-    return all_files, fundamentals, out, out_names
-
-
-def merge_frequency_data(data_list):
-    """
-    Merge multiple FrequencyData objects into one.
-
-    Parameters
-    ----------
-    data_list : list of pyfar.FrequencyData
-        List of FrequencyData objects to be merged.
-
-    Returns
-    -------
-    data_out : pyfar.FrequencyData
-        Merged FrequencyData object.
-    """
-    data_out = data_list[0].copy()
-    frequencies = data_out.frequencies.copy()
-    for idx in range(1, len(data_list)):
-        data = data_list[idx]
-        assert data_out.cshape == data.cshape
-        frequencies = np.append(frequencies, data.frequencies)
-        frequencies = np.array(list(set(frequencies)))
-        frequencies = np.sort(frequencies)
-
-        data_new = []
-        for f in frequencies:
-            if any(data_out.frequencies == f):
-                freq_index = np.where(data_out.frequencies == f)
-                data_new.append(data_out.freq[..., freq_index[0][0]])
-            elif any(data.frequencies == f):
-                freq_index = np.where(data.frequencies == f)
-                data_new.append(data.freq[..., freq_index[0][0]])
-
-        data_new = np.moveaxis(np.array(data_new), 0, -1)
-        data_out = pf.FrequencyData(data_new, frequencies)
-    return data_out
-
-
-def read_numcalc(folder=None, is_ref=False):
+def _read_numcalc(folder=None):
     """
     Process NumCalc output and write data to disk.
 
@@ -439,22 +242,19 @@ def read_numcalc(folder=None, is_ref=False):
     1. Read project parameter `from parameters.json`
     2. use :py:func:`~write_output_report` to parse files in
        project_folder/NumCalc/source_*/NC*.out, write project report to
-       project_folder/Output2HRTF/report_source_*.csv. Raise a warning if any
+       project_folder/report/report_source_*.csv. Raise a warning if any
        issues were detected and write report_issues.txt to the same folder
     3. Read simulated pressures from project_folder/NumCalc/source_*/be.out.
        This and the following steps are done, even if an issue was detected in
        the previous step
-    4. use :py:func:`~mesh2hrtf.reference_hrtfs` and
-       :py:func:`~mesh2hrtf.compute_hrirs` to save the results to SOFA files
+    4. write the reflected sound pressure to sofa file.
 
     Parameters
     ----------
     folder : str, optional
-        The path of the Mesh2HRTF project folder, i.e., the folder containing
+        The path of the NumCalc project folder, i.e., the folder containing
         the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
         default, ``None`` uses the current working directory.
-    is_ref : bool, optional
-        If the data is from the reference sample. The default is False.
     """
 
     # check input
@@ -462,10 +262,11 @@ def read_numcalc(folder=None, is_ref=False):
         folder = os.getcwd()
 
     # check and load parameters, required parameters are:
-    # Mesh2HRTF_version, reference, computeHRIRs, speedOfSound, densityOfAir,
+    # mesh2scattering_version, reference, computeHRIRs, speedOfSound,
+    # densityOfAir,
     # sources_num, sourceType, sources, sourceArea,
     # num_frequencies, frequencies
-    params = os.path.join(folder, '..', 'parameters.json')
+    params = os.path.join(folder, 'parameters.json')
     if not os.path.isfile(params):
         raise ValueError((
             f"The folder {folder} is not a valid Mesh2scattering project. "
@@ -475,39 +276,20 @@ def read_numcalc(folder=None, is_ref=False):
         params = json.load(file)
 
     # get source positions
-    if params['sources_num'] > 1:
-        source_coords = np.transpose(np.array(params['sources']))
-    else:
-        source_coords = np.array(params['sources']).reshape((1, 3))
-    source_coords = pf.Coordinates(
-        source_coords[..., 0], source_coords[..., 1], source_coords[..., 2])
+    source_coords = pf.Coordinates()
+    source_coords.cartesian = np.array(params['sources'])
 
-    # output directory
-    if not os.path.exists(os.path.join(folder, 'Output2HRTF')):
-        os.makedirs(os.path.join(folder, 'Output2HRTF'))
-
-    # write the project report and check for issues
-    print('\n Writing the project report ...')
-    found_issues, report = write_output_report(folder)
-
-    if found_issues:
-        warnings.warn(report, stacklevel=2)
 
     # get the evaluation grids
     evaluationGrids, _ = _read_nodes_and_elements(
         os.path.join(folder, 'EvaluationGrids'))
 
     # Load EvaluationGrid data
-    if is_ref:
-        xyz = np.array(params["sources"])
-        coords = pf.Coordinates(xyz[..., 0], xyz[..., 1], xyz[..., 2])
-        num_sources = np.sum(np.abs(coords.azimuth) < 1e-12)
-    else:
-        num_sources = params["sources_num"]
+    num_sources = source_coords.csize
 
     if not len(evaluationGrids) == 0:
         pressure, _ = _read_numcalc_data(
-            num_sources, params["num_frequencies"],
+            num_sources, len(params["frequencies"]),
             folder, 'pEvalGrid')
 
     # save to struct
@@ -530,7 +312,7 @@ def write_output_report(folder=None):
     r"""
     Generate project report from NumCalc output files.
 
-    NumCalc (Mesh2HRTF's numerical core) writes information about the
+    NumCalc (mesh2scattering's numerical core) writes information about the
     simulations to the files `NC*.out` located under `NumCalc/source_*`. The
     file `NC.out` exists if NumCalc was ran without the additional command line
     parameters ``-istart`` and ``-iend``. If these parameters were used, there
@@ -540,8 +322,8 @@ def write_output_report(folder=None):
     .. note::
 
         The project reports are written to the files
-        `Output2HRTF/report_source_*.csv`. If issues were detected, they are
-        listed in `Output2HRTF/report_issues.csv`.
+        `report/report_source_*.csv`. If issues were detected, they are
+        listed in `report/report_issues.csv`.
 
     The report contain the following information
 
@@ -575,7 +357,7 @@ def write_output_report(folder=None):
     Parameters
     ----------
     folder : str, optional
-        The path of the Mesh2HRTF project folder, i.e., the folder containing
+        The path of the NumCalc project folder, i.e., the folder containing
         the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
         default, ``None`` uses the current working directory.
 
@@ -587,16 +369,15 @@ def write_output_report(folder=None):
         The report or an empty string if no issues were found
     """
 
+    if folder is None:
+        folder = os.getcwd()
+
     # get sources and number of sources and frequencies
     sources = glob.glob(os.path.join(folder, "NumCalc", "source_*"))
     num_sources = len(sources)
 
-    if os.path.exists(os.path.join(folder, '..', "parameters.json")):
-        with open(os.path.join(folder, '..', "parameters.json"), "r") as file:
-            params = json.load(file)
-    else:
-        with open(os.path.join(folder, "parameters.json"), "r") as file:
-            params = json.load(file)
+    with open(os.path.join(folder, "parameters.json"), "r") as file:
+        params = json.load(file)
 
     # sort source files (not read in correct order in some cases)
     nums = [int(source.split("_")[-1]) for source in sources]
@@ -605,7 +386,7 @@ def write_output_report(folder=None):
 
     # parse all NC*.out files for all sources
     all_files, fundamentals, out, out_names = _parse_nc_out_files(
-        sources, num_sources, params["num_frequencies"])
+        sources, num_sources, len(params["frequencies"]))
 
     # write report as csv file
     _write_project_reports(folder, all_files, out, out_names)
@@ -672,7 +453,7 @@ def _read_nodes_and_elements(folder, objects=None):
     return grids, gridsNumNodes
 
 
-def _read_numcalc_data(sources_num, num_frequencies, folder, data):
+def _read_numcalc_data(n_sources, n_frequencies, folder, data):
     """Read the sound pressure on the object meshes or evaluation grid."""
     pressure = []
 
@@ -680,12 +461,12 @@ def _read_numcalc_data(sources_num, num_frequencies, folder, data):
         raise ValueError(
             'data must be pBoundary, pEvalGrid, vBoundary, or vEvalGrid')
 
-    for source in range(sources_num):
+    for source in range(n_sources):
 
         tmpFilename = os.path.join(
             folder, 'NumCalc', f'source_{source+1}', 'be.out')
         tmpPressure, indices = _load_results(
-            tmpFilename, data, num_frequencies)
+            tmpFilename, data, n_frequencies)
 
         pressure.append(tmpPressure)
 
@@ -730,7 +511,7 @@ def _load_results(foldername, filename, num_frequencies):
         line = csv.reader(file, delimiter=' ', skipinitialspace=True)
         for _idx, li in enumerate(line):
             # read number of data points and head lines
-            if len(li) == 2 and not li[0].startswith("Mesh"):
+            if len(li) == 2 and not li[0].startswith("mesh2scattering"):
                 numDatalines = int(li[1])
 
             # read starting index
@@ -828,15 +609,15 @@ def _check_project_report(folder, fundamentals, out):
     if not report:
         report = ("\nDetected unknown issues\n"
                   "-----------------------\n"
-                  "Check the project reports in Output2HRTF,\n"
+                  "Check the project reports in report,\n"
                   "and the NC*.out files in NumCalc/source_*\n\n")
 
-    report += ("For more information check Output2HRTF/report_source_*.csv "
+    report += ("For more information check report/report_source_*.csv "
                "and the NC*.out files located at NumCalc/source_*")
 
     # write to disk
     report_name = os.path.join(
-        folder, "Output2HRTF", "report_issues.txt")
+        folder, "report", "report_issues.txt")
     with open(report_name, "w") as f_id:
         f_id.write(report)
 
@@ -845,11 +626,13 @@ def _check_project_report(folder, fundamentals, out):
 
 def _write_project_reports(folder, all_files, out, out_names):
     """
-    Write project report to disk at folder/Output2HRTF/report_source_*.csv.
+    Write project report to disk at folder/report/report_source_*.csv.
 
     For description of input parameter refer to write_output_report and
     _parse_nc_out_files
     """
+    if not os.path.exists(os.path.join(folder, 'report')):
+        os.mkdir(os.path.join(folder, 'report'))
 
     # loop sources
     for ss in range(out.shape[2]):
@@ -875,7 +658,7 @@ def _write_project_reports(folder, all_files, out, out_names):
 
         # write to disk
         report_name = os.path.join(
-            folder, "Output2HRTF", f"report_source_{ss + 1}.csv")
+            folder, "report", f"report_source_{ss + 1}.csv")
         with open(report_name, "w") as f_id:
             f_id.write(report)
 
@@ -1027,3 +810,47 @@ def _parse_nc_out_files(sources, num_sources, num_frequencies):
                     out[step-1, 7, ss] = float(line[idx.start()+41:idx.end()])
 
     return all_files, fundamentals, out, out_names
+
+
+def read_evaluation_grid(name):
+    """
+    Read NumCalc evaluation grid.
+
+    Parameters
+    ----------
+    name : str
+        Name of the folder containing the nodes of the evaluation grid in
+        Nodes.txt
+    show : bool, optional
+        If ``True`` the points of the evaluation grid are plotted. The default
+        is ``False``.
+
+    Returns
+    -------
+    coordinates : pyfar Coordinates
+        The points of the evaluation grid as a pyfar Coordinates object
+    """
+
+    # check if the grid exists
+    if not os.path.isfile(os.path.join(name, "Nodes.txt")):
+        raise ValueError(f"{os.path.join(name, 'Nodes.txt')} does not exist")
+
+    # read the nodes
+    with open(os.path.join(name, "Nodes.txt"), "r") as f_id:
+        nodes = f_id.readlines()
+
+    # get number of nodes
+    N = int(nodes[0].strip())
+    points = np.zeros((N, 3))
+
+    # get points (first entry is node number)
+    for nn in range(N):
+        node = nodes[nn+1].strip().split(" ")
+        points[nn, 0] = float(node[1])
+        points[nn, 1] = float(node[2])
+        points[nn, 2] = float(node[3])
+
+    # make coordinates object
+    coordinates = pf.Coordinates(points[:, 0], points[:, 1], points[:, 2])
+
+    return coordinates

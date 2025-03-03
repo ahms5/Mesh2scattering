@@ -121,7 +121,7 @@ m2s.numcalc.manage_numcalc(project_path, numcalc_path)
 # sample is always rotational symmetric, the data for the missing angles
 # are rotated in this was sample and reference  data will have the same
 # dimensions and coordinate
-m2s.output.write_pattern(project_path)
+m2s.output.write_pressure(project_path)
 
 # calculate the scattering coefficient for each incident angle and the random
 # one from the scattering pattern
