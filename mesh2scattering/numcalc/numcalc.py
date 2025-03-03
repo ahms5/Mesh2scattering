@@ -39,13 +39,12 @@ def build_or_fetch_numcalc(replace_existing=False):
     # ignore tests for windows since its difficult to build the exe
     if os.name == 'nt':
         numcalc_path = os.path.join(
-            m2s.utils.program_root(), "numcalc", "bin")
+            m2s.utils.program_root(), "numcalc", "bin", 'NumCalc.exe')
 
-        if replace_existing and os.path.isfile(os.path.join(
-                numcalc_path, 'NumCalc.exe')):
-            os.remove(os.path.join(numcalc_path, 'NumCalc.exe'))
+        if replace_existing and os.path.isfile( numcalc_path):
+            os.remove(numcalc_path)
 
-        if not os.path.exists(os.path.join(numcalc_path, "NumCalc.exe")):
+        if not os.path.exists(numcalc_path):
             numcalc_path = _download_windows_build()
 
     else:
@@ -89,7 +88,7 @@ def _download_windows_build():
             m2s.utils.program_root(), "numcalc", "bin"),
     ))
     return os.path.join(
-            m2s.utils.program_root(), "numcalc", "bin")
+            m2s.utils.program_root(), "numcalc", "bin", 'NumCalc.exe')
 
 def remove_outputs(
         paths, boundary=False, grid=False, log=False):
@@ -197,11 +196,8 @@ def manage_numcalc(project_path=None, numcalc_path=None,
         2- one NumCalc project folder (folder containing "parameters.json").
         The default ``None`` uses ``os.getcwd()``
     numcalc_path : str, optional
-        On Unix, this is the path to the NumCalc binary (by default 'NumCalc'
-        is used). On Windows, this is the path to the folder
-        'NumCalc_WindowsExe' from
-        https://github.com/ahms5/Mesh2scattering/releases/ (by default the
-        `project_path` is searched for this folder)
+        This is the path to the NumCalc binary (by default 'NumCalc'
+        is used).
         By default, :py:func:`build_or_fetch_numcalc` is used.
     max_ram_load : number, optional
         The RAM that can maximally be used in GB. New NumCalc instances are
@@ -261,11 +257,6 @@ def manage_numcalc(project_path=None, numcalc_path=None,
     # default values ----------------------------------------------------------
     if numcalc_path is None:
         numcalc_path = build_or_fetch_numcalc()
-    if os.name == "nt":
-        numcalc_path = "Searching for NumCalc_WindowsExe"\
-             if numcalc_path is None else numcalc_path
-    else:
-        numcalc_path = "NumCalc" if numcalc_path is None else numcalc_path
 
     ram_info = psutil.virtual_memory()
     total_ram = ram_info.total / 1073741824
@@ -341,36 +332,19 @@ def manage_numcalc(project_path=None, numcalc_path=None,
     # Check for NumCalc executable --------------------------------------------
     if os.name == 'nt':  # Windows detected
 
+        numcalc_path_base = os.path.dirname(numcalc_path)
         # files that are needed to execute NumCalc
         NumCalc_runtime_files = ['NumCalc.exe', 'libgcc_s_seh-1.dll',
                                  'libstdc++-6.dll', 'libwinpthread-1.dll']
 
-        if os.path.isdir(os.path.join(all_projects[0], 'NumCalc_WindowsExe')):
-            # located inside the project folder
-            numcalc_path = os.path.join(all_projects[0], 'NumCalc_WindowsExe')
-        elif os.path.isdir(os.path.join(os.path.dirname(all_projects[0]),
-                                        'NumCalc_WindowsExe')):
-            # located inside the folder that contains all NumCalc projects
-            numcalc_path = os.path.join(
-                os.path.dirname(all_projects[0]), 'NumCalc_WindowsExe')
-        elif os.path.isfile(os.path.join(all_projects[0],
-                                         NumCalc_runtime_files[0])):
-            # located directly in the project folder.
-            numcalc_path = os.path.join(all_projects[0])
-        else:
-            # try path provided as it is
-            pass
-
         # Check that each required runtime file is present:
         for calc_file in NumCalc_runtime_files:
-            if not os.path.isfile(os.path.join(numcalc_path, calc_file)):
+            if not os.path.isfile(os.path.join(numcalc_path_base, calc_file)):
                 message = (
                     f"The file {calc_file} is missing or manage_numcalc "
                     f"did not find the containing folder 'NumCalc_WindowsExe'")
                 _raise_error(message, text_color_red, log_file, confirm_errors)
 
-        # full path to the NumCalc executable
-        numcalc_executable = os.path.join(numcalc_path, "NumCalc.exe")
 
         del calc_file, NumCalc_runtime_files
     else:
@@ -384,12 +358,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
             _raise_error(
                 f"NumCalc executable does not exist at {numcalc_path}",
                 text_color_red, log_file, confirm_errors)
-        numcalc_executable = numcalc_path
         numcalc_path = os.path.dirname(numcalc_path)
-
-    # echo the used NumCalc executable
-    _print_message(f"NumCalc executable: {numcalc_executable}\n",
-                   text_color_reset, log_file)
 
     # Check all projects that may need to be executed -------------------------
     projects_to_run = []
@@ -407,7 +376,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
 
     for project in all_projects:
         all_instances, instances_to_run, _ = _check_project(
-            project, numcalc_executable, log_file)
+            project, numcalc_path, log_file)
 
         if instances_to_run is not None:
             projects_to_run.append(project)
@@ -427,7 +396,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
         # Get number of instances in project and estimate their RAM consumption
         root_NumCalc = os.path.join(project, 'NumCalc')
         all_instances, instances_to_run, source_counter = \
-            _check_project(project, numcalc_executable, log_file)
+            _check_project(project, numcalc_path, log_file)
         total_nr_to_run = instances_to_run.shape[0]
 
         # Status printouts:
@@ -535,13 +504,13 @@ def manage_numcalc(project_path=None, numcalc_path=None,
                     os.path.join(cwd, "NC{step}-{step}_log.txt"), "w")
                 # run NumCalc and route all printouts to a log file
                 subprocess.Popen(
-                    f"{numcalc_executable} -istart {step} -iend {step}",
+                    f"{numcalc_path} -istart {step} -iend {step}",
                     stdout=LogFileHandle, cwd=cwd)
 
             else:  # elif os.name == 'posix': Linux or Mac detected
                 # run NumCalc and route all printouts to a log file
                 subprocess.Popen((
-                    f"{numcalc_executable} -istart {step} -iend {step}"
+                    f"{numcalc_path} -istart {step} -iend {step}"
                     f" >NC{step}-{step}_log.txt"), shell=True, cwd=cwd)
 
             # prepare instances for next loop
@@ -574,7 +543,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
 
     for project in all_projects:
         all_instances, instances_to_run, _ = _check_project(
-            project, numcalc_executable, log_file)
+            project, numcalc_path, log_file)
 
         if instances_to_run is None:
             continue

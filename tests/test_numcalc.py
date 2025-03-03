@@ -15,7 +15,7 @@ base_dir = os.path.dirname(__file__)
 if os.name == 'nt':
     numcalc = os.path.join(
         m2s.utils.program_root(), "numcalc", "bin", "NumCalc.exe")
-    numcalc_path = os.path.dirname(numcalc)
+    numcalc_path = numcalc
     warnings.warn(
         ('Under Windows the code is not compiling but an executable is '
          f'expected in {numcalc}.'), UserWarning, stacklevel=2)
@@ -279,11 +279,11 @@ def test_manage_numcalc(tmpdir):
 
 def test__download_windows_build():
     path = m2s.numcalc.numcalc._download_windows_build()
-    assert os.path.isfile(os.path.join(path, "NumCalc.exe"))
+    assert os.path.isfile(path)
+    path.endswith("NumCalc.exe")
 
 
 @pytest.mark.parametrize('replace', [True, False])
 def test_build_or_fetch_numcalc(replace):
     path = m2s.numcalc.numcalc.build_or_fetch_numcalc(replace)
-    assert os.path.isfile(
-        os.path.join(path, "NumCalc.exe") if os.name == 'nt' else path)
+    assert os.path.isfile(path)
