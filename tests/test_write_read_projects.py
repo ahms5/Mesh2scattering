@@ -15,7 +15,7 @@ base_dir = os.path.dirname(__file__)
 if os.name == 'nt':
     numcalc = os.path.join(
         m2s.utils.program_root(), "numcalc", "bin", "NumCalc.exe")
-    numcalc_path = os.path.dirname(numcalc)
+    numcalc_path = numcalc
     warnings.warn(
         ('Under Windows the code is not compiling but an executable is '
          f'expected in {numcalc}.'), UserWarning, stacklevel=2)
@@ -38,10 +38,6 @@ def test_write_project(tmpdir):
 
     s2 = pf.Coordinates(0, 0, [3, 4], weights=[1, 1])
     s1 = pf.Coordinates(0, 0, 3, weights=[1])
-
-    numcalc = os.path.join(
-        m2s.utils.repository_root(),
-        'mesh2scattering', 'numcalc', 'bin', 'NumCalc')
 
     for frequencies in [np.array([500, 501]), np.array([500])]:
         for source_type in [

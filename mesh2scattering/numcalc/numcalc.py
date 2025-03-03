@@ -358,7 +358,6 @@ def manage_numcalc(project_path=None, numcalc_path=None,
             _raise_error(
                 f"NumCalc executable does not exist at {numcalc_path}",
                 text_color_red, log_file, confirm_errors)
-        numcalc_path = os.path.dirname(numcalc_path)
 
     # Check all projects that may need to be executed -------------------------
     projects_to_run = []
