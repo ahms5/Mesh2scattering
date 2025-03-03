@@ -30,61 +30,12 @@ pip install mesh2scattering
 
 (Requires Python 3.9 or higher)
 
-Note that NumCalc need to be build on Linux and MacOS. For Windows it can be downloaded.
+For Windows the exe is downloaded automatically.
+For Linux and MacOS NumCalc is build automatically, note that this requires
+the ``build-essential`` on Linux and ``xcode`` on mac.
+In the [contributing guidelines](https://mesh2scattering.readthedocs.io/en/stable/contributing.html), you will find a complete Instructions for
+manual building.
 
-### for Linux
-
-Install the C++ build essentials by running
-
-```bash
-sudo apt-get install build-essential
-```
-
-Go into the NumCalc directory by running
-
-```bash
-cd path/to/your/Mesh2scattering/mesh2scattering/numcalc/src
-```
-
-Compile NumCalc by running make. It is now located in the folder ``mesh2scattering/numcalc/bin``
-
-```bash
-make
-```
-
-Copy NumCalc to a folder in your program path: in the same directory run
-
-```bash
-sudo cp NumCalc /usr/local/bin/
-```
-
-Now NumCalc can be used by running NumCalc (don't do this yet).
-
-### for MacOS
-
-
-Install the C++ build essentials by installing ``xcode``
-Go into the ``numcalc/src`` directory by running
-
-```bash
-cd path/to/your/Mesh2scattering/mesh2scattering/numcalc/src
-```
-
-Compile NumCalc by running ``make``. It is now located in the folder ``mesh2scattering/numcalc/bin``
-
-```bash
-make
-```
-
-Now NumCalc can be used by running ``path/to/mesh2scattering/numcalc/bin/NumCalc`` (don't do this yet)
-
-```bash
-path/to/mesh2scattering/numcalc/bin/NumCalc
-```
-
-### for Windows
-
-download the executable from the release.
 
 ## Contributing
 
