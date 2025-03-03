@@ -1,3 +1,4 @@
+"""Contains functions for managing numerical calculations."""
 import os
 import glob
 import time
@@ -5,14 +6,93 @@ import psutil
 import subprocess
 import numpy as np
 import shutil
-import csv
 import mesh2scattering as m2s
-import re
-import io
+from packaging.version import Version
+import pooch
 
+
+def build_or_fetch_numcalc(replace_existing=False):
+    """Get the numcalc executable from building (linux and mac) or downloading
+    the exe from Github (windows) and will be placed in the
+    ``numcalc/bin`` folder.
+
+    Building NumCalc on Linux requires the ``build-essential`` package to be
+    installed. On Ubuntu, this can be done with the following command:
+
+    .. code-block:: bash
+
+        sudo apt-get install build-essential
+
+    For Mac, the ``xcode`` command line tools are required.
+
+    Parameters
+    ----------
+    replace_existing : bool, optional
+        If True, the existing NumCalc executable is replaced. The default is
+        False.
+
+    Returns
+    -------
+    str
+        NumCalc path
+    """
+    # ignore tests for windows since its difficult to build the exe
+    if os.name == 'nt':
+        numcalc_path = os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin")
+
+        if replace_existing and os.path.isfile(os.path.join(
+                numcalc_path, 'NumCalc.exe')):
+            os.remove(os.path.join(numcalc_path, 'NumCalc.exe'))
+
+        if not os.path.exists(os.path.join(numcalc_path, "NumCalc.exe")):
+            numcalc_path = _download_windows_build()
+
+    else:
+        # Build NumCalc locally to use for testing
+        numcalc = os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin", "NumCalc")
+        numcalc_path = numcalc
+
+        if os.path.isfile(numcalc) and replace_existing:
+            os.remove(numcalc)
+
+        if not os.path.isfile(numcalc):
+            subprocess.run(
+                ["make"], cwd=os.path.join(
+                    m2s.utils.program_root(), "numcalc", "src"), check=True)
+
+    return numcalc_path
+
+
+def _download_windows_build():
+    """Download the NumCalc executable from the Github release."""
+    if Version(m2s.__version__) < Version('1.0.0'):
+        m2s_version= 'develop'
+    else:
+        m2s_version = f'v{m2s.__version__}'
+
+    win_exe = pooch.create(
+        # Use the default cache folder for the operating system
+        path=os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin"),
+        # The remote data is on Github
+        base_url=(
+            "https://github.com/ahms5/Mesh2scattering/raw"
+            f"/{m2s_version}/release/"),
+        registry={
+            "NumCalc_WindowsExe.zip": None,
+            },
+        )
+    _ = win_exe.fetch("NumCalc_WindowsExe.zip", processor=pooch.Unzip(
+        extract_dir=os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin"),
+    ))
+    return os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin")
 
 def remove_outputs(
-        paths, boundary=False, grid=False, scattering=False, log=False):
+        paths, boundary=False, grid=False, log=False):
     """
     Remove output data from scattering project folder.
 
@@ -33,13 +113,9 @@ def remove_outputs(
         Remove raw pressure and velocity simulated on the evaluation grid.This
         data is saved in
         `project_folder/NumCalc/source_*/be.out/be.*/*EvalGrid`
-    scattering : bool, optional
-        Remove scattering saved in SOFA files saved in
-        `project_folder/*.sofa`.
     log : bool, optional
         Remove log ``(*.txt, *.out)`` files in ``source_*`` dir.
     """
-
     # check input
     if isinstance(paths, str):
         paths = (paths, )
@@ -49,71 +125,57 @@ def remove_outputs(
 
     # loop paths and contained folders
     for pp, path in enumerate(paths):
-        for subfolder in ['sample', 'reference']:
-            folders = glob.glob(os.path.join(path, subfolder))
+        folders = glob.glob(path)
 
-            for ff, folder in enumerate(folders):
+        for ff, folder in enumerate(folders):
 
-                print(
-                    f"Purging path {pp+1}/{len(paths)} "
-                    f"folder {ff+1}/{folders}")
-                print(os.path.basename(folder))
+            print(
+                f"Purging path {pp+1}/{len(paths)} "
+                f"folder {ff+1}/{folders}")
+            print(os.path.basename(folder))
 
-                # check if the directories exist ------------------------------
-                has_numcalc = os.path.isdir(os.path.join(folder, "NumCalc"))
-                if has_numcalc:
-                    numcalc = glob.glob(os.path.join(
-                        folder, "NumCalc", "source_*"))
+            # check if the directories exist ------------------------------
+            has_numcalc = os.path.isdir(os.path.join(folder, "NumCalc"))
+            if has_numcalc:
+                numcalc = glob.glob(os.path.join(
+                    folder, "NumCalc", "source_*"))
 
-                has_output = os.path.isdir(os.path.join(folder, "Output2HRTF"))
-                if has_output:
-                    output = glob.glob(
-                        os.path.join(folder, "Output2HRTF", "*"))
-
-                # data in source*/be.out/be.* folders -------------------------
-                # delete entire be.out folders
-                if boundary and grid and has_numcalc:
-                    for nc in numcalc:
-                        shutil.rmtree(os.path.join(nc, "be.out"))
-                # delete only the boundary data
-                elif boundary and has_numcalc:
-                    for nc in numcalc:
-                        for be in glob.glob(
-                                os.path.join(nc, "be.out", "be.*")):
-                            os.remove(os.path.join(be, "pBoundary"))
-                            os.remove(os.path.join(be, "vBoundary"))
-                # delete only the grid data
-                elif grid and has_numcalc:
-                    for nc in numcalc:
-                        for be in glob.glob(
-                                os.path.join(nc, "be.out", "be.*")):
-                            os.remove(os.path.join(be, "pEvalGrid"))
-                            os.remove(os.path.join(be, "vEvalGrid"))
-                # delete only the log data
-                if log and has_numcalc:
-                    for nc in numcalc:
-                        for be in glob.glob(os.path.join(nc, "*.txt")):
-                            if os.path.isfile(os.path.join(nc, be)):
-                                os.remove(os.path.join(nc, be))
-                        for be in glob.glob(os.path.join(nc, "*.out")):
-                            if os.path.isfile(os.path.join(nc, be)):
-                                os.remove(os.path.join(nc, be))
-
-                # data in scattering ------------------------------------------
-                if has_output:
-                    for oo in output:
-                        base = os.path.basename(oo)
-                        # remove compressed boundary data
-                        if base.endswith(".sofa") and scattering:
-                            os.remove(oo)
+            # data in source*/be.out/be.* folders -------------------------
+            # delete entire be.out folders
+            if boundary and grid and has_numcalc:
+                for nc in numcalc:
+                    shutil.rmtree(os.path.join(nc, "be.out"))
+            # delete only the boundary data
+            elif boundary and has_numcalc:
+                for nc in numcalc:
+                    for be in glob.glob(
+                            os.path.join(nc, "be.out", "be.*")):
+                        os.remove(os.path.join(be, "pBoundary"))
+                        os.remove(os.path.join(be, "vBoundary"))
+            # delete only the grid data
+            elif grid and has_numcalc:
+                for nc in numcalc:
+                    for be in glob.glob(
+                            os.path.join(nc, "be.out", "be.*")):
+                        os.remove(os.path.join(be, "pEvalGrid"))
+                        os.remove(os.path.join(be, "vEvalGrid"))
+            # delete only the log data
+            if log and has_numcalc:
+                for nc in numcalc:
+                    for be in glob.glob(os.path.join(nc, "*.txt")):
+                        if os.path.isfile(os.path.join(nc, be)):
+                            os.remove(os.path.join(nc, be))
+                    for be in glob.glob(os.path.join(nc, "*.out")):
+                        if os.path.isfile(os.path.join(nc, be)):
+                            os.remove(os.path.join(nc, be))
 
 
-def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
+def manage_numcalc(project_path=None, numcalc_path=None,
                    max_ram_load=None, ram_safety_factor=1.05, max_cpu_load=90,
-                   max_instances=psutil.cpu_count(), wait_time=15,
+                   max_instances=None, wait_time=15,
                    starting_order='alternate', confirm_errors=False):
     """
-    Run NumCalc on one or multiple Mesh2HRTF project folders.
+    Run NumCalc on one or multiple NumCalc project folders.
 
     This script monitors the RAM and CPU usage and starts a new NumCalc
     instance whenever enough resources are available. The required RAM for each
@@ -125,25 +187,26 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
 
         `manage_numcalc` can also be launched by running the python script
         `manage_numcalc_script.py` contained in the subfolder
-        `mesh2hrtf/NumCalc` of the Mesh2HRTF Git repository.
+        `mesh2scattering/NumCalc` of the mesh2scattering Git repository.
 
     Parameters
     ----------
     project_path : str, optional
         The directory to simulate: It can be path to either
-        1- directory that contains multiple Mesh2HRTF project folders or
-        2- one Mesh2HRTF project folder (folder containing "parameters.json").
-        The default is os.getcwd()
+        1- directory that contains multiple NumCalc project folders or
+        2- one NumCalc project folder (folder containing "parameters.json").
+        The default ``None`` uses ``os.getcwd()``
     numcalc_path : str, optional
         On Unix, this is the path to the NumCalc binary (by default 'NumCalc'
         is used). On Windows, this is the path to the folder
         'NumCalc_WindowsExe' from
-        https://sourceforge.net/projects/mesh2hrtf-tools/ (by default the
+        https://github.com/ahms5/Mesh2scattering/releases/ (by default the
         `project_path` is searched for this folder)
+        By default, :py:func:`build_or_fetch_numcalc` is used.
     max_ram_load : number, optional
         The RAM that can maximally be used in GB. New NumCalc instances are
         only started if enough RAM is available. The default ``None`` uses all
-        available RAM will be used.
+        available RAM.
     ram_safety_factor : number, optional
         A safety factor that is applied to the estimated RAM consumption. The
         estimate is obtained using NumCalc -estimate_ram. The default of
@@ -153,14 +216,17 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
         Maximum allowed CPU load in percent. New instances are only launched if
         the current CPU load is below this value. The default is 90 percent.
     max_instances : int, optional
-        The maximum numbers of parallel NumCalc instances. By default a new
-        instance is launched until the number of available CPU cores given by
-        ``psutil.cpu_count()`` is reached.
+        The maximum numbers of parallel NumCalc instances. If max_instances is
+        ``None``, by default a new instance is launched until the number of
+        available CPU cores given by ``psutil.cpu_count()`` is reached.
     wait_time : int, optional
         Delay in seconds for waiting until the RAM and CPU usage is checked
         after launching a NumCalc instance. This has to be sufficiently large
         for the RAM and CPU to be fully used by the started NumCalc instance.
-        The default is 15. After this initial wait time, the resources are
+        The default is 15 s but values of 60 s or even more might be required
+        depending on the machine. The RAM values that ``manage_numcalc``
+        outputs are usually a good indicator to check if `wait_time` is
+        sufficiently high. After this initial wait time, the resources are
         checked every second. And the next instance is started, once enough
         resources are available.
     starting_order : str, optional
@@ -180,8 +246,10 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
         occurs. The default false exits the function immediately if an error
         occurs.
     """
-
     # log_file initialization -------------------------------------------------
+    if project_path is None:
+        project_path = os.getcwd()
+
     current_time = time.strftime("%Y_%m_%d_%H-%M-%S", time.localtime())
     log_file = os.path.join(
         project_path, f"manage_numcalc_{current_time}.txt")
@@ -191,6 +259,8 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
         os.remove(log_file)
 
     # default values ----------------------------------------------------------
+    if numcalc_path is None:
+        numcalc_path = build_or_fetch_numcalc()
     if os.name == "nt":
         numcalc_path = "Searching for NumCalc_WindowsExe"\
              if numcalc_path is None else numcalc_path
@@ -198,17 +268,15 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
         numcalc_path = "NumCalc" if numcalc_path is None else numcalc_path
 
     ram_info = psutil.virtual_memory()
+    total_ram = ram_info.total / 1073741824
     if max_ram_load is None:
-        max_ram_load = ram_info.total / 1073741824
-    elif max_ram_load > ram_info.total / 1073741824:
+        max_ram_load = total_ram
+    elif max_ram_load > total_ram:
         raise ValueError((
             f"The maximum RAM load of {max_ram_load} GB must be smaller than "
-            f"the total RAM, which is {ram_info.total / 1073741824} GB."))
+            f"the total RAM, which is {total_ram} GB."))
 
     # helping variables -------------------------------------------------------
-
-    # RAM that should not be used
-    ram_offset = max([0, ram_info.total / 1073741824 - max_ram_load])
 
     # trick to get colored print-outs   https://stackoverflow.com/a/54955094
     text_color_red = '\033[31m'
@@ -221,30 +289,32 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
     wait_time_busy = 1
 
     # check input -------------------------------------------------------------
-    if max_instances > psutil.cpu_count():
+    if max_instances is None:
+        max_instances = psutil.cpu_count()
+    elif max_instances > psutil.cpu_count():
         _raise_error(
             (f"max_instances is {max_instances} but can not be larger than "
              f"{psutil.cpu_count()} (The number of logical CPUs)"),
             text_color_red, log_file, confirm_errors)
 
     # Detect what the project_path or "getcwd()" is pointing to:
-    if os.path.isdir(os.path.join(project_path, 'NumCalc')):
-        # project_path is a Mesh2HRTF project folder
+    if os.path.isfile(os.path.join(project_path, 'parameters.json')):
+        # project_path is a NumCalc project folder
         all_projects = [project_path]
         log_file = os.path.join(project_path, log_file)
     else:
-        # project_path contains multiple Mesh2HRTF project folders
+        # project_path contains multiple NumCalc project folders
         all_projects = []  # list of project folders to execute
         for subdir in os.listdir(project_path):
-            if os.path.isdir(os.path.join(
-                    project_path, subdir, 'ObjectMeshes', 'Reference')):
+            if os.path.isdir(os.path.join(project_path, subdir,
+                                          'ObjectMeshes', 'Reference')):
                 all_projects.append(os.path.join(project_path, subdir))
 
         log_file = os.path.join(project_path, log_file)
 
         # stop if no project folders were detected
         if len(all_projects) == 0:
-            message = ("manage_numcalc could not detect any Mesh2HRTF "
+            message = ("manage_numcalc could not detect any NumCalc "
                        f"projects at project_path={project_path}")
             _raise_error(message, text_color_red, log_file, confirm_errors)
 
@@ -256,11 +326,13 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
     message += (
         f"project_path: {project_path}\n"
         f"numcalc_path: {numcalc_path}\n"
-        f"max_ram_load: {max_ram_load}\n"
+        f"max_ram_load: {max_ram_load:.2f} GB ({total_ram:.2f} GB detected, "
+        f"{ram_info.available / 1073741824:.2f} GB available)\n"
         f"ram_safety_factor: {ram_safety_factor}\n"
-        f"max_cpu_load: {max_cpu_load}\n"
-        f"max_instances: {max_instances}\n"
-        f"wait_time: {wait_time}\n"
+        f"max_cpu_load: {max_cpu_load} %\n"
+        f"max_instances: {max_instances} "
+        f"({psutil.cpu_count()} cores detected)\n"
+        f"wait_time: {wait_time} seconds\n"
         f"starting_order: {starting_order}\n"
         f"confirm_errors: {confirm_errors}\n")
 
@@ -278,7 +350,7 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
             numcalc_path = os.path.join(all_projects[0], 'NumCalc_WindowsExe')
         elif os.path.isdir(os.path.join(os.path.dirname(all_projects[0]),
                                         'NumCalc_WindowsExe')):
-            # located inside the folder that contains all Mesh2HRTF projects
+            # located inside the folder that contains all NumCalc projects
             numcalc_path = os.path.join(
                 os.path.dirname(all_projects[0]), 'NumCalc_WindowsExe')
         elif os.path.isfile(os.path.join(all_projects[0],
@@ -324,20 +396,26 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
     message = ("\nPer project summary of instances that will be run\n"
                "-------------------------------------------------\n")
 
-    message += f"Detected {len(all_projects)} Mesh2HRTF projects in\n"
-    message += f"{os.path.dirname(log_file)}\n\n"
+    message += f"Detected {len(all_projects)} NumCalc projects in\n"
+    message += f"{os.path.dirname(log_file)}\n"
+
+    # print already here because _check_project might produce output that
+    # should come after this
+    _print_message(message, text_color_reset, log_file)
+
+    message = "\n"
 
     for project in all_projects:
-        all_instances, instances_to_run, *_ = _check_project(
+        all_instances, instances_to_run, _ = _check_project(
             project, numcalc_executable, log_file)
 
         if instances_to_run is not None:
             projects_to_run.append(project)
             message += (
                 f"{len(instances_to_run)}/{len(all_instances)} frequency "
-                f"steps to run in {os.path.basename(project)}\n")
+                f"steps to run in '{os.path.basename(project)}'\n")
         else:
-            message += f"{os.path.basename(project)} is already complete\n"
+            message += f"'{os.path.basename(project)}' is already complete\n"
 
     _print_message(message, text_color_reset, log_file)
 
@@ -353,7 +431,7 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
         total_nr_to_run = instances_to_run.shape[0]
 
         # Status printouts:
-        message = (f"Started {os.path.basename(project)} "
+        message = (f"Started '{os.path.basename(project)}' project "
                    f"({pp + 1}/{len(projects_to_run)}, {current_time})")
         message = "\n" + message + "\n" + "-" * len(message) + "\n"
         if total_nr_to_run:
@@ -373,14 +451,13 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
 
         # check if available memory is enough for running the instance with the
         # highest memory consumption without ever exceeding 100% of RAM.
-        ram_available, ram_used = _get_current_ram(ram_offset)
         if max_ram_load < instances_to_run[-1, 3] * ram_safety_factor:
             # note: it IS possible to run simulations that use even more than
             # 100% of available system RAM - only the performance will be poor.
             _raise_error((
                 f"Stop - not sufficient free RAM for this simulation project: "
-                f"Available RAM is {round(ram_available, 2)} GB, but frequency"
                 f"Available RAM is {round(max_ram_load, 2)} GB, but frequency"
+                f" step {int(instances_to_run[-1, 1])} of source "
                 f"{int(instances_to_run[-1, 0])} requires "
                 f"{round(instances_to_run[-1, 3] * ram_safety_factor, 2)} "
                 "GB."), text_color_red, log_file, confirm_errors)
@@ -399,7 +476,7 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
             # current time and resources
             current_time = time.strftime(
                 "%b %d %Y, %H:%M:%S", time.localtime())
-            ram_available, ram_used = _get_current_ram(ram_offset)
+            ram_available, ram_used = _get_current_ram(total_ram, max_ram_load)
             cpu_load = psutil.cpu_percent(.1)
             running_instances = _numcalc_instances()
 
@@ -414,12 +491,13 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
                 # print message (only done once between launching instances)
                 if started_instance:
                     _print_message(
-                        (f"\n... waiting for resources (checking every "
-                         f"second, {current_time}):\n"
-                         f" {running_instances} NumCalc instances running ("
-                         f"{cpu_load}% CPU load)\n"
-                         f" {round(ram_available, 2)} GB RAM available ("
-                         f"{round(ram_required, 2)} GB RAM needed next)\n"),
+                        (f"... waiting for resources and checking every "
+                         f"second ({current_time})\n"
+                         f"{running_instances} NumCalc instances running at "
+                         f"{cpu_load:.2f}% CPU load\n"
+                         f"{round(ram_available, 2)} GB RAM available "
+                         f"({ram_used:.2f} GB used), "
+                         f"{round(ram_required, 2)} GB required\n"),
                         text_color_reset, log_file)
                     started_instance = False
 
@@ -428,18 +506,24 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
                 continue
 
             # find frequency step with the highest possible RAM consumption
-            for idx, ram_required in enumerate(instances_to_run[:, 3]):
+            idx = -1
+            for i, ram_required in enumerate(instances_to_run[:, 3]):
+                idx = i
                 if ram_required <= ram_available:
                     break
 
             # start new NumCalc instance
             source = int(instances_to_run[idx, 0])
             step = int(instances_to_run[idx, 1])
+            frequency = float(instances_to_run[idx, 2])
+            ram = float(instances_to_run[idx, 3])
             progress = total_nr_to_run - instances_to_run.shape[0] + 1
             message = (
-                f"{progress}/{total_nr_to_run} starting instance from: "
-                f"{os.path.basename(project)} (source {source}, step {step}, "
-                f"{current_time})")
+                f"{progress}/{total_nr_to_run} starting instance from "
+                f"'{os.path.basename(project)}' ({current_time})\n"
+                f"source {source}, step {step}, {frequency} Hz\n"
+                f"estimated {ram:.2f} GB RAM of available {ram_available:.2f} "
+                "GB required\n")
             _print_message(message, text_color_reset, log_file)
 
             # new working directory
@@ -489,14 +573,14 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
                "--------------------------------------\n")
 
     for project in all_projects:
-        all_instances, instances_to_run, *_ = _check_project(
+        all_instances, instances_to_run, _ = _check_project(
             project, numcalc_executable, log_file)
 
         if instances_to_run is None:
             continue
 
         if instances_to_run.shape[0] > 0:
-            message += f"{os.path.basename(project)}: "
+            message += f"'{os.path.basename(project)}': "
             unfinished = [f"source {int(p[0])} step {int(p[1])}"
                           for p in instances_to_run]
             message += "; ".join(unfinished) + "\n"
@@ -514,8 +598,7 @@ def manage_numcalc(project_path=os.getcwd(), numcalc_path=None,
 
 
 def _raise_error(message, text_color, log_file, confirm_errors):
-    """Two different ways of error handling depending on `confirm_errors`"""
-
+    """Two different ways of error handling depending on `confirm_errors`."""
     # error to logfile
     with open(log_file, "a", encoding="utf8", newline="\n") as f:
         f.write("\n\n" + message + "\n")
@@ -534,8 +617,7 @@ def _raise_error(message, text_color, log_file, confirm_errors):
 
 
 def _print_message(message, text_color, log_file):
-    """Print message to console and log file"""
-
+    """Print message to console and log file."""
     if os.name == 'nt':  # Windows detected
         text_color = ''  # color codes do not work as intended on Win10
     print(text_color + message)
@@ -544,23 +626,24 @@ def _print_message(message, text_color, log_file):
         f.write(message + "\n")
 
 
-def _get_current_ram(ram_offset):
-    """Get the available RAM = free RAM - ram_offset"""
+def _get_current_ram(total_ram, max_ram_load):
+    """
+    Get the available based on currently available RAM, total RAM, and allowed
+    RAM load.
+    """
     ram_info = psutil.virtual_memory()
-    ram_available = max([0, ram_info.available / 1073741824 - ram_offset])
-    ram_used = ram_info.used / 1073741824
+    ram_free = ram_info.available / 1073741824
+    ram_used = total_ram - ram_free
+    ram_available = max([0, max_ram_load - ram_used])
     return ram_available, ram_used
 
 
 def _numcalc_instances():
-    """Return the number of currently running NumCalc instances"""
-
+    """Return the number of currently running NumCalc instances."""
     numcalc_executable = 'NumCalc' if os.name != 'nt' else 'NumCalc.exe'
 
     num_instances = 0
     for p in psutil.process_iter(['name', 'memory_info']):
-        if not hasattr(p.info['name'], 'endswith'):
-            continue
         if p.info['name'].endswith(numcalc_executable):
             num_instances += 1
 
@@ -569,12 +652,16 @@ def _numcalc_instances():
 
 def _check_project(project, numcalc_executable, log_file):
     """
-    Find unfinished instances (frequency steps) in a Mesh2HRTF project folder
+    Find unfinished instances (frequency steps) in a NumCalc project folder.
 
     Parameters
     ----------
     project : str
-        Full path of the Mesh2HRTF project folder
+        Full path of the NumCalc project folder
+    numcalc_executable : str
+        Full path to the NumCalc executable
+    log_file : str
+        Full path to the log file
 
     Returns
     -------
@@ -590,7 +677,6 @@ def _check_project(project, numcalc_executable, log_file):
     source_counter : int
         Number of sources in the project
     """
-
     # get source folders and number of sources
     sources = glob.glob(os.path.join(project, 'NumCalc', "source_*"))
     source_counter = len(sources)
@@ -620,8 +706,6 @@ def _check_project(project, numcalc_executable, log_file):
 
         # get RAM estimates and prepend source number
         estimates = read_ram_estimates(ff)
-        if len(estimates) == 0:
-            raise ValueError(f'{ff} is empty.')
         estimates = np.concatenate(
             ((source_id + 1) * np.ones((estimates.shape[0], 1)), estimates),
             axis=1)
@@ -689,7 +773,6 @@ def read_ram_estimates(folder: str):
         steps. The first column contains the frequency step, the second the
         frequency in Hz, and the third the estimated RAM consumption in GB.
     """
-
     # check if file exists
     if not os.path.isfile(os.path.join(folder, "Memory.txt")):
         raise ValueError(f"{folder} does not contain a Memory.txt file")
@@ -710,233 +793,41 @@ def read_ram_estimates(folder: str):
     return np.asarray(estimates)
 
 
-def _load_results(foldername, filename, numFrequencies):
-    """
-    Load results of the BEM calculation.
-
-    Parameters
-    ----------
-    foldername : string
-        The folder from which the data is loaded. The data to be read is
-        located in the folder be.out inside NumCalc/source_*
-    filename : string
-        The kind of data that is loaded
-
-        pBoundary
-            The sound pressure on the object mesh
-        vBoundary
-            The sound velocity on the object mesh
-        pEvalGrid
-            The sound pressure on the evaluation grid
-        vEvalGrid
-            The sound velocity on the evaluation grid
-    numFrequencies : int
-        the number of simulated frequencies
-
-    Returns
-    -------
-    data : numpy array
-        Pressure or abs velocity values of shape (numFrequencies, numEntries)
-    """
-
-    # ---------------------check number of header and data lines---------------
-    current_file = os.path.join(foldername, 'be.1', filename)
-    numDatalines = None
-    with open(current_file) as file:
-        line = csv.reader(file, delimiter=' ', skipinitialspace=True)
-        for idx, li in enumerate(line):
-            # read number of data points and head lines
-            if len(li) == 2 and not li[0].startswith("Mesh"):
-                numDatalines = int(li[1])
-
-            # read starting index
-            elif numDatalines and len(li) > 2:
-                start_index = int(li[0])
-                break
-
-    # ------------------------------load data----------------------------------
-    dtype = complex if filename.startswith("p") else float
-    data = np.zeros((numFrequencies, numDatalines), dtype=dtype)
-
-    for ii in range(numFrequencies):
-        tmpData = []
-        current_file = os.path.join(foldername, 'be.%d' % (ii+1), filename)
-        with open(current_file) as file:
-
-            line = csv.reader(file, delimiter=' ', skipinitialspace=True)
-
-            for li in line:
-
-                # data lines have 3 ore more entries
-                if len(li) < 3 or li[0].startswith("Mesh"):
-                    continue
-
-                if filename.startswith("p"):
-                    tmpData.append(complex(float(li[1]), float(li[2])))
-                elif filename == "vBoundary":
-                    tmpData.append(np.abs(complex(float(li[1]), float(li[2]))))
-                elif filename == "vEvalGrid":
-                    tmpData.append(np.sqrt(
-                        np.abs(complex(float(li[1]), float(li[2])))**2 +
-                        np.abs(complex(float(li[3]), float(li[4])))**2 +
-                        np.abs(complex(float(li[5]), float(li[6])))**2))
-
-        data[ii, :] = tmpData if tmpData else np.nan
-
-    return data, np.arange(start_index, numDatalines + start_index)
-
-
 def calc_and_read_ram(project_path, numcalc_executable):
-    """Calculate if not exists and returns the memory usage for sample and
-    reference.
+    """Calculate if not exists and returns the memory usage.
 
     Parameters
     ----------
     project_path : str, path
-        project root path, this should contain the ``sample`` and the
-        ``reference`` folder.
+        project root path.
     numcalc_executable : str, path
         Path to numcalc executable, on Windows it ends with ``NumCalc.exe``
         and on Unix system ``NumCalc``
 
     Returns
     -------
-    ram : np.ndarray
-        with shape (N, 6), where the first row definitions are as follows:
+    ram : numpy.ndarray
+        with shape (N, 3), where the first row definitions are as follows:
             - id of the frequency
             - frequency itself
             - expected RAM usage in GB
-            - defines folder, for ``sample`` 0 and for ``reference`` 1
-            - source id starting from 1, like the folders name
     """
     if not os.path.isdir(project_path):
         raise ValueError(f'No such directory {project_path}')
-    sample_source = os.path.join(project_path, 'sample', 'NumCalc', 'source_1')
-    ref_source = os.path.join(project_path, 'reference', 'NumCalc', 'source_1')
-    paths = [sample_source, ref_source]
-    for path in paths:
-        if not os.path.isfile(os.path.join(path, "Memory.txt")):
-            if os.name == 'nt':  # Windows detected
-                # run NumCalc and route all printouts to a log file
-                subprocess.run(
-                    f"{numcalc_executable} -estimate_ram",
-                    stdout=subprocess.DEVNULL, cwd=path, check=True)
+    path = os.path.join(project_path, 'NumCalc', 'source_1')
+    if not os.path.isfile(os.path.join(path, "Memory.txt")):
+        if os.name == 'nt':  # Windows detected
+            # run NumCalc and route all printouts to a log file
+            subprocess.run(
+                f"{numcalc_executable} -estimate_ram",
+                stdout=subprocess.DEVNULL, cwd=path, check=True)
 
-            else:  # elif os.name == 'posix': Linux or Mac detected
-                # run NumCalc and route all printouts to a log file
-                subprocess.run(
-                    [f"{numcalc_executable} -estimate_ram"],
-                    shell=True, stdout=subprocess.DEVNULL,
-                    cwd=path, check=True)
+        else:  # elif os.name == 'posix': Linux or Mac detected
+            # run NumCalc and route all printouts to a log file
+            subprocess.run(
+                [f"{numcalc_executable} -estimate_ram"],
+                shell=True, stdout=subprocess.DEVNULL,
+                cwd=path, check=True)
 
-    ram = []
-    for idx in range(len(paths)):
-        data = read_ram_estimates(paths[idx])
-        data = np.append(data, np.zeros((data.shape[0], 1))+idx, axis=1)
-        ram.append(data)
-
-    ram = np.vstack(ram)
-    cores = (np.array(ram[:, 2]*1.1/4, dtype=int)+1)
-    ram = np.append(ram, cores.reshape((len(cores), 1)), axis=1)
+    ram = read_ram_estimates(path)
     return ram
-
-
-def create_hpc_files(
-        project_path, numcalc_executable,
-        template_path=None, times='00-03:00:00'):
-    """Create job-files for hpc computing in hpc folder. For each frequency
-    bin a file is created in which a job array is defined for each unsolved
-    step.
-
-    Parameters
-    ----------
-    project_path : str, path
-        Project root, which contains the `sample` and `reference` folder
-    numcalc_executable : str, path
-        path to numcalc executable, is used to estimate the ram usage
-    template_path : str, optional
-        template path for hpc job. Note that the may differ for each hpc
-        cluster. It should contain the following placeholder:
-        - `$$CORES$$`, defines the number of course which are used
-        - `$$TIME$$``, defines the maximum time per job, see times
-        - `$$NAME$$`, job name,
-        - `$$ARRAY$$`, defines the sources to be simulated
-        - `$$PATH$$`, path for simulation root
-        by default `/mesh2scattering/numcalc/hpc_template/rwth_hpc_draft.sh`
-    times : str, optional
-        defines the time limit for each job, by default '00-03:00:00'
-
-    Returns
-    -------
-    list(str)
-        list of job definition files.
-    """
-
-    if template_path is None:
-        template_path = os.path.join(
-            m2s.utils.program_root(), 'numcalc', 'hpc_templates',
-            'rwth_hpc_draft.sh')
-    ram = calc_and_read_ram(project_path, numcalc_executable)
-    program_path = m2s.utils.program_root()
-    hpc_path = os.path.join(project_path, 'hpc')
-    if not os.path.exists(hpc_path):
-        os.mkdir(hpc_path)
-
-    cores_str = '$$CORES$$'
-    times_str = '$$TIME$$'
-    name_str = '$$NAME$$'
-    array_str = '$$ARRAY$$'
-    path_str = '$$PATH$$'
-    folder_str = '$$TYPE$$'
-    index_str = '$$INDEX$$'
-
-    project_name_out = hpc_path.split(os.sep)[-2]
-    path = f'$HOME/mesh2scattering/{project_name_out}'
-
-    # read draft
-    with open(os.path.join(program_path, template_path)) as f:
-        lines = f.read()
-    shell_scripte = []
-    for idx in range(ram.shape[0]):
-        cores = int(ram[idx, 4])
-        if ram[idx, 3] == 0:  # sample
-            folder = 'sample'
-        else:
-            folder = 'reference'
-        index = int(ram[idx, 0])
-
-        all_files, fundamentals, out, out_names = m2s.output.check_project(
-            os.path.join(project_path, folder))
-
-        array_list = []
-        is_error = False
-        for ss in range(out.shape[2]):
-            f = out[index-1, :, ss]
-            if any(f < 0):
-                array_list.append(f'{ss+1}')
-                is_error = True
-        if not is_error:
-            continue
-        array = ','.join(array_list)
-
-        name = f'{project_name_out}_{folder}_{index}'
-
-        # fill in form
-        shell = lines.replace(cores_str, f'{cores}')
-        shell = shell.replace(times_str, times)
-        shell = shell.replace(name_str, name)
-        shell = shell.replace(array_str, array)
-        shell = shell.replace(path_str, path)
-        shell = shell.replace(folder_str, folder)
-        shell = shell.replace(index_str, f'{index}')
-
-        # paste correct newline symbol for Linux
-        shell = re.sub('\r\n', '\n', shell)
-
-        file_out = os.path.join(hpc_path, f'{name}.sh')
-        shell_scripte.append(f'{name}.sh')
-        with io.open(file_out, "w", newline='\n') as f:
-            f.write(shell)
-            f.close()
-
-    return shell_scripte

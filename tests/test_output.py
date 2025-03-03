@@ -1,9 +1,50 @@
 import os
 import mesh2scattering as m2s
-import numpy.testing as npt
 import pyfar as pf
 import shutil
 import pytest
+import numpy as np
+import sofar as sf
+
+
+@pytest.mark.parametrize("project_name", [
+    'sine', 'reference',
+])
+def test_write_pattern(project_name, tmpdir):
+    base_dir = os.path.dirname(__file__)
+    # copy test directory
+    test_dir = os.path.join(tmpdir, project_name)
+    shutil.copytree(
+        os.path.join(
+            base_dir, 'resources', 'output', project_name),
+        test_dir)
+
+    m2s.output.write_pressure(test_dir)
+
+    sofa = sf.read_sofa(
+        os.path.join(
+            test_dir, '..', f'{project_name}_gaussian_63.pressure.sofa'))
+    pressure, sources, receivers = pf.io.convert_sofa(sofa)
+
+    # check if the sofa file is correct
+    assert pressure.cshape[0] == sources.csize
+    assert pressure.cshape[1] == receivers.csize
+    assert isinstance(sofa.SpeedOfSound, float)
+    assert isinstance(sofa.SampleStructuralWavelengthX, float)
+    assert isinstance(sofa.SampleStructuralWavelengthY, float)
+    assert isinstance(sofa.SampleDiameter, float)
+    assert isinstance(sofa.SourceWeights, np.ndarray)
+    assert isinstance(sofa.ReceiverWeights, np.ndarray)
+    assert sofa.ReceiverWeights.size == receivers.csize
+    assert sofa.SourceWeights.size == sources.csize
+    if project_name == 'sine':
+        assert sofa.SampleSymmetryAzimuth == '90,180'
+        assert bool(sofa.SampleSymmetryRotational) is False
+    elif project_name == 'reference':
+        assert sofa.SampleSymmetryAzimuth == ''
+        assert bool(sofa.SampleSymmetryRotational) is True
+    else:
+        raise AssertionError()
 
 
 def test_import():
@@ -11,35 +52,34 @@ def test_import():
     assert output
 
 
-@pytest.mark.parametrize("folders,issue,errors,nots", (
+@pytest.mark.parametrize(("folders", "issue", "errors", "nots"), [
     # no issues single NC.out filejoin
-    [["case_0"], False, [], []],
+    (["case_0"], False, [], []),
     # issues in NC.out that are corrected by second file NC1-1.out
-    [["case_4"], False, [], []],
+    (["case_4"], False, [], []),
     # missing frequencies
-    [["case_1"], True,
-     ["Frequency steps that were not calculated:\n59, 60"], []],
+    (["case_1"], True,
+     ["Frequency steps that were not calculated:\n59, 60"], []),
     # convergence issues
-    [["case_2"], True,
-     ["Frequency steps that did not converge:\n18, 42"], []],
+    (["case_2"], True,
+     ["Frequency steps that did not converge:\n18, 42"], []),
     # input/mesh issues
-    [["case_3"], True,
+    (["case_3"], True,
      ["Frequency steps that were not calculated:\n59, 60",
-      "Frequency steps with bad input:\n58"], []],
-    # no isses in source 1 but issues in source 2
-    [["case_0", "case_1"], True,
+      "Frequency steps with bad input:\n58"], []),
+    # no issues in source 1 but issues in source 2
+    (["case_0", "case_1"], True,
      ["Detected issues for source 2",
       "Frequency steps that were not calculated:\n59, 60"],
-     ["Detected issues for source 1"]]
-))
+     ["Detected issues for source 1"]),
+])
 def test_project_report(folders, issue, errors, nots, tmpdir):
-    """Test issues found by the project report"""
-
+    """Test issues found by the project report."""
     cwd = os.path.dirname(__file__)
     data_nc = os.path.join(cwd, 'resources', 'nc.out')
     # create fake project structure
     os.mkdir(os.path.join(tmpdir, "NumCalc"))
-    os.mkdir(os.path.join(tmpdir, "Output2HRTF"))
+    os.mkdir(os.path.join(tmpdir, "report"))
     shutil.copyfile(os.path.join(data_nc, "parameters.json"),
                     os.path.join(tmpdir, "parameters.json"))
     for ff, folder in enumerate(folders):
@@ -57,56 +97,9 @@ def test_project_report(folders, issue, errors, nots, tmpdir):
         assert no not in report
     if issue:
         assert os.path.isfile(os.path.join(
-            tmpdir, "Output2HRTF", "report_issues.txt"))
-        assert ("For more information check Output2HRTF/report_source_*.csv "
+            tmpdir, "report", "report_issues.txt"))
+        assert ("For more information check report/report_source_*.csv "
                 "and the NC*.out files located at NumCalc/source_*") in report
     else:
         assert not os.path.isfile(os.path.join(
-            tmpdir, "Output2HRTF", "report_issues.txt"))
-
-
-def test_write_pattern(tmpdir):
-    project_path = os.path.join(
-        m2s.utils.repository_root(), "examples", "project")
-    test_dir = os.path.join(tmpdir, 'project_one_source')
-    shutil.copytree(project_path, test_dir)
-    m2s.output.write_pattern(test_dir)
-    reference, source_coords_ref, receiver_coords_ref = pf.io.read_sofa(
-        os.path.join(test_dir, 'reference.pattern.sofa'))
-    sample, source_coords, receiver_coords = pf.io.read_sofa(
-        os.path.join(test_dir, 'sample.pattern.sofa'))
-    assert sample.cshape[0] == source_coords.csize
-    assert sample.cshape[1] == receiver_coords.csize
-    assert sample.cshape[0] == source_coords.csize
-    assert sample.cshape[1] == receiver_coords.csize
-    assert reference.cshape[0] == source_coords_ref.csize
-    assert reference.cshape[1] == receiver_coords_ref.csize
-    assert reference.cshape[0] == source_coords_ref.csize
-    assert reference.cshape[1] == receiver_coords_ref.csize
-    assert reference.cshape == sample.cshape
-    npt.assert_equal(reference.frequencies, sample.frequencies)
-
-
-def test_write_pattern_one_source(tmpdir):
-    project_path = os.path.join(
-        m2s.utils.repository_root(), "tests", "resources",
-        'project_one_source')
-    test_dir = os.path.join(tmpdir, 'project_one_source')
-    shutil.copytree(project_path, test_dir)
-
-    m2s.output.write_pattern(test_dir)
-
-    reference, source_coords_ref, receiver_coords_ref = pf.io.read_sofa(
-        os.path.join(test_dir, 'reference.pattern.sofa'))
-    sample, source_coords, receiver_coords = pf.io.read_sofa(
-        os.path.join(test_dir, 'sample.pattern.sofa'))
-    assert sample.cshape[0] == source_coords.csize
-    assert sample.cshape[1] == receiver_coords.csize
-    assert sample.cshape[0] == source_coords.csize
-    assert sample.cshape[1] == receiver_coords.csize
-    assert reference.cshape[0] == source_coords_ref.csize
-    assert reference.cshape[1] == receiver_coords_ref.csize
-    assert reference.cshape[0] == source_coords_ref.csize
-    assert reference.cshape[1] == receiver_coords_ref.csize
-    assert reference.cshape == sample.cshape
-    npt.assert_equal(reference.frequencies, sample.frequencies)
+            tmpdir, "report", "report_issues.txt"))

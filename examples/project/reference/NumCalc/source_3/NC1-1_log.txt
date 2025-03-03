@@ -1,23 +1,23 @@
 istart= 1 iend = 1
 
----------- NumCalc started: 17/2/2023 7:29:23 ----------
+---------- NumCalc started: 3/3/2025 12:47:33 ----------
 
-Running on:         Annes-MacBook-Air.local
+Running on:         YOGA-MVO1.ITA.AKUSTIK.RWTH-AACHEN.DE
 
 3D analysis
-Job title: scattering coefficient Reference
+Job title: reference
 
-Step 1, Frequency = 1250 Hz
+Step 1, Frequency = 1000 Hz
 
 Direct multilevel fast multipole BEM
 
-Number of equations = 23668
+Number of equations = 16460
 
 Informations about clusters:
    Level    Num. of clusters    Maximum radius   Minimum radius
-     0           77                0.0742633         0.0279451
-     1          284                0.0441123         0.0267978
- resu. nets    1225                     0              0
+     0           60                0.079496         0.0472832
+     1          218                0.0478861         0.0284976
+ resu. nets    4096                     0              0
 
 
 Informations about the FMM expansion:
@@ -25,25 +25,27 @@ Informations about the FMM expansion:
      0           8               8              16           128
      1           8               8              16           128
 
-CGS: err_ori = 2.83726e-05
-10 0.0013885
-10 Abs Error:3.93953e-08
-20 3.04157e-05
-20 Abs Error:8.62971e-10
-29 3.6051e-10
-
-Assembling the equation system         : 45
-Solving the equation system            : 10
-Post processing                        : 2
-Total                                  : 57
+CGS: err_ori = 0.00560859
+10 0.0322062
+10 Abs Error:0.000180631
+20 0.000142239
+20 Abs Error:7.9776e-07
+30 3.15827e-07
+30 Abs Error:1.77134e-09
+40 1.61406e-10
+40 Abs Error:9.05259e-13
+Assembling the equation system         : 32
+Solving the equation system            : 7
+Post processing                        : 4
+Total                                  : 43
 
 
 Time Statistic for the job (in second):
 Input ............................ 0
 Address computation .............. 0
-Assembling the equation system ... 45
-Solving the equation system ...... 10
-Post processing .................. 2
-The whole job .................... 57
+Assembling the equation system ... 32
+Solving the equation system ...... 7
+Post processing .................. 4
+The whole job .................... 43
 
----------- NumCalc ended: 17/2/2023 7:30:20 ----------
+---------- NumCalc ended: 3/3/2025 12:48:16 ----------

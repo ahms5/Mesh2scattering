@@ -1,13 +1,16 @@
 import pytest
-import numpy as np
-from mesh2scattering import input
+import trimesh
 
 
 @pytest.fixture
-def source_coords_10deg():
-    source_azimuth_deg = np.arange(0, 95, 10)
-    source_colatitude_deg = np.arange(10, 85, 10)
-    source_radius = 10
+def simple_mesh():
+    """Return a simple triangle mesh.
 
-    return input.create_source_positions(
-        source_azimuth_deg, source_colatitude_deg, source_radius)
+    Returns
+    -------
+    trimesh.Trimesh
+        simple triangle
+    """
+    return trimesh.Trimesh(
+        vertices=[[0, 0, 0], [1, 0, 0], [0, 1, 0]], faces=[[0, 1, 2]])
+
