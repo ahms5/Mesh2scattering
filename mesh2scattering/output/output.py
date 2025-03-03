@@ -256,7 +256,6 @@ def _read_numcalc(folder=None):
         the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
         default, ``None`` uses the current working directory.
     """
-
     # check input
     if folder is None:
         folder = os.getcwd()
@@ -368,7 +367,6 @@ def write_output_report(folder=None):
     report : str
         The report or an empty string if no issues were found
     """
-
     if folder is None:
         folder = os.getcwd()
 
@@ -503,7 +501,6 @@ def _load_results(foldername, filename, num_frequencies):
     data : numpy array
         Pressure or abs velocity values of shape (num_frequencies, numEntries)
     """
-
     # ---------------------check number of header and data lines---------------
     current_file = os.path.join(foldername, 'be.1', filename)
     numDatalines = None
@@ -686,7 +683,6 @@ def _parse_nc_out_files(sources, num_sources, num_frequencies):
     out_names : list of string
         verbal information about the columns of `out`
     """
-
     # array for reporting fundamental errors
     fundamentals = []
     all_files = []
@@ -830,7 +826,6 @@ def read_evaluation_grid(name):
     coordinates : pyfar Coordinates
         The points of the evaluation grid as a pyfar Coordinates object
     """
-
     # check if the grid exists
     if not os.path.isfile(os.path.join(name, "Nodes.txt")):
         raise ValueError(f"{os.path.join(name, 'Nodes.txt')} does not exist")

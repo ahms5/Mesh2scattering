@@ -94,7 +94,6 @@ exclude = [
 line-length = 79
 lint.ignore = [
     "D200",   # One-line docstring should fit on one line with quotes
-    "D202",   # No blank lines allowed after function docstring
     "D205",   # 1 blank line required between summary line and description
     "B006",   # Do not use mutable data structures for argument defaults
     "B008",   # Do not perform calls in argument defaults

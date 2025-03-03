@@ -74,7 +74,6 @@ def pressure_data_mics_incident_directions(
     pyfar.FrequencyData
         output sound pressure data
     """
-
     frequencies = [200, 300]
     shape_new = np.append(
         quarter_half_sphere.cshape, half_sphere.cshape)
