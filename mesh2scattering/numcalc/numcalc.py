@@ -7,7 +7,6 @@ import subprocess
 import numpy as np
 import shutil
 import mesh2scattering as m2s
-import warnings
 import pooch
 
 
