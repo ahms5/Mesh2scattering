@@ -173,9 +173,9 @@ class EvaluationGrid():
     def export_numcalc(
             self, folder_path:str, start:int=200000):
         """
-        Write evaluation grid for use in Mesh2HRTF.
+        Write evaluation grid for use in NumCalc.
 
-        Mesh2HRTF evaluation grids consist of the two text files Nodes.txt and
+        NumCalc evaluation grids consist of the two text files Nodes.txt and
         Elements.txt. Evaluations grids are always triangulated.
 
         Parameters
@@ -185,7 +185,7 @@ class EvaluationGrid():
             folder does not exist, it is created.
         start : int, optional
             The nodes and elements of the evaluation grid are numbered and the
-            first element will have the number `start`. In Mesh2HRTF, each Node
+            first element will have the number `start`. In NumCalc, each Node
             must have a unique number. The nodes/elements of the mesh for
             which the HRTFs are simulated start at 1. Thus `start` must at
             least be greater than the number of

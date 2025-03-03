@@ -93,7 +93,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
                    max_instances=None, wait_time=15,
                    starting_order='alternate', confirm_errors=False):
     """
-    Run NumCalc on one or multiple Mesh2HRTF project folders.
+    Run NumCalc on one or multiple NumCalc project folders.
 
     This script monitors the RAM and CPU usage and starts a new NumCalc
     instance whenever enough resources are available. The required RAM for each
@@ -105,20 +105,20 @@ def manage_numcalc(project_path=None, numcalc_path=None,
 
         `manage_numcalc` can also be launched by running the python script
         `manage_numcalc_script.py` contained in the subfolder
-        `mesh2hrtf/NumCalc` of the Mesh2HRTF Git repository.
+        `mesh2scattering/NumCalc` of the mesh2scattering Git repository.
 
     Parameters
     ----------
     project_path : str, optional
         The directory to simulate: It can be path to either
-        1- directory that contains multiple Mesh2HRTF project folders or
-        2- one Mesh2HRTF project folder (folder containing "parameters.json").
+        1- directory that contains multiple NumCalc project folders or
+        2- one NumCalc project folder (folder containing "parameters.json").
         The default ``None`` uses ``os.getcwd()``
     numcalc_path : str, optional
         On Unix, this is the path to the NumCalc binary (by default 'NumCalc'
         is used). On Windows, this is the path to the folder
         'NumCalc_WindowsExe' from
-        https://sourceforge.net/projects/mesh2hrtf-tools/ (by default the
+        https://github.com/ahms5/Mesh2scattering/releases/ (by default the
         `project_path` is searched for this folder)
     max_ram_load : number, optional
         The RAM that can maximally be used in GB. New NumCalc instances are
@@ -153,7 +153,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
             Always launches the step with the highest possible memory
             consumption.
         ``'low'``
-            Alsways launches the step with the lowest estimated memory
+            Always launches the step with the lowest estimated memory
             consumption
         ``'alternate'`` (default)
             mixes the two approaches above.
@@ -215,11 +215,11 @@ def manage_numcalc(project_path=None, numcalc_path=None,
 
     # Detect what the project_path or "getcwd()" is pointing to:
     if os.path.isfile(os.path.join(project_path, 'parameters.json')):
-        # project_path is a Mesh2HRTF project folder
+        # project_path is a NumCalc project folder
         all_projects = [project_path]
         log_file = os.path.join(project_path, log_file)
     else:
-        # project_path contains multiple Mesh2HRTF project folders
+        # project_path contains multiple NumCalc project folders
         all_projects = []  # list of project folders to execute
         for subdir in os.listdir(project_path):
             if os.path.isdir(os.path.join(project_path, subdir,
@@ -230,7 +230,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
 
         # stop if no project folders were detected
         if len(all_projects) == 0:
-            message = ("manage_numcalc could not detect any Mesh2HRTF "
+            message = ("manage_numcalc could not detect any NumCalc "
                        f"projects at project_path={project_path}")
             _raise_error(message, text_color_red, log_file, confirm_errors)
 
@@ -266,7 +266,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
             numcalc_path = os.path.join(all_projects[0], 'NumCalc_WindowsExe')
         elif os.path.isdir(os.path.join(os.path.dirname(all_projects[0]),
                                         'NumCalc_WindowsExe')):
-            # located inside the folder that contains all Mesh2HRTF projects
+            # located inside the folder that contains all NumCalc projects
             numcalc_path = os.path.join(
                 os.path.dirname(all_projects[0]), 'NumCalc_WindowsExe')
         elif os.path.isfile(os.path.join(all_projects[0],
@@ -312,7 +312,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
     message = ("\nPer project summary of instances that will be run\n"
                "-------------------------------------------------\n")
 
-    message += f"Detected {len(all_projects)} Mesh2HRTF projects in\n"
+    message += f"Detected {len(all_projects)} NumCalc projects in\n"
     message += f"{os.path.dirname(log_file)}\n"
 
     # print already here because _check_project might produce output that
@@ -571,12 +571,12 @@ def _numcalc_instances():
 
 def _check_project(project, numcalc_executable, log_file):
     """
-    Find unfinished instances (frequency steps) in a Mesh2HRTF project folder.
+    Find unfinished instances (frequency steps) in a NumCalc project folder.
 
     Parameters
     ----------
     project : str
-        Full path of the Mesh2HRTF project folder
+        Full path of the NumCalc project folder
     numcalc_executable : str
         Full path to the NumCalc executable
     log_file : str

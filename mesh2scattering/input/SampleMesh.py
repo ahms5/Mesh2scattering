@@ -405,9 +405,9 @@ class SampleMesh():
 
     def export_numcalc(self, folder_path, start=200000):
         """
-        Write mesh to Mesh2HRTF input format.
+        Write mesh to NumCalc input format.
 
-        Mesh2HRTF meshes consist of two text files Nodes.txt and Elements.txt.
+        NumCalc meshes consist of two text files Nodes.txt and Elements.txt.
         The Nodes.txt file contains the coordinates of the vertices and the
         Elements.txt file contains the indices of the vertices that form the
         faces of the mesh.
@@ -419,7 +419,7 @@ class SampleMesh():
             'Nodes.txt' and 'Elements.txt' files.
         start : int, optional
             The nodes and elements of the mesh are numbered and the first
-            element will have the number `start`. In Mesh2HRTF, each Node
+            element will have the number `start`. In NumCalc, each Node
             must have a unique number. The nodes/elements of the mesh for
             which the HRTFs are simulated start at 1. Thus `start` must
             at least be greater than the number of nodes/elements in the mesh.

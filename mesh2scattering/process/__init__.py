@@ -1,4 +1,4 @@
-"""Write output for Mesh2HRTF."""
+"""Write output for NumCalc."""
 
 from .coefficients import (
     scattering_freefield,

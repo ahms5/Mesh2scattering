@@ -1,4 +1,4 @@
-"""Write output for Mesh2HRTF."""
+"""Write output for NumCalc."""
 
 import os
 import warnings
@@ -247,13 +247,12 @@ def _read_numcalc(folder=None):
     3. Read simulated pressures from project_folder/NumCalc/source_*/be.out.
        This and the following steps are done, even if an issue was detected in
        the previous step
-    4. use :py:func:`~mesh2hrtf.reference_hrtfs` and
-       :py:func:`~mesh2hrtf.compute_hrirs` to save the results to SOFA files
+    4. write the reflected sound pressure to sofa file.
 
     Parameters
     ----------
     folder : str, optional
-        The path of the Mesh2HRTF project folder, i.e., the folder containing
+        The path of the NumCalc project folder, i.e., the folder containing
         the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
         default, ``None`` uses the current working directory.
     """
@@ -263,7 +262,7 @@ def _read_numcalc(folder=None):
         folder = os.getcwd()
 
     # check and load parameters, required parameters are:
-    # Mesh2HRTF_version, reference, computeHRIRs, speedOfSound, densityOfAir,
+    # mesh2scattering_version, reference, computeHRIRs, speedOfSound, densityOfAir,
     # sources_num, sourceType, sources, sourceArea,
     # num_frequencies, frequencies
     params = os.path.join(folder, 'parameters.json')
@@ -312,7 +311,7 @@ def write_output_report(folder=None):
     r"""
     Generate project report from NumCalc output files.
 
-    NumCalc (Mesh2HRTF's numerical core) writes information about the
+    NumCalc (mesh2scattering's numerical core) writes information about the
     simulations to the files `NC*.out` located under `NumCalc/source_*`. The
     file `NC.out` exists if NumCalc was ran without the additional command line
     parameters ``-istart`` and ``-iend``. If these parameters were used, there
@@ -357,7 +356,7 @@ def write_output_report(folder=None):
     Parameters
     ----------
     folder : str, optional
-        The path of the Mesh2HRTF project folder, i.e., the folder containing
+        The path of the NumCalc project folder, i.e., the folder containing
         the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
         default, ``None`` uses the current working directory.
 
@@ -814,7 +813,7 @@ def _parse_nc_out_files(sources, num_sources, num_frequencies):
 
 def read_evaluation_grid(name):
     """
-    Read Mesh2HRTF evaluation grid.
+    Read NumCalc evaluation grid.
 
     Parameters
     ----------

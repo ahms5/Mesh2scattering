@@ -1,4 +1,4 @@
-"""Write output for Mesh2HRTF."""
+"""Write output for mesh2scattering."""
 
 from .output import (
     write_pressure,

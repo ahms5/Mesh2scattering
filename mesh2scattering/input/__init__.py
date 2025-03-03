@@ -1,5 +1,5 @@
 """
-This module provides functions to write input files for Mesh2HRTF.
+This module provides functions to write input files for mesh2scattering.
 """
 
 from .input import (
