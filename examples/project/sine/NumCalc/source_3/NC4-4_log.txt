@@ -1,0 +1,49 @@
+istart= 4 iend = 4
+
+---------- NumCalc started: 3/3/2025 12:27:16 ----------
+
+Running on:         YOGA-MVO1.ITA.AKUSTIK.RWTH-AACHEN.DE
+
+3D analysis
+Job title: sine
+
+Step 4, Frequency = 4000 Hz
+
+Direct multilevel fast multipole BEM
+
+Number of equations = 18586
+
+Informations about clusters:
+   Level    Num. of clusters    Maximum radius   Minimum radius
+     0           60                0.0795468         0.0453384
+     1          216                0.0474056         0.0356681
+ resu. nets    4096                     0              0
+
+
+Informations about the FMM expansion:
+   Level    N. expa. terms    N. p. theta    N. p. phi    N. p. sphere
+     0          14              14              28           392
+     1           9               9              18           162
+
+CGS: err_ori = 0.002652
+10 0.000146993
+10 Abs Error:3.89825e-07
+20 1.96322e-07
+20 Abs Error:5.20645e-10
+26 2.38263e-10
+
+Assembling the equation system         : 22
+Solving the equation system            : 6
+Post processing                        : 12
+Total                                  : 40
+
+
+Time Statistic for the job (in second):
+Input ............................ 0
+Address computation .............. 0
+Assembling the equation system ... 22
+Solving the equation system ...... 6
+Post processing .................. 12
+The whole job .................... 40
+
+---------- NumCalc ended: 3/3/2025 12:27:56 ----------

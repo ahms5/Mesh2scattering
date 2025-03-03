@@ -44,7 +44,6 @@ def test_numcalc_invalid_parameter(capfd):
     Test if NumCalc throws an error in case of invalid command line
     parameter.
     """
-
     try:
         # run NumCalc with subprocess
         if os.name == 'nt':  # Windows detected
@@ -234,7 +233,6 @@ def test_remove_outputs(boundary, grid, log, tmpdir):
 
 def test_read_ram_estimates_assertions():
     """Test assertions for read_ram_estimates."""
-
     with pytest.raises(ValueError, match="does not contain a Memory.txt"):
         m2s.numcalc.read_ram_estimates(os.getcwd())
 

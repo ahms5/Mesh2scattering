@@ -127,4 +127,8 @@ mesh2scattering/NumCalc/src/*.o
 mesh2scattering/NumCalc/bin/NumCalc
 mesh2scattering/NumCalc/bin/*.dll
 mesh2scattering/NumCalc/bin/*.exe
+
+# mesh2scattering test output
 tests/resources/output/test.scattering.sofa
+*.mph.lock
+examples/project/manage_numcalc*.txt

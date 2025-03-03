@@ -68,10 +68,10 @@ class SurfaceDescription():
             structural_depth: float=0,
             surface_type: SurfaceType=SurfaceType.PERIODIC,
             model_scale: float=1,
-            symmetry_azimuth: list=[],
+            symmetry_azimuth: list=None,
             symmetry_rotational: bool=False,
             comment: str="") -> None:
-        """Initializes the SurfaceDescription object.
+        """Initialize the SurfaceDescription object.
 
         Parameters
         ----------
@@ -98,6 +98,8 @@ class SurfaceDescription():
         SurfaceDescription
             surface description object.
         """
+        if symmetry_azimuth is None:
+            symmetry_azimuth = []
         if not isinstance(structural_wavelength_x, (int, float)) or \
              structural_wavelength_x < 0:
             raise ValueError(
@@ -253,7 +255,7 @@ class SampleMesh():
             sample_diameter: float=0.8,
             sample_shape: SampleShape=SampleShape.ROUND,
             ) -> None:
-        """Initializes the SampleMesh object.
+        """Initialize the SampleMesh object.
 
         Parameters
         ----------

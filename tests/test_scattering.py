@@ -38,7 +38,7 @@ def quarter_half_sphere():
 
 @pytest.fixture
 def pressure_data_mics(half_sphere):
-    """Returns a sound pressure data example, with sound pressure 0 and
+    """Return a sound pressure data example, with sound pressure 0 and
     two frequency bins.
 
     Parameters
@@ -59,7 +59,7 @@ def pressure_data_mics(half_sphere):
 @pytest.fixture
 def pressure_data_mics_incident_directions(
         half_sphere, quarter_half_sphere):
-    """Returns a sound pressure data example, with sound pressure 0 and
+    """Return a sound pressure data example, with sound pressure 0 and
     two frequency bins.
 
     Parameters

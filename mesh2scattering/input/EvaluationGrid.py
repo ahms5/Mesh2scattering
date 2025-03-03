@@ -92,7 +92,7 @@ class EvaluationGrid():
 
     @classmethod
     def from_parallel_to_plane(cls, coordinates, plane, name):
-        """Evaluation grid build from a sampling parallel to
+        """Build a Evaluation grid from a sampling parallel to
         'xy', 'yz' or 'xz' plane.
 
         Parameters

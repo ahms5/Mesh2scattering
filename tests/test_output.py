@@ -75,7 +75,6 @@ def test_import():
 ])
 def test_project_report(folders, issue, errors, nots, tmpdir):
     """Test issues found by the project report."""
-
     cwd = os.path.dirname(__file__)
     data_nc = os.path.join(cwd, 'resources', 'nc.out')
     # create fake project structure

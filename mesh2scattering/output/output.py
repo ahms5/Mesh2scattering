@@ -103,7 +103,7 @@ def _create_pressure_sofa(
         structural_wavelength_x, structural_wavelength_y,
         sample_diameter, speed_of_sound,
         density_of_medium,mesh2scattering_version,
-        model_scale=1, symmetry_azimuth=[],
+        model_scale=1, symmetry_azimuth=None,
         symmetry_rotational=False,
         ):
     """Write complex pressure data to SOFA object from NumCalc simulation.
@@ -181,7 +181,7 @@ def _create_pressure_sofa(
             f = Lbyl
         else:
             f = Lbyl/structural_wavelength*speed_of_sound
-        sofa.N = f
+        sofa.N = data.frequencies
         sofa.add_variable(
             'OriginalFrequencies', f, 'double', 'N')
         sofa.add_variable(
@@ -217,10 +217,10 @@ def _create_pressure_sofa(
         'ReceiverWeights', receivers.weights, 'double', 'R')
     sofa.add_variable(
         'SourceWeights', sources.weights, 'double', 'E')
-    if len(symmetry_azimuth)>0:
-        symmetry_azimuth_str = ','.join([f'{a}' for a in symmetry_azimuth])
-    else:
+    if symmetry_azimuth is None:
         symmetry_azimuth_str = ''
+    else:
+        symmetry_azimuth_str = ','.join([f'{a}' for a in symmetry_azimuth])
     sofa.add_variable(
         'SampleSymmetryAzimuth', symmetry_azimuth_str, 'string', 'S')
     sofa.add_variable(
@@ -256,7 +256,6 @@ def _read_numcalc(folder=None):
         the subfolders EvaluationsGrids, NumCalc, and ObjectMeshes. The
         default, ``None`` uses the current working directory.
     """
-
     # check input
     if folder is None:
         folder = os.getcwd()
@@ -368,6 +367,8 @@ def write_output_report(folder=None):
     report : str
         The report or an empty string if no issues were found
     """
+    if folder is None:
+        folder = os.getcwd()
 
     if folder is None:
         folder = os.getcwd()
@@ -503,7 +504,6 @@ def _load_results(foldername, filename, num_frequencies):
     data : numpy array
         Pressure or abs velocity values of shape (num_frequencies, numEntries)
     """
-
     # ---------------------check number of header and data lines---------------
     current_file = os.path.join(foldername, 'be.1', filename)
     numDatalines = None
@@ -686,7 +686,6 @@ def _parse_nc_out_files(sources, num_sources, num_frequencies):
     out_names : list of string
         verbal information about the columns of `out`
     """
-
     # array for reporting fundamental errors
     fundamentals = []
     all_files = []
@@ -830,7 +829,6 @@ def read_evaluation_grid(name):
     coordinates : pyfar Coordinates
         The points of the evaluation grid as a pyfar Coordinates object
     """
-
     # check if the grid exists
     if not os.path.isfile(os.path.join(name, "Nodes.txt")):
         raise ValueError(f"{os.path.join(name, 'Nodes.txt')} does not exist")

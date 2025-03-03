@@ -1,5 +1,5 @@
 """
-This module contains functions for managing numerical calculations.
+Contains functions for managing numerical calculations.
 """
 from .numcalc import (
     manage_numcalc,
