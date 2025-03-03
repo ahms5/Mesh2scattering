@@ -4,7 +4,11 @@
 ##-------------------------------------------
 mesh2scattering 0.1.4
 ##
+<<<<<<<< HEAD:tests/resources/numcalc/low_complexity_project/NumCalc/source_1/NC.inp
 low_complexity_project
+========
+low_complexity_project_solved
+>>>>>>>> develop:tests/resources/numcalc/low_complexity_project_solved/NumCalc/source_1/NC.inp
 ##
 ## Controlparameter I
 0

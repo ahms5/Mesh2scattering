@@ -370,6 +370,9 @@ def write_output_report(folder=None):
     if folder is None:
         folder = os.getcwd()
 
+    if folder is None:
+        folder = os.getcwd()
+
     # get sources and number of sources and frequencies
     sources = glob.glob(os.path.join(folder, "NumCalc", "source_*"))
     num_sources = len(sources)
