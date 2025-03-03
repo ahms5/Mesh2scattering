@@ -228,6 +228,21 @@ jobs:
             twine check dist/*
             twine upload dist/*
 
+  publish_github_release:
+    docker:
+      - image: circleci/golang:1.17
+    steps:
+      - checkout
+      - run:
+          name: zip example folder into release folder
+          command: zip -r ./release/examples.zip ./examples
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go install github.com/tcnksm/ghr@latest
+            ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering ${CIRCLE_SHA1} ./release/
+  
+
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
@@ -374,6 +389,16 @@ workflows:
             - test_examples
             - test_documentation_build
             - test_deprecation_warnings
+          filters:
+            branches:
+              ignore: /.*/
+            # only act on version tags
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+
+      - publish_github_release:
+          requires:
+            - run_pypi_publish
           filters:
             branches:
               ignore: /.*/
