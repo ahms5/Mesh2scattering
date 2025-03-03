@@ -44,6 +44,7 @@ def test_numcalc_invalid_parameter(capfd):
     Test if NumCalc throws an error in case of invalid command line
     parameter.
     """
+
     try:
         # run NumCalc with subprocess
         if os.name == 'nt':  # Windows detected
@@ -233,6 +234,7 @@ def test_remove_outputs(boundary, grid, log, tmpdir):
 
 def test_read_ram_estimates_assertions():
     """Test assertions for read_ram_estimates."""
+
     with pytest.raises(ValueError, match="does not contain a Memory.txt"):
         m2s.numcalc.read_ram_estimates(os.getcwd())
 
@@ -265,8 +267,7 @@ def test_manage_numcalc(tmpdir):
 
     # run as function
     m2s.numcalc.manage_numcalc(
-        os.path.join(tmpdir, 'project'),
-        numcalc_path=numcalc, wait_time=0)
+        os.path.join(tmpdir, 'project'), wait_time=0)
 
     # check if files exist
     assert len(glob.glob(
@@ -276,23 +277,3 @@ def test_manage_numcalc(tmpdir):
     assert os.path.isfile(os.path.join(base, "Memory.txt"))
     for step in range(1, 2):
         assert os.path.isfile(os.path.join(base, f"NC{step}-{step}.out"))
-
-def test_numcalc_download():
-    path = m2s.numcalc.numcalc._download_windows_build()
-    assert os.path.exists(path)
-
-def test_numcalc_remove_download():
-    filenames = [
-        'libgcc_s_seh-1.dll',
-        'libstdc++-6.dll',
-        'libwinpthread-1.dll',
-        'NumCalc.exe',
-        'NumCalc_WindowsExe.zip',
-        ]
-    for filename in filenames:
-        path = os.path.join(
-            m2s.utils.program_root(), "numcalc", "bin", filename)
-        if os.path.exists(path):
-            os.remove(path)
-    path = m2s.numcalc.numcalc._download_windows_build()
-    assert os.path.exists(path)

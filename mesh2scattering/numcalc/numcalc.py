@@ -31,10 +31,10 @@ def build_or_fetch_numcalc():
     """
     # ignore tests for windows since its difficult to build the exe
     if os.name == 'nt':
-        numcalc = os.path.join(
-            m2s.utils.program_root(), "numcalc", "bin", "NumCalc.exe")
-        if not os.path.exists(numcalc):
-            return _download_windows_build()
+        numcalc_path = os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin")
+        if not os.path.exists(os.path.join(numcalc_path, "NumCalc.exe")):
+            numcalc_path = _download_windows_build()
 
     else:
         # Build NumCalc locally to use for testing
@@ -73,7 +73,7 @@ def _download_windows_build():
             m2s.utils.program_root(), "numcalc", "bin"),
     ))
     return os.path.join(
-            m2s.utils.program_root(), "numcalc", "bin", "NumCalc.exe")
+            m2s.utils.program_root(), "numcalc", "bin")
 
 def remove_outputs(
         paths, boundary=False, grid=False, log=False):

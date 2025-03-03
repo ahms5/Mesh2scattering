@@ -61,9 +61,7 @@ class EvaluationGrid():
             raise ValueError("faces must be a np.ndarray.")
         if faces.ndim != 2 or faces.shape[1] != 3:
             raise ValueError("faces must be of shape (n, 3).")
-        faces = np.atleast_2d(faces)
-        if not isinstance(faces[0, 0], (np.int32, int, np.int64)):
-            raise ValueError("faces must be of type int.")
+        faces = np.atleast_2d(np.array(faces, dtype=int))
 
         self._coordinates = coordinates
         self._faces = faces
