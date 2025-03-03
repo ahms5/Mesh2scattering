@@ -42,6 +42,7 @@ def test_write_project(source_type, bem_method, tmpdir, simple_mesh):
     sample_mesh = m2s.input.SampleMesh(
         simple_mesh,
         surface_description,
+        0.01,
         0.8,
         m2s.input.SampleShape.ROUND,
     )

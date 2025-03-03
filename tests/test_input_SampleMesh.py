@@ -120,6 +120,7 @@ def test_sample_mesh_initialization(simple_mesh):
     sample_mesh = SampleMesh(
         mesh=simple_mesh,
         surface_description=surface_desc,
+        sample_baseplate_hight=0.1,
         sample_diameter=0.8,
         sample_shape=SampleShape.ROUND,
     )
@@ -127,6 +128,7 @@ def test_sample_mesh_initialization(simple_mesh):
     assert sample_mesh.surface_description == surface_desc
     assert sample_mesh.sample_diameter == 0.8
     assert sample_mesh.sample_shape == SampleShape.ROUND
+    assert sample_mesh.sample_baseplate_hight == .1
     assert sample_mesh.n_repetitions_x == 10
     assert sample_mesh.n_repetitions_y == 0
     assert sample_mesh.n_mesh_elements == 1
@@ -163,6 +165,27 @@ def test_sample_mesh_invalid_sample_diameter(simple_mesh):
             mesh=simple_mesh,
             surface_description=surface_desc,
             sample_diameter=-1,
+            sample_shape=SampleShape.ROUND,
+        )
+
+def test_sample_mesh_invalid_sample_baseplate_hight(simple_mesh):
+    surface_desc = SurfaceDescription()
+    with pytest.raises(
+            ValueError,
+            match="sample_baseplate_hight must be a float or int and >0."):
+        SampleMesh(
+            mesh=simple_mesh,
+            surface_description=surface_desc,
+            sample_baseplate_hight="invalid",
+            sample_shape=SampleShape.ROUND,
+        )
+    with pytest.raises(
+            ValueError,
+            match="sample_baseplate_hight must be a float or int and >0."):
+        SampleMesh(
+            mesh=simple_mesh,
+            surface_description=surface_desc,
+            sample_baseplate_hight=-1,
             sample_shape=SampleShape.ROUND,
         )
 

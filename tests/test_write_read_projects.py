@@ -72,7 +72,8 @@ def test_write_project(tmpdir):
                 sample_mesh = m2s.input.SampleMesh(
                     trimesh.load_mesh(mesh_path),
                     surface_description,
-                    0.5,
+                    0.01,
+                    0.8,
                     m2s.input.SampleShape.ROUND,
                 )
                 bem_method = 'ML-FMM BEM'

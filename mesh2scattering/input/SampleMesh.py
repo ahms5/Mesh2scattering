@@ -249,8 +249,10 @@ class SampleMesh():
     def __init__(
             self, mesh: trimesh.Trimesh,
             surface_description: SurfaceDescription,
+            sample_baseplate_hight: float=.01,
             sample_diameter: float=0.8,
-            sample_shape: SampleShape=SampleShape.ROUND) -> None:
+            sample_shape: SampleShape=SampleShape.ROUND,
+            ) -> None:
         """Initializes the SampleMesh object.
 
         Parameters
@@ -259,6 +261,8 @@ class SampleMesh():
             trimesh object representing the sample mesh.
         surface_description : SurfaceDescription
             surface description of the sample mesh.
+        sample_baseplate_hight : float, optional
+            height of the baseplate, by default 0
         sample_diameter : float, optional
             diameter of the sample, by default 0.8
         sample_shape : str, optional
@@ -272,6 +276,11 @@ class SampleMesh():
         if not isinstance(mesh, trimesh.Trimesh):
             raise ValueError("mesh must be a trimesh.Trimesh object.")
         if not isinstance(
+                sample_baseplate_hight, (int, float)) or \
+                    sample_baseplate_hight <= 0:
+            raise ValueError(
+                "sample_baseplate_hight must be a float or int and >0.")
+        if not isinstance(
                 sample_diameter, (int, float)) or sample_diameter <= 0:
             raise ValueError("sample_diameter must be a float or int and >0.")
         if not isinstance(sample_shape, SampleShape):
@@ -284,6 +293,7 @@ class SampleMesh():
         self._surface_description = surface_description
         self._sample_diameter = sample_diameter
         self._sample_shape = sample_shape
+        self._sample_baseplate_hight = sample_baseplate_hight
         # calculate Number of repetitions in x and y direction
         Lambda_x = surface_description.structural_wavelength_x
         Lambda_y = surface_description.structural_wavelength_y
@@ -291,6 +301,17 @@ class SampleMesh():
             sample_diameter / Lambda_x) if Lambda_x > 0 else 0
         self._n_repetitions_y = (
             sample_diameter / Lambda_y) if Lambda_y > 0 else 0
+
+    @property
+    def sample_baseplate_hight(self):
+        """Defines the height of the baseplate.
+
+        Returns
+        -------
+        float
+            The height of the baseplate.
+        """
+        return self._sample_baseplate_hight
 
     @property
     def mesh(self):
