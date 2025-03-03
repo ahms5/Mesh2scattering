@@ -74,17 +74,17 @@ build-backend = "setuptools.build_meta"
 find = { }  # Scan the project directory with the default parameters
 
 [tool.setuptools]
+# ...
+# By default, include-package-data is true in pyproject.toml, so you do
+# NOT have to specify this line.
 include-package-data = true
 
 [tool.setuptools.package-data]
-"mesh2scattering" = [
-    "numcalc/src/**/*",
-    "numcalc/bin/**/*",
-    ]
-"*" = [
-    "examples/*",
-    "examples/project/**/*",
-    "examples/mesh/**/*",
+mesh2scattering = [
+    "numcalc/bin/readme.txt",
+    "numcalc/src/Makefile",
+    "numcalc/src/*.cpp",
+    "numcalc/src/*.h",
     ]
 
 [tool.ruff]

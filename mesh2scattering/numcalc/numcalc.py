@@ -11,7 +11,7 @@ from packaging.version import Version
 import pooch
 
 
-def build_or_fetch_numcalc():
+def build_or_fetch_numcalc(replace_existing=False):
     """Get the numcalc executable from building (linux and mac) or downloading
     the exe from Github (windows) and will be placed in the
     ``numcalc/bin`` folder.
@@ -25,6 +25,12 @@ def build_or_fetch_numcalc():
 
     For Mac, the ``xcode`` command line tools are required.
 
+    Parameters
+    ----------
+    replace_existing : bool, optional
+        If True, the existing NumCalc executable is replaced. The default is
+        False.
+
     Returns
     -------
     str
@@ -34,6 +40,11 @@ def build_or_fetch_numcalc():
     if os.name == 'nt':
         numcalc_path = os.path.join(
             m2s.utils.program_root(), "numcalc", "bin")
+
+        if replace_existing and os.path.isfile(os.path.join(
+                numcalc_path, 'NumCalc.exe')):
+            os.remove(os.path.join(numcalc_path, 'NumCalc.exe'))
+
         if not os.path.exists(os.path.join(numcalc_path, "NumCalc.exe")):
             numcalc_path = _download_windows_build()
 
@@ -43,12 +54,13 @@ def build_or_fetch_numcalc():
             m2s.utils.program_root(), "numcalc", "bin", "NumCalc")
         numcalc_path = numcalc
 
-        if os.path.isfile(numcalc):
+        if os.path.isfile(numcalc) and replace_existing:
             os.remove(numcalc)
 
-        subprocess.run(
-            ["make"], cwd=os.path.join(
-                m2s.utils.program_root(), "numcalc", "src"), check=True)
+        if not os.path.isfile(numcalc):
+            subprocess.run(
+                ["make"], cwd=os.path.join(
+                    m2s.utils.program_root(), "numcalc", "src"), check=True)
 
     return numcalc_path
 

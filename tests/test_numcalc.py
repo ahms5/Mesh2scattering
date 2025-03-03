@@ -280,3 +280,10 @@ def test_manage_numcalc(tmpdir):
 def test__download_windows_build():
     path = m2s.numcalc.numcalc._download_windows_build()
     assert os.path.isfile(os.path.join(path, "NumCalc.exe"))
+
+
+@pytest.mark.parametrize('replace', [True, False])
+def test_build_or_fetch_numcalc(replace):
+    path = m2s.numcalc.numcalc.build_or_fetch_numcalc(replace)
+    assert os.path.isfile(
+        os.path.join(path, "NumCalc.exe") if os.name == 'nt' else path)

@@ -36,7 +36,6 @@ the ``build-essential`` on Linux and ``xcode`` on mac.
 In the [contributing guidelines](https://mesh2scattering.readthedocs.io/en/stable/contributing.html), you will find a complete Instructions for
 manual building.
 
-
 ## Contributing
 
 Check out the [contributing guidelines](https://mesh2scattering.readthedocs.io/en/stable/contributing.html).
