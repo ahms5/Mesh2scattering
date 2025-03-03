@@ -103,7 +103,7 @@ def _create_pressure_sofa(
         structural_wavelength_x, structural_wavelength_y,
         sample_diameter, speed_of_sound,
         density_of_medium,mesh2scattering_version,
-        model_scale=1, symmetry_azimuth=[],
+        model_scale=1, symmetry_azimuth=None,
         symmetry_rotational=False,
         ):
     """Write complex pressure data to SOFA object from NumCalc simulation.
@@ -217,10 +217,10 @@ def _create_pressure_sofa(
         'ReceiverWeights', receivers.weights, 'double', 'R')
     sofa.add_variable(
         'SourceWeights', sources.weights, 'double', 'E')
-    if len(symmetry_azimuth)>0:
-        symmetry_azimuth_str = ','.join([f'{a}' for a in symmetry_azimuth])
-    else:
+    if symmetry_azimuth is None:
         symmetry_azimuth_str = ''
+    else:
+        symmetry_azimuth_str = ','.join([f'{a}' for a in symmetry_azimuth])
     sofa.add_variable(
         'SampleSymmetryAzimuth', symmetry_azimuth_str, 'string', 'S')
     sofa.add_variable(
