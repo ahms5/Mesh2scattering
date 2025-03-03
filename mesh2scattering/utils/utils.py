@@ -1,12 +1,14 @@
 """
-This module contains utility functions for the mesh2scattering package.
+Contains utility functions for the mesh2scattering package.
 """
 
 import os
 
 
 def program_root():
-    """The root directory of the repository as absolute path. This function
+    """Return the root directory of the repository as absolute path.
+
+    This function
     relies on the correct setting of the environment variable `REPOSITORY_ROOT`
     which is set during the setup of the utils module.
 
@@ -21,9 +23,10 @@ def program_root():
 
 
 def repository_root():
-    """The root directory of the repository as absolute path. This function
-    relies on the correct setting of the environment variable `REPOSITORY_ROOT`
-    which is set during the setup of the utils module.
+    """Return the root directory of the repository as absolute path.
+
+    This function relies on the correct setting of the environment variable
+    `REPOSITORY_ROOT` which is set during the setup of the utils module.
 
     Returns
     -------

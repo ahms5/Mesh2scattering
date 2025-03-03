@@ -19,7 +19,8 @@ breaking changes, not compatibly with mesh2scattering versions below v1.0.0
 - Deploy: add numcalc code to build ([#46](https://github.com/ahms5/Mesh2scattering/issues/46))
 - Deploy: changed to ``pyproject.toml`` ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
 - Documentation: updated documentation style based on pyfar ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48))
-- CI: replaced ``flake8`` by ``ruff`` and add additional rules ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48), #49)
+- CI: replaced ``flake8`` by ``ruff`` and add additional rules ([#48](https://github.com/ahms5/Mesh2scattering/pulls/48), [#49](https://github.com/ahms5/Mesh2scattering/pulls/49))
+- Example: Update example ([#54](https://github.com/ahms5/Mesh2scattering/pulls/54))
 
 #### Removed
 

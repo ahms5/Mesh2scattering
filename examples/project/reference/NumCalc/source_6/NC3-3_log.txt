@@ -1,0 +1,49 @@
+istart= 3 iend = 3
+
+---------- NumCalc started: 3/3/2025 12:45:56 ----------
+
+Running on:         YOGA-MVO1.ITA.AKUSTIK.RWTH-AACHEN.DE
+
+3D analysis
+Job title: reference
+
+Step 3, Frequency = 3000 Hz
+
+Direct multilevel fast multipole BEM
+
+Number of equations = 16460
+
+Informations about clusters:
+   Level    Num. of clusters    Maximum radius   Minimum radius
+     0           60                0.079496         0.0472832
+     1          218                0.0478861         0.0284976
+ resu. nets    4096                     0              0
+
+
+Informations about the FMM expansion:
+   Level    N. expa. terms    N. p. theta    N. p. phi    N. p. sphere
+     0          11              11              22           242
+     1           8               8              16           128
+
+CGS: err_ori = 0.00247114
+10 0.0019765
+10 Abs Error:4.88422e-06
+20 1.56983e-06
+20 Abs Error:3.87927e-09
+27 5.87319e-10
+
+Assembling the equation system         : 27
+Solving the equation system            : 8
+Post processing                        : 13
+Total                                  : 48
+
+
+Time Statistic for the job (in second):
+Input ............................ 0
+Address computation .............. 0
+Assembling the equation system ... 27
+Solving the equation system ...... 8
+Post processing .................. 13
+The whole job .................... 48
+
+---------- NumCalc ended: 3/3/2025 12:46:44 ----------

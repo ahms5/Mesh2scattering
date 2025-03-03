@@ -1,4 +1,4 @@
-"""This module contains functions for managing numerical calculations."""
+"""Contains functions for managing numerical calculations."""
 import os
 import glob
 import time
@@ -101,7 +101,6 @@ def remove_outputs(
     log : bool, optional
         Remove log ``(*.txt, *.out)`` files in ``source_*`` dir.
     """
-
     # check input
     if isinstance(paths, str):
         paths = (paths, )
@@ -232,7 +231,6 @@ def manage_numcalc(project_path=None, numcalc_path=None,
         occurs. The default false exits the function immediately if an error
         occurs.
     """
-
     # log_file initialization -------------------------------------------------
     if project_path is None:
         project_path = os.getcwd()
@@ -586,7 +584,6 @@ def manage_numcalc(project_path=None, numcalc_path=None,
 
 def _raise_error(message, text_color, log_file, confirm_errors):
     """Two different ways of error handling depending on `confirm_errors`."""
-
     # error to logfile
     with open(log_file, "a", encoding="utf8", newline="\n") as f:
         f.write("\n\n" + message + "\n")
@@ -606,7 +603,6 @@ def _raise_error(message, text_color, log_file, confirm_errors):
 
 def _print_message(message, text_color, log_file):
     """Print message to console and log file."""
-
     if os.name == 'nt':  # Windows detected
         text_color = ''  # color codes do not work as intended on Win10
     print(text_color + message)
@@ -629,7 +625,6 @@ def _get_current_ram(total_ram, max_ram_load):
 
 def _numcalc_instances():
     """Return the number of currently running NumCalc instances."""
-
     numcalc_executable = 'NumCalc' if os.name != 'nt' else 'NumCalc.exe'
 
     num_instances = 0
@@ -667,7 +662,6 @@ def _check_project(project, numcalc_executable, log_file):
     source_counter : int
         Number of sources in the project
     """
-
     # get source folders and number of sources
     sources = glob.glob(os.path.join(project, 'NumCalc', "source_*"))
     source_counter = len(sources)
@@ -764,7 +758,6 @@ def read_ram_estimates(folder: str):
         steps. The first column contains the frequency step, the second the
         frequency in Hz, and the third the estimated RAM consumption in GB.
     """
-
     # check if file exists
     if not os.path.isfile(os.path.join(folder, "Memory.txt")):
         raise ValueError(f"{folder} does not contain a Memory.txt file")
