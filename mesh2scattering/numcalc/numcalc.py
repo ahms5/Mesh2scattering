@@ -7,6 +7,7 @@ import subprocess
 import numpy as np
 import shutil
 import mesh2scattering as m2s
+from packaging.version import Version
 import pooch
 
 
@@ -54,8 +55,11 @@ def build_or_fetch_numcalc():
 
 def _download_windows_build():
     """Download the NumCalc executable from the Github release."""
-    version = f'v{m2s.__version__}'
-    version= 'build-numcalc'
+    if Version(m2s.__version__) < Version('1.0.0'):
+        m2s_version= 'develop'
+    else:
+        m2s_version = f'v{m2s.__version__}'
+
     win_exe = pooch.create(
         # Use the default cache folder for the operating system
         path=os.path.join(
@@ -63,7 +67,7 @@ def _download_windows_build():
         # The remote data is on Github
         base_url=(
             "https://github.com/ahms5/Mesh2scattering/raw"
-            f"/{version}/release/"),
+            f"/{m2s_version}/release/"),
         registry={
             "NumCalc_WindowsExe.zip": None,
             },

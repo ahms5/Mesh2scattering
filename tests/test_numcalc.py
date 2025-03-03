@@ -275,3 +275,8 @@ def test_manage_numcalc(tmpdir):
     assert os.path.isfile(os.path.join(base, "Memory.txt"))
     for step in range(1, 2):
         assert os.path.isfile(os.path.join(base, f"NC{step}-{step}.out"))
+
+
+def test__download_windows_build():
+    path = m2s.numcalc.numcalc._download_windows_build()
+    assert os.path.isfile(os.path.join(path, "NumCalc.exe"))
