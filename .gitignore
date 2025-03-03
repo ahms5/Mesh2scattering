@@ -128,3 +128,4 @@ mesh2scattering/NumCalc/bin/NumCalc
 mesh2scattering/NumCalc/bin/*.dll
 mesh2scattering/NumCalc/bin/*.exe
 tests/resources/output/test.scattering.sofa
+mesh2scattering/numcalc/bin/NumCalc_WindowsExe.zip

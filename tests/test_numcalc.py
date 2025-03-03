@@ -278,3 +278,23 @@ def test_manage_numcalc(tmpdir):
     assert os.path.isfile(os.path.join(base, "Memory.txt"))
     for step in range(1, 2):
         assert os.path.isfile(os.path.join(base, f"NC{step}-{step}.out"))
+
+def test_numcalc_download():
+    path = m2s.numcalc.numcalc._download_windows_build()
+    assert os.path.exists(path)
+
+def test_numcalc_remove_download():
+    filenames = [
+        'libgcc_s_seh-1.dll',
+        'libstdc++-6.dll',
+        'libwinpthread-1.dll',
+        'NumCalc.exe',
+        'NumCalc_WindowsExe.zip',
+        ]
+    for filename in filenames:
+        path = os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin", filename)
+        if os.path.exists(path):
+            os.remove(path)
+    path = m2s.numcalc.numcalc._download_windows_build()
+    assert os.path.exists(path)

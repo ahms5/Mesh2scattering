@@ -6,7 +6,75 @@ import psutil
 import subprocess
 import numpy as np
 import shutil
+import mesh2scattering as m2s
+import warnings
+import pooch
 
+
+def build_or_fetch_numcalc():
+    """Get the numcalc executable from building (linux and mac) or downloading
+    the exe from Github (windows) and will be placed in the
+    ``numcalc/bin`` folder.
+
+    Building NumCalc on Linux requires the ``build-essential`` package to be
+    installed. On Ubuntu, this can be done with the following command:
+
+    .. code-block:: bash
+
+        sudo apt-get install build-essential
+
+    For Mac, the ``xcode`` command line tools are required.
+
+    Returns
+    -------
+    str
+        NumCalc path
+    """
+    # ignore tests for windows since its difficult to build the exe
+    if os.name == 'nt':
+        numcalc = os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin", "NumCalc.exe")
+        if not os.path.exists(numcalc):
+            return _download_windows_build()
+
+    else:
+        # Build NumCalc locally to use for testing
+        numcalc = os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin", "NumCalc")
+        numcalc_path = numcalc
+
+        if os.path.isfile(numcalc):
+            os.remove(numcalc)
+
+        subprocess.run(
+            ["make"], cwd=os.path.join(
+                m2s.utils.program_root(), "numcalc", "src"), check=True)
+
+    return numcalc_path
+
+
+def _download_windows_build():
+    """Download the NumCalc executable from the Github release."""
+    version = f'v{m2s.__version__}'
+    version= 'build-numcalc'
+    win_exe = pooch.create(
+        # Use the default cache folder for the operating system
+        path=os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin"),
+        # The remote data is on Github
+        base_url=(
+            "https://github.com/ahms5/Mesh2scattering/raw"
+            f"/{version}/release/"),
+        registry={
+            "NumCalc_WindowsExe.zip": None,
+            },
+        )
+    _ = win_exe.fetch("NumCalc_WindowsExe.zip", processor=pooch.Unzip(
+        extract_dir=os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin"),
+    ))
+    return os.path.join(
+            m2s.utils.program_root(), "numcalc", "bin", "NumCalc.exe")
 
 def remove_outputs(
         paths, boundary=False, grid=False, log=False):
@@ -120,6 +188,7 @@ def manage_numcalc(project_path=None, numcalc_path=None,
         'NumCalc_WindowsExe' from
         https://github.com/ahms5/Mesh2scattering/releases/ (by default the
         `project_path` is searched for this folder)
+        By default, :py:func:`build_or_fetch_numcalc` is used.
     max_ram_load : number, optional
         The RAM that can maximally be used in GB. New NumCalc instances are
         only started if enough RAM is available. The default ``None`` uses all
@@ -177,6 +246,8 @@ def manage_numcalc(project_path=None, numcalc_path=None,
         os.remove(log_file)
 
     # default values ----------------------------------------------------------
+    if numcalc_path is None:
+        numcalc_path = build_or_fetch_numcalc()
     if os.name == "nt":
         numcalc_path = "Searching for NumCalc_WindowsExe"\
              if numcalc_path is None else numcalc_path
