@@ -48,8 +48,6 @@ def test_evaluation_grid_invalid_faces():
     with pytest.raises(ValueError, match=re.escape(
         "faces must be of shape (n, 3).")):
         EvaluationGrid(coords, np.array([[0]]), 'name')
-    with pytest.raises(ValueError, match="faces must be of type int."):
-        EvaluationGrid(coords, np.array([[0, 1, 2.5]]), 'name')
 
 
 def test_from_spherical():

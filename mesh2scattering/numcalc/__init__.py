@@ -2,6 +2,7 @@
 Contains functions for managing numerical calculations.
 """
 from .numcalc import (
+    build_or_fetch_numcalc,
     manage_numcalc,
     remove_outputs,
     read_ram_estimates,
@@ -10,6 +11,7 @@ from .numcalc import (
 
 
 __all__ = [
+    'build_or_fetch_numcalc',
     'manage_numcalc',
     'remove_outputs',
     'read_ram_estimates',

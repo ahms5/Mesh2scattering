@@ -265,8 +265,7 @@ def test_manage_numcalc(tmpdir):
 
     # run as function
     m2s.numcalc.manage_numcalc(
-        os.path.join(tmpdir, 'project'),
-        numcalc_path=numcalc, wait_time=0)
+        os.path.join(tmpdir, 'project'), wait_time=0)
 
     # check if files exist
     assert len(glob.glob(
@@ -276,3 +275,8 @@ def test_manage_numcalc(tmpdir):
     assert os.path.isfile(os.path.join(base, "Memory.txt"))
     for step in range(1, 2):
         assert os.path.isfile(os.path.join(base, f"NC{step}-{step}.out"))
+
+
+def test__download_windows_build():
+    path = m2s.numcalc.numcalc._download_windows_build()
+    assert os.path.isfile(os.path.join(path, "NumCalc.exe"))

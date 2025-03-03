@@ -29,6 +29,7 @@ dependencies = [
     'psutil',
     'sofar',
     'trimesh',
+    'pooch',
 ]
 
 [project.optional-dependencies]
