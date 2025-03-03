@@ -133,3 +133,4 @@ tests/resources/output/test.scattering.sofa
 mesh2scattering/numcalc/bin/NumCalc_WindowsExe.zip
 *.mph.lock
 examples/project/manage_numcalc*.txt
+release/examples.zip
