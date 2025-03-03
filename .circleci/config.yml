@@ -234,7 +234,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: zip folders
+          name: zip example folder into release folder
           command: zip -r ./release/examples.zip ./examples
       - run:
           name: "Publish Release on GitHub"

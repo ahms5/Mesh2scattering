@@ -13,6 +13,8 @@ breaking changes, not compatibly with mesh2scattering versions below v1.0.0
 - all modules and public methods are tested ([#52](https://github.com/ahms5/Mesh2scattering/pulls/52))
 - NumCalc is now downloaded automatically from Github on Windows ([#55](https://github.com/ahms5/Mesh2scattering/pull/55))
 - NumCalc is now build automatically on Linux and Mac, this require the related compilers, see Readme ([#55](https://github.com/ahms5/Mesh2scattering/pull/55))
+- Deploy: add automatic release publish on Github ([#56](https://github.com/ahms5/Mesh2scattering/pull/56))
+
 
 #### Fixed
 
