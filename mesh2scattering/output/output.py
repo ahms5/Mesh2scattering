@@ -181,7 +181,7 @@ def _create_pressure_sofa(
             f = Lbyl
         else:
             f = Lbyl/structural_wavelength*speed_of_sound
-        sofa.N = f
+        sofa.N = data.frequencies
         sofa.add_variable(
             'OriginalFrequencies', f, 'double', 'N')
         sofa.add_variable(

@@ -83,6 +83,7 @@ include-package-data = true
 "*" = [
     "examples/*",
     "examples/project/**/*",
+    "examples/mesh/**/*",
     ]
 
 [tool.ruff]
