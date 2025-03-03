@@ -24,7 +24,9 @@ functionality and [read the docs](https://mesh2scattering.readthedocs.io/en/late
 
 Use pip to install mesh2scattering
 
-    pip install mesh2scattering
+```bash
+pip install mesh2scattering
+```
 
 (Requires Python 3.9 or higher)
 
