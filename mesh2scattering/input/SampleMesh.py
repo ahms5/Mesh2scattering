@@ -71,7 +71,7 @@ class SurfaceDescription():
             symmetry_azimuth: list=[],
             symmetry_rotational: bool=False,
             comment: str="") -> None:
-        """Initializes the SurfaceDescription object.
+        """Initialize the SurfaceDescription object.
 
         Parameters
         ----------
@@ -253,7 +253,7 @@ class SampleMesh():
             sample_diameter: float=0.8,
             sample_shape: SampleShape=SampleShape.ROUND,
             ) -> None:
-        """Initializes the SampleMesh object.
+        """Initialize the SampleMesh object.
 
         Parameters
         ----------

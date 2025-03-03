@@ -1,5 +1,5 @@
 """
-This module provides functions to write input files for NumCalc.
+Provides functions to write input files for NumCalc.
 """
 import os
 import numpy as np

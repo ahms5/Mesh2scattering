@@ -1,4 +1,4 @@
-"""This module contains functions to calculate scattering
+"""Contains functions to calculate scattering
 coefficients from SOFA files and save them in new SOFA files.
 """
 import pyfar as pf

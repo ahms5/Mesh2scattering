@@ -1,5 +1,5 @@
 """
-This module provides functions to write input files for NumCalc.
+Provides functions to write input files for NumCalc.
 """
 import pyfar as pf
 from enum import Enum
@@ -33,7 +33,7 @@ class SoundSource():
             source_coordinates: pf.Coordinates,
             source_type: SoundSourceType=SoundSourceType.POINT_SOURCE,
             ) -> None:
-        """Initializes the SoundSource object.
+        """Initialize the SoundSource object.
 
         Parameters
         ----------

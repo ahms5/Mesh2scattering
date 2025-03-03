@@ -1,5 +1,5 @@
 """
-This module contains utility functions for the mesh2scattering package.
+Contains utility functions for the mesh2scattering package.
 """
 
 from .utils import (
