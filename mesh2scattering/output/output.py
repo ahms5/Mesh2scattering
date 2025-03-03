@@ -262,7 +262,8 @@ def _read_numcalc(folder=None):
         folder = os.getcwd()
 
     # check and load parameters, required parameters are:
-    # mesh2scattering_version, reference, computeHRIRs, speedOfSound, densityOfAir,
+    # mesh2scattering_version, reference, computeHRIRs, speedOfSound,
+    # densityOfAir,
     # sources_num, sourceType, sources, sourceArea,
     # num_frequencies, frequencies
     params = os.path.join(folder, 'parameters.json')
