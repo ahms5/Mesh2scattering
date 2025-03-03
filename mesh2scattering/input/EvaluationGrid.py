@@ -13,11 +13,11 @@ class EvaluationGrid():
 
     Parameters
     ----------
-    coordinates : pf.Coordinates
+    coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
         The coordinates of the evaluation grid.
-    faces : np.ndarray
+    faces : numpy.ndarray
         The faces of the evaluation grid.
-    name : str
+    name : string
         The name of the evaluation grid.
 
     Examples
@@ -39,15 +39,15 @@ class EvaluationGrid():
     _name: str
 
     def __init__(
-            self, coordinates: pf.Coordinates, faces:np.ndarray, name: str):
+            self, coordinates: pf.Coordinates, faces: np.ndarray, name: str):
         """Initialize the EvaluationGrid object.
 
         Parameters
         ----------
-        coordinates : pf.Coordinates
+        coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
             The coordinates of the evaluation grid.
-        faces : np.ndarray of ints
-            The faces of the evaluation grid. must be of shape (n, 3).
+        faces : numpy.ndarray of ints
+            The faces of the evaluation grid. Must be of shape (n, 3).
         name : str
             The name of the evaluation grid.
         """
@@ -75,7 +75,7 @@ class EvaluationGrid():
 
         Parameters
         ----------
-        coordinates : pf.Coordinates
+        coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
             The coordinates of the evaluation grid.
         name : str
             The name of the evaluation grid.
@@ -97,7 +97,7 @@ class EvaluationGrid():
 
         Parameters
         ----------
-        coordinates : pf.Coordinates
+        coordinates ::py:class:`~pyfar.classes.coordinates.Coordinates`
             The coordinates of the evaluation grid.
         plane : "xy", "yz", "xz"
             In case all values of the evaluation grid are constant for one
@@ -131,7 +131,7 @@ class EvaluationGrid():
 
         Returns
         -------
-        pf.Coordinates
+        :py:class:`~pyfar.classes.coordinates.Coordinates`
             The coordinates of the evaluation grid.
         """
         return self._coordinates
@@ -153,7 +153,7 @@ class EvaluationGrid():
 
         Returns
         -------
-        np.ndarray
+        numpy.ndarray
             The weights of the evaluation grid.
         """
         return self._coordinates.weights
@@ -164,7 +164,7 @@ class EvaluationGrid():
 
         Returns
         -------
-        np.ndarray
+        numpy.ndarray
             The faces of the evaluation grid.
         """
         return self._faces

@@ -37,7 +37,7 @@ class SoundSource():
 
         Parameters
         ----------
-        source_coordinates : pf.Coordinates
+        source_coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
             source coordinates, if the sound source type is Point source,
             it reflects the positions in space, and it the source type is
             plane wave it reflects the direction of the sound wave.
@@ -76,7 +76,7 @@ class SoundSource():
 
         Returns
         -------
-        pf.Coordinates
+        :py:class:`~pyfar.classes.coordinates.Coordinates`
             The source coordinates in meter.
         """
         return self._source_coordinates

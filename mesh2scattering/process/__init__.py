@@ -1,9 +1,13 @@
 """Write output for Mesh2HRTF."""
 
-from .scattering import (
-    freefield,
+from .coefficients import (
+    scattering_freefield,
     )
 
+from .process import (
+    calculate_scattering,
+    )
 __all__ = [
-    'freefield',
+    'scattering_freefield',
+    'calculate_scattering',
     ]

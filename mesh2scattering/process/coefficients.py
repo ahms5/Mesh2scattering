@@ -1,8 +1,10 @@
+"""Coefficient calculation functions for the scattering analysis."""
 import numpy as np
 import pyfar as pf
 
 
-def freefield(sample_pressure, reference_pressure, microphone_weights):
+def scattering_freefield(
+        sample_pressure, reference_pressure, microphone_weights):
     r"""
     Calculate the direction dependent free-field scattering coefficient.
 
@@ -27,9 +29,7 @@ def freefield(sample_pressure, reference_pressure, microphone_weights):
     :math:`\varphi` are the ``colatitude``
     angle and ``azimuth`` angles from the
     :py:class:`~pyfar.classes.coordinates.Coordinates` object.
-    In other words, the test sample lies in the x-y-plane. See
-    :py:func:`random` to calculate the random incidence
-    scattering coefficient.
+    In other words, the test sample lies in the x-y-plane.
 
     Parameters
     ----------

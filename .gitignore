@@ -127,3 +127,4 @@ mesh2scattering/NumCalc/src/*.o
 mesh2scattering/NumCalc/bin/NumCalc
 mesh2scattering/NumCalc/bin/*.dll
 mesh2scattering/NumCalc/bin/*.exe
+tests/resources/output/test.scattering.sofa

@@ -56,13 +56,9 @@ def write_pressure(folder):
         # objects. This way they are available to other users as well)
         source_position = np.array(params['sources'])
         source_type = params['source_type']
-        if source_position.shape[1] != 3:
-            source_position = np.transpose(source_position)
         if source_type == 'Plane wave':
             source_position = -source_position*99
         receiver_position = np.array(evaluationGrids[grid]['nodes'][:, 1:4])
-        if receiver_position.shape[1] != 3:
-            receiver_position = np.transpose(receiver_position)
 
         # apply symmetry of reference sample
         data = pf.FrequencyData(
@@ -114,13 +110,13 @@ def _create_pressure_sofa(
 
     Parameters
     ----------
-    data : pf.FrequencyData
+    data : :py:class:`~pyfar.classes.audio.FrequencyData`
         the complex pressure data.
-    Lbyl : np.ndarray
+    Lbyl : numpy.ndarray
         structural wavelength over wavelength of sound.
-    sources : pf.Coordinates
+    sources : :py:class:`~pyfar.classes.coordinates.Coordinates`
         source positions in cartesian coordinates.
-    receivers : pf.Coordinates
+    receivers : :py:class:`~pyfar.classes.coordinates.Coordinates`
         Receivers positions in cartesian coordinates.
     structural_wavelength : float
         structural wavelength in main direction (x) in meters.

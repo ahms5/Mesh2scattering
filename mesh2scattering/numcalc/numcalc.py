@@ -727,7 +727,7 @@ def calc_and_read_ram(project_path, numcalc_executable):
 
     Returns
     -------
-    ram : np.ndarray
+    ram : numpy.ndarray
         with shape (N, 3), where the first row definitions are as follows:
             - id of the frequency
             - frequency itself

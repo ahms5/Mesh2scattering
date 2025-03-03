@@ -33,7 +33,7 @@ def write_scattering_project_numcalc(
         Project path where the project should be created.
     project_title : str
         Project title, required for meta data files.
-    frequencies : np.ndarray
+    frequencies : numpy.ndarray
         frequency vector to be solved.
     sound_sources : SoundSource
         sound sources.
@@ -189,14 +189,14 @@ def _write_nc_inp(
         Speed of sound in m/s.
     density_of_medium : float
         density of the medium in kg/m^3.
-    frequencies : np.ndarray
+    frequencies : numpy.ndarray
         frequency vector in Hz for NumCalc.
     evaluation_grid_names : list[str]
         evaluation grid names. Evaluation grids need to be written before the
         NC.inp file.
     source_type : SoundSourceType
         Type of the sound source. Options are 'Point source' or 'Plane wave'.
-    source_positions : pf.Coordinates
+    source_positions : :py:class:`~pyfar.classes.coordinates.Coordinates`
         source positions in meter.
     n_mesh_elements : int
         number of elements in the mesh.

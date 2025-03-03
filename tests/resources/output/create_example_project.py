@@ -58,3 +58,9 @@ m2s.numcalc.manage_numcalc(
     os.path.join(base_path, 'output'), numcalc, wait_time=0)
 
 # %%
+for sample in ['sine', 'reference']:
+    project_path = os.path.join(
+        base_path, 'output', sample)
+
+    m2s.output.write_pressure(project_path)
+# %%
