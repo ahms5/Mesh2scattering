@@ -511,7 +511,9 @@ def _load_results(foldername, filename, num_frequencies):
         line = csv.reader(file, delimiter=' ', skipinitialspace=True)
         for _idx, li in enumerate(line):
             # read number of data points and head lines
-            if len(li) == 2 and not li[0].startswith("mesh2scattering"):
+            if len(li) == 2 and not (
+                    li[0].startswith("mesh2scattering") or li[0].startswith(
+                        "Mesh2HRTF")):
                 numDatalines = int(li[1])
 
             # read starting index
