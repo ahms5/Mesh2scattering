@@ -3,6 +3,10 @@
 
 ## mesh2scattering
 
+### v1.0.1 - (2025-04-25)
+
+- fix copyright in documentation
+
 ### v1.0.0 - (2025-03-07)
 
 breaking changes, not compatibly with mesh2scattering versions below v1.0.0.
