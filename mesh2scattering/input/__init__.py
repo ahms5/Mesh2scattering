@@ -2,6 +2,11 @@
 Provides functions to write input files for mesh2scattering.
 """
 
+from .BoundaryCondition import (
+    BoundaryConditionType,
+    BoundaryCondition,
+)
+
 from .input import (
     write_scattering_project_numcalc,
     )
@@ -23,6 +28,8 @@ from .SoundSource import (
 )
 
 __all__ = [
+    'BoundaryConditionType',
+    'BoundaryCondition',
     'write_scattering_project_numcalc',
     'EvaluationGrid',
     'SampleShape',

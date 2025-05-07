@@ -1,6 +1,24 @@
 import numpy as np
 import os
 import pyfar as pf
+from enum import Enum
+
+
+class BoundaryConditionType(Enum):
+    """Defines the type of the Boundary condition.
+    """
+
+    VELO = "velocity "
+    """velocity boundary condition."""
+
+    PRES = "pressure"
+    """pressure boundary condition."""
+
+    ADMI = "admittance"
+    """admittance boundary condition."""
+
+    IMPE = "impedance "
+    """impedance  boundary condition."""
 
 
 class BoundaryCondition:
@@ -19,18 +37,22 @@ class BoundaryCondition:
         A comment that is written to the beginning of the material file.
     """
 
-    _values: pf.FrequencyData = None
-    _kind: str = None
+    _values:pf.FrequencyData = None
+    _kind: BoundaryConditionType = None
     _comment: str = None
 
-    def __init__(self, values: pf.FrequencyData, kind: str, comment: str=None):
-        """Initializes the Material object.
+    def __init__(
+            self,
+            values: pf.FrequencyData,
+            kind: BoundaryConditionType,
+            comment: str=None):
+        """Initialize the Material object.
 
         Parameters
         ----------
-        values : pf.FrequencyData
+        values : pf.FrequencyData, number
             Defines the boundary condition values with its frequencies.
-        kind : str
+        kind : BoundaryConditionType
             the kind of boundary condition.
         comment : str
             A comment that is written to the beginning of the material file.
@@ -253,7 +275,6 @@ def write_material(
     between the lowest and highest provided frequency and uses the nearest
     neighbor outside this range.
     """
-
     # check input
     if not isinstance(data, pf.FrequencyData):
         raise ValueError("data must be a pyfar.FrequencyData object.")
