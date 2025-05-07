@@ -54,8 +54,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'mesh2scattering'
-copyright = "2025, Anne Heimes"
-author = "Anne Heimes"
+copyright = u"2022-2024, the Mesh2HRTF developers; 2024, Anne Heimes"
+author = "Mesh2HRTF developers, Anne Heimes"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
