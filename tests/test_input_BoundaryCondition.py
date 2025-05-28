@@ -64,17 +64,17 @@ def test_comment_setter_accepts_only_str(material_frequency_data):
     with pytest.raises(ValueError, match="comment must be a string"):
         BoundaryCondition(
             values=material_frequency_data,
-            kind=BoundaryConditionType.PRES,
+            kind=BoundaryConditionType.IMPE,
             comment=123,
         )
 
 def test_kind_property_returns_enum(material_frequency_data):
     bc = BoundaryCondition(
         values=material_frequency_data,
-        kind=BoundaryConditionType.VELO,
+        kind=BoundaryConditionType.IMPE,
         comment="c",
     )
-    assert bc.kind == BoundaryConditionType.VELO
+    assert bc.kind == BoundaryConditionType.IMPE
 
 def test_values_property_returns_freqdata(material_frequency_data):
     bc = BoundaryCondition(
