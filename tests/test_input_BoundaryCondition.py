@@ -104,3 +104,22 @@ def test_setters_update_values(material_frequency_data, material_data):
     assert bc.values is material_data
     assert bc.kind == BoundaryConditionType.IMPE
     assert bc.comment == "updated"
+
+
+@pytest.mark.parametrize(
+    ("kind_enum", "expected_str"),
+    [
+        (BoundaryConditionType.VELO, "VELO"),
+        (BoundaryConditionType.PRES, "PRES"),
+        (BoundaryConditionType.ADMI, "ADMI"),
+        (BoundaryConditionType.IMPE, "IMPE"),
+    ]
+)
+def test_kind_str_property_returns_expected_string(
+        material_data, kind_enum, expected_str):
+    bc = BoundaryCondition(
+        values=material_data,
+        kind=kind_enum,
+        comment="test",
+    )
+    assert bc.kind_str == expected_str

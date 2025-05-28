@@ -117,6 +117,38 @@ class BoundaryCondition:
         self._kind = kind
 
     @property
+    def kind_str(self):
+        """Get and set the kind of boundary condition as a string.
+
+        - ``'PRES'``
+            A pressure boundary condition can be used to force a certain
+            pressure on the boundary of the mesh. E.g., a pressure of 0 would
+            define a sound soft boundary.
+            Cannot be frequency dependent, this means frequency must be 0.
+        - ``'VELO'``
+            A velocity boundary condition can be used to force a certain
+            velocity on the boundary of the mesh. E.g., a velocity of 0 would
+            define a sound hard boundary.
+            Cannot be frequency dependent, this means frequency must be 0.
+        - ``'ADMI'``
+            A normalized admittance boundary condition can be used to define
+            arbitrary boundaries. The admittance must be normalized, i.e.,
+            admittance/(rho*c) has to be provided, which rho being the density
+            of air in kg/m**3 and c the speed of sound in m/s.
+        - ``'IMPE'``
+            A normalized impedance boundary condition can be used to define
+            arbitrary boundaries. The impedance must be normalized, i.e.,
+            impedance/(rho*c) has to be provided, which rho being the density
+            of air in kg/m**3 and c the speed of sound in m/s.
+
+        Returns
+        -------
+        str
+            The kind of boundary condition.
+        """
+        return self._kind.value
+
+    @property
     def comment(self):
         """A comment that is written to the beginning of the material file.
 
@@ -132,5 +164,6 @@ class BoundaryCondition:
         if not isinstance(comment, str):
             raise ValueError("comment must be a string.")
         self._comment = comment
-    
+
+
 
