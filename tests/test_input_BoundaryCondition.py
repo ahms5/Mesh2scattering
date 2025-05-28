@@ -113,7 +113,7 @@ def test_setters_update_values(material_frequency_data, material_data):
         (BoundaryConditionType.PRES, "PRES"),
         (BoundaryConditionType.ADMI, "ADMI"),
         (BoundaryConditionType.IMPE, "IMPE"),
-    ]
+    ],
 )
 def test_kind_str_property_returns_expected_string(
         material_data, kind_enum, expected_str):
@@ -123,3 +123,45 @@ def test_kind_str_property_returns_expected_string(
         comment="test",
     )
     assert bc.kind_str == expected_str
+
+
+@pytest.mark.parametrize(
+    ("kind", "values"),
+    [
+        (BoundaryConditionType.VELO, 'material_data'),
+        (BoundaryConditionType.PRES, 'material_data'),
+        (BoundaryConditionType.ADMI, 'material_data'),
+        (BoundaryConditionType.IMPE, 'material_data'),
+        (BoundaryConditionType.ADMI, 'material_frequency_data'),
+        (BoundaryConditionType.IMPE, 'material_frequency_data'),
+    ],
+    )
+def test_frequency_dependence_allowed(request, kind, values):
+    """Test that frequency dependence is allowed for ADMI and IMPE."""
+    values = request.getfixturevalue(values)
+    bc = BoundaryCondition(
+        values=values,
+        kind=kind,
+    )
+    assert bc.kind is kind
+    assert isinstance(bc.values, pf.FrequencyData)
+    assert bc.values == values
+
+
+@pytest.mark.parametrize(
+    ("kind", "values"),
+    [
+        (BoundaryConditionType.VELO, 'material_frequency_data'),
+        (BoundaryConditionType.PRES, 'material_frequency_data'),
+    ],
+    )
+def test_frequency_dependence_not_allowed(request, kind, values):
+    values = request.getfixturevalue(values)
+    match = (
+        "Frequency dependent boundary conditions can only be specified "
+        "for ADMI and IMPE")
+    with pytest.raises(ValueError, match=match):
+        BoundaryCondition(
+            values=values,
+            kind=kind,
+        )

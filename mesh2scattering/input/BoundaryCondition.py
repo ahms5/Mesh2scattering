@@ -1,5 +1,9 @@
+"""Defines a boundary condition for a mesh, e.g material property.
+
+Frequency dependent boundary conditions can only be specified for
+ADMI and IMPE but not for PRES and VELO.
+"""
 import numpy as np
-import os
 import pyfar as pf
 from enum import Enum
 
@@ -45,7 +49,7 @@ class BoundaryCondition:
             self,
             values: pf.FrequencyData,
             kind: BoundaryConditionType,
-            comment: str=None):
+            comment: str=""):
         """Initialize the Material object.
 
         Parameters
@@ -57,8 +61,14 @@ class BoundaryCondition:
         comment : str
             A comment that is written to the beginning of the material file.
         """
-        self.values = values
         self.kind = kind
+        if kind in (BoundaryConditionType.PRES, BoundaryConditionType.VELO):
+            if not (np.isclose(
+                    values.frequencies, 0).all() or values.n_bins==1):
+                raise ValueError(
+                    "Frequency dependent boundary conditions can only be "
+                    "specified for ADMI and IMPE but not for PRES and VELO.")
+        self.values = values
         self.comment = comment
 
     @property
