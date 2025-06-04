@@ -254,7 +254,7 @@ class SampleMesh():
             sample_baseplate_hight: float=.01,
             sample_diameter: float=0.8,
             sample_shape: SampleShape=SampleShape.ROUND,
-            bc_mapping=None,
+            bc_mapping: bc.BoundaryConditionMapping=None,
             ) -> None:
         """Initialize the SampleMesh object.
 
@@ -299,7 +299,7 @@ class SampleMesh():
                     bc_mapping, bc.BoundaryConditionMapping):
                 raise ValueError(
                     "bc_mapping must be a "
-                    "BoundaryConditionMapping object.")
+                    "BoundaryConditionMapping object or None.")
 
         # check if BoundaryConditionMapping matches the mesh properties
         if bc_mapping is not None:
@@ -329,7 +329,7 @@ class SampleMesh():
 
         Returns
         -------
-        BoundaryConditionMapping
+        bc_mapping : BoundaryConditionMapping, None
             The boundary condition mapping of the sample mesh.
         """
         return self._bc_mapping

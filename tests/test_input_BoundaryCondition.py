@@ -15,17 +15,11 @@ def material_frequency_data():
         frequencies=np.linspace(100, 1000, 5),
     )
 
-@pytest.fixture
-def material_data():
-    return pf.FrequencyData(
-        data=1,
-        frequencies=0,
-    )
 
 @pytest.fixture
-def material(material_data):
+def material():
     return BoundaryCondition(
-        values=material_data,
+        values=1,
         kind=BoundaryConditionType.pressure,
     )
 
@@ -43,47 +37,36 @@ def test_enum_values():
     assert BoundaryConditionType.impedance.value == "IMPE"
 
 
-def test_init_sets_attributes(material_data):
+def test_init_sets_attributes():
     bc = BoundaryCondition(
-        values=material_data,
+        values=1,
         kind=BoundaryConditionType.admittance,
-        comment="test comment",
     )
-    assert bc.values is material_data
+    assert bc.values == 1
     assert bc.kind == BoundaryConditionType.admittance
-    assert bc.comment == "test comment"
 
 def test_values_setter_accepts_only_frequencydata():
     with pytest.raises(
-            ValueError, match="values must be a pyfar.FrequencyData object"):
+            ValueError,
+            match="values must be a pyfar.FrequencyData object or a number"):
         BoundaryCondition(
-            values=123,
+            values='error',
             kind=BoundaryConditionType.admittance,
-            comment="fail",
         )
 
-def test_kind_setter_accepts_only_enum(material_frequency_data):
+def test_kind_setter_accepts_only_enum():
     with pytest.raises(
             ValueError, match="kind must be a BoundaryConditionType"):
         BoundaryCondition(
-            values=material_frequency_data,
+            values=1,
             kind="VELO",
-            comment="fail",
         )
 
-def test_comment_setter_accepts_only_str(material_frequency_data):
-    with pytest.raises(ValueError, match="comment must be a string"):
-        BoundaryCondition(
-            values=material_frequency_data,
-            kind=BoundaryConditionType.admittance,
-            comment=123,
-        )
 
 def test_kind_property_returns_enum(material_frequency_data):
     bc = BoundaryCondition(
         values=material_frequency_data,
         kind=BoundaryConditionType.admittance,
-        comment="c",
     )
     assert bc.kind == BoundaryConditionType.admittance
 
@@ -91,30 +74,19 @@ def test_values_property_returns_freqdata(material_frequency_data):
     bc = BoundaryCondition(
         values=material_frequency_data,
         kind=BoundaryConditionType.admittance,
-        comment="c",
     )
     assert isinstance(bc.values, pf.FrequencyData)
 
-def test_comment_property_returns_str(material_frequency_data):
-    bc = BoundaryCondition(
-        values=material_frequency_data,
-        kind=BoundaryConditionType.admittance,
-        comment="hello",
-    )
-    assert bc.comment == "hello"
 
-def test_setters_update_values(material_frequency_data, material_data):
+def test_setters_update_values(material_frequency_data):
     bc = BoundaryCondition(
         values=material_frequency_data,
         kind=BoundaryConditionType.admittance,
-        comment="init",
     )
-    bc.values = material_data
+    bc.values = 1
     bc.kind = BoundaryConditionType.impedance
-    bc.comment = "updated"
-    assert bc.values is material_data
+    assert bc.values == 1
     assert bc.kind == BoundaryConditionType.impedance
-    assert bc.comment == "updated"
 
 
 @pytest.mark.parametrize(
@@ -127,11 +99,10 @@ def test_setters_update_values(material_frequency_data, material_data):
     ],
 )
 def test_kind_str_property_returns_expected_string(
-        material_data, kind_enum, expected_str):
+        kind_enum, expected_str):
     bc = BoundaryCondition(
-        values=material_data,
+        values=1,
         kind=kind_enum,
-        comment="test",
     )
     assert bc.kind_str == expected_str
 
@@ -139,23 +110,32 @@ def test_kind_str_property_returns_expected_string(
 @pytest.mark.parametrize(
     ("kind", "values"),
     [
-        (BoundaryConditionType.velocity, 'material_data'),
-        (BoundaryConditionType.pressure, 'material_data'),
-        (BoundaryConditionType.admittance, 'material_data'),
-        (BoundaryConditionType.impedance, 'material_data'),
-        (BoundaryConditionType.admittance, 'material_frequency_data'),
+        (BoundaryConditionType.velocity, 1),
+        (BoundaryConditionType.pressure, 1),
+        (BoundaryConditionType.admittance, 1),
+        (BoundaryConditionType.impedance, 1),
     ],
     )
-def test_frequency_dependence_allowed(request, kind, values):
-    """Test that frequency dependence is allowed for ADMI and IMPE."""
-    values = request.getfixturevalue(values)
+def test_frequency_dependence_allowed(kind, values):
+    """Test that frequency dependence is allowed for ADMI."""
     bc = BoundaryCondition(
         values=values,
         kind=kind,
     )
     assert bc.kind is kind
-    assert isinstance(bc.values, pf.FrequencyData)
+    assert bc.values == 1
     assert bc.values == values
+
+
+def test_frequency_dependence_allowed_frequency_data(material_frequency_data):
+    """Test that frequency dependence is allowed for ADMI."""
+    bc = BoundaryCondition(
+        values=material_frequency_data,
+        kind=BoundaryConditionType.admittance,
+    )
+    assert bc.kind is BoundaryConditionType.admittance
+    assert isinstance(bc.values, pf.FrequencyData)
+    assert bc.values == material_frequency_data
 
 
 @pytest.mark.parametrize(
@@ -255,7 +235,7 @@ def test_MappingBoundaryCondition_n_frequency_curves(material):
             data=np.array([2.0]),
             frequencies=np.array([1000]),
         ),
-        kind=BoundaryConditionType.impedance,
+        kind=BoundaryConditionType.admittance,
     )
     bcm.apply_material(material2, 11, 12)
     assert bcm.n_frequency_curves == 2

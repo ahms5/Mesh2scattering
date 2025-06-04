@@ -1,7 +1,7 @@
 """Defines a boundary condition for a mesh, e.g material property.
 
 Frequency dependent boundary conditions can only be specified for
-ADMI and IMPE but not for PRES and VELO.
+ADMI  but not for IMPE, PRES and VELO.
 """
 import numpy as np
 import pyfar as pf
@@ -58,7 +58,7 @@ class BoundaryCondition:
     """Defines a boundary condition for a mesh, e.g material property.
 
     NOTE: Frequency dependent boundary conditions can only be specified for
-    ADMI and IMPE but not for PRES and VELO
+    ADMI but not for IMPE, PRES and VELO
 
     Parameters
     ----------
@@ -66,42 +66,36 @@ class BoundaryCondition:
         Defines the boundary condition values with its frequencies.
     kind : str
         the kind of boundary condition.
-    comment : str
-        A comment that is written to the beginning of the material file.
     """
 
     _values: pf.FrequencyData = None
     _kind: BoundaryConditionType = None
-    _comment: str = None
 
     def __init__(
             self,
-            values: pf.FrequencyData,
+            values: pf.FrequencyData|float,
             kind: BoundaryConditionType,
-            comment: str=""):
+            ):
         """Initialize the Material object.
 
         Parameters
         ----------
         values : pf.FrequencyData, number
-            Defines the boundary condition values with its frequencies.
+            Defines the boundary condition values. If a number is provided,
+            it is
+            assumed to be a constant value for all frequencies.
+            If a FrequencyData object is provided, it must be frequency
+            dependent and can only be used for admittance data.
         kind : BoundaryConditionType
             the kind of boundary condition.
-        comment : str
-            A comment that is written to the beginning of the material file.
         """
-        self.kind = kind
-        if kind in (
-                BoundaryConditionType.pressure,
-                BoundaryConditionType.velocity,
-                BoundaryConditionType.impedance):
-            if not (np.isclose(
-                    values.frequencies, 0).all() or values.n_bins==1):
+        if isinstance(values, pf.FrequencyData):
+            if kind is not BoundaryConditionType.admittance:
                 raise ValueError(
                     "Frequency dependent boundary conditions can only be "
                     "specified for ADMI but not for IMPE, PRES and VELO.")
+        self.kind = kind
         self.values = values
-        self.comment = comment
 
     @property
     def values(self):
@@ -117,8 +111,27 @@ class BoundaryCondition:
     @values.setter
     def values(self, values):
         if not isinstance(values, pf.FrequencyData):
-            raise ValueError("values must be a pyfar.FrequencyData object.")
+            try:
+                values = float(values)
+            except ValueError as e:
+                raise ValueError(
+                    "values must be a pyfar.FrequencyData "
+                    "object or a number.") from e
         self._values = values
+
+    @property
+    def frequency_dependent(self):
+        """Check if the boundary condition is frequency dependent.
+
+        Returns
+        -------
+        bool
+            True if the boundary condition is frequency dependent, False
+            otherwise.
+        """
+        if isinstance(self.values, pf.FrequencyData):
+            return True
+        return False
 
     @property
     def kind(self):
@@ -189,23 +202,6 @@ class BoundaryCondition:
             The kind of boundary condition.
         """
         return self._kind.value
-
-    @property
-    def comment(self):
-        """A comment that is written to the beginning of the material file.
-
-        Returns
-        -------
-        str
-            A comment for the material.
-        """
-        return self._comment
-
-    @comment.setter
-    def comment(self, comment):
-        if not isinstance(comment, str):
-            raise ValueError("comment must be a string.")
-        self._comment = comment
 
 
 class BoundaryConditionMapping():
@@ -283,8 +279,7 @@ class BoundaryConditionMapping():
         """
         n_frequency_curves = 0
         for material in self._material_list:
-            if material.values.n_bins > 1 or any(
-                    material.values.frequencies > 1e-12):
+            if material.frequency_dependent:
                 n_frequency_curves += 2
         return n_frequency_curves
 
@@ -302,9 +297,9 @@ class BoundaryConditionMapping():
         """
         nc_boundary = ''
         n_frequency_curves = self.n_frequency_curves
-        n_max_bins = np.max([m.values.n_bins for m in self._material_list])
         # first line
         if n_frequency_curves > 0:
+            n_max_bins = np.max([m.values.n_bins for m in self._material_list])
             nc_frequency_curve = f'{n_frequency_curves} {n_max_bins}\n'
         else:
             nc_frequency_curve = ''
@@ -314,7 +309,7 @@ class BoundaryConditionMapping():
             i_end = self._material_mapping[i][1]
 
             values = self._material_list[i].values
-            if self._material_list[i].values.n_bins > 1:
+            if self._material_list[i].frequency_dependent:
                 freq_curve_real = f'{current_curve} {values.n_bins}\n'
                 curve_real = current_curve
                 current_curve += 1
@@ -332,8 +327,8 @@ class BoundaryConditionMapping():
                 real = 1.
                 imag = 1.
             else:
-                real = values.freq.real[0, 0]
-                imag = values.freq.imag[0, 0]
+                real = np.real(values)
+                imag = np.imag(values)
                 curve_real = -1
                 curve_imag = -1
             material_kind = self._material_list[i].kind_str

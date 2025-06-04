@@ -294,7 +294,7 @@ def test__write_nc_inp_boundary_condition(tmpdir):
     bcm = m2s.input.bc.BoundaryConditionMapping(n_mesh_elements)
     bc = m2s.input.bc.BoundaryCondition(
         kind=m2s.input.bc.BoundaryConditionType.pressure,
-        values=pf.FrequencyData(0, 0),
+        values=0,
     )
     bcm.apply_material(
         bc,

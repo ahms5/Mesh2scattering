@@ -17,7 +17,7 @@ import pytest
 @pytest.mark.parametrize('bc', [
     None,
     m2s.input.bc.BoundaryCondition(
-        pf.FrequencyData(0.5, 0), # R = 1/3 -> alpha = 0.88
+        .5, # R = 1/3 -> alpha = 0.88
         m2s.input.bc.BoundaryConditionType.impedance),
     m2s.input.bc.BoundaryCondition(
         pf.FrequencyData([0.5, 0.5], [100, 200]), # R = 1/3 -> alpha = 0.88
