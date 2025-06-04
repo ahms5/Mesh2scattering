@@ -1,0 +1,51 @@
+istart= 1 iend = 1
+
+---------- NumCalc started: 4/6/2025 18:50:42 ----------
+
+Running on:         iTA-POOL3.ITA.AKUSTIK.RWTH-AACHEN.DE
+
+3D analysis
+Job title: reference
+
+Step 1, Frequency = 1000 Hz
+
+Direct multilevel fast multipole BEM
+
+Number of equations = 16460
+
+Informations about clusters:
+   Level    Num. of clusters    Maximum radius   Minimum radius
+     0           60                0.079496         0.0472832
+     1          218                0.0478861         0.0284976
+ resu. nets    4096                     0              0
+
+
+Informations about the FMM expansion:
+   Level    N. expa. terms    N. p. theta    N. p. phi    N. p. sphere
+     0           8               8              16           128
+     1           8               8              16           128
+
+CGS: err_ori = 0.00781919
+10 0.00495564
+10 Abs Error:3.87491e-05
+20 3.60152e-07
+20 Abs Error:2.8161e-09
+30 1.01709e-08
+30 Abs Error:7.95284e-11
+33 4.4603e-10
+
+Assembling the equation system         : 25
+Solving the equation system            : 6
+Post processing                        : 5
+Total                                  : 36
+
+
+Time Statistic for the job (in second):
+Input ............................ 1
+Address computation .............. 0
+Assembling the equation system ... 25
+Solving the equation system ...... 6
+Post processing .................. 5
+The whole job .................... 37
+
+---------- NumCalc ended: 4/6/2025 18:51:19 ----------
