@@ -287,6 +287,54 @@ def test__write_nc_inp(source_type, bem_method, tmpdir):
     assert '\nEND\n' in content
 
 
+def test__write_nc_inp_boundary_condition(tmpdir):
+    # test write nc inp file vs online documentation
+    # https://github.com/Any2HRTF/Mesh2HRTF/wiki/Structure_of_NC.inp
+    n_mesh_elements = 100
+    bcm = m2s.input.bc.BoundaryConditionMapping(n_mesh_elements)
+    bc = m2s.input.bc.BoundaryCondition(
+        kind=m2s.input.bc.BoundaryConditionType.pressure,
+        values=pf.FrequencyData(0, 0),
+    )
+    bcm.apply_material(
+        bc,
+        0, n_mesh_elements - 1)
+    version = '0.1.0'
+    source_type = m2s.input.SoundSourceType.POINT_SOURCE
+    bem_method = 'BEM'
+    project_path = os.path.join(tmpdir, 'project')
+    project_title = 'test_project'
+    speed_of_sound = 346.18
+    density_of_medium = 1.1839
+    frequencies = np.array([500])
+    evaluation_grid_names = ['example_grid']
+    source_positions = pf.Coordinates(1, 0, 1, weights=1)
+    n_mesh_nodes = 50
+    n_grid_elements = 200
+    n_grid_nodes = 70
+    os.mkdir(project_path)
+    os.mkdir(os.path.join(project_path, 'NumCalc'))
+    nc_boundary, nc_frequency_curve = bcm.to_nc_out()
+    m2s.input.input._write_nc_inp(
+        project_path, version, project_title,
+        speed_of_sound, density_of_medium,
+        frequencies,
+        evaluation_grid_names,
+        source_type, source_positions,
+        n_mesh_elements, n_mesh_nodes, n_grid_elements, n_grid_nodes,
+        bem_method, nc_boundary, nc_frequency_curve)
+
+
+    # test if the file is correct
+    NC_path = os.path.join(project_path, 'NumCalc', 'source_1', 'NC.inp')
+    with open(NC_path, 'r') as f:
+        content = "".join(f.readlines())
+
+    #BOUNDARY : ELEM [%d] TO [%d %s %f %d %f %d]
+    boundary = '##\nBOUNDARY\nELEM 0 TO 99 PRES 0.0 -1 0.0 -1\nRETU\n'
+    assert boundary in content
+
+
 @pytest.fixture
 def valid_inputs(simple_mesh):
     return {
