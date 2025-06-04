@@ -254,10 +254,14 @@ class BoundaryConditionMapping():
         """
         if not isinstance(material, BoundaryCondition):
             raise ValueError("material must be a BoundaryCondition object.")
-        if not isinstance(first_element, int):
-            raise ValueError("first_element must be an integer.")
-        if not isinstance(last_element, int):
-            raise ValueError("last_element must be an integer.")
+        try:
+            first_element = int(first_element)
+        except ValueError as e:
+            raise ValueError("first_element must be an integer.") from e
+        try:
+            last_element = int(last_element)
+        except ValueError as e:
+            raise ValueError("last_element must be an integer.") from e
         if first_element < 0 or last_element < 0:
             raise ValueError("first_element and last_element must be >= 0.")
         if first_element > last_element:
