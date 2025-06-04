@@ -40,7 +40,7 @@ def test_write_run_project(source_type, bem_method, tmpdir, simple_mesh, bc):
     if bc is not None:
         n_mesh_faces = simple_mesh.faces.shape[0]
         bcm = m2s.input.bc.BoundaryConditionMapping(n_mesh_faces)
-        bcm.apply_material(
+        bcm.add_boundary_condition(
             bc, 0, n_mesh_faces-1,
         )
 

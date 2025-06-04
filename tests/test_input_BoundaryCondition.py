@@ -168,12 +168,12 @@ def test_MappingBoundaryCondition():
 def test_MappingBoundaryCondition_apply_material(material):
     bcm = BoundaryConditionMapping(10)
     ## add material by indexes
-    bcm.apply_material(material, 1, 5)
+    bcm.add_boundary_condition(material, 1, 5)
     assert len(bcm._material_list) == 1
     assert bcm._material_list[0].kind == material.kind
     npt.assert_almost_equal(bcm._material_mapping[0], [1, 5])
 
-    bcm.apply_material(material, 6, 10)
+    bcm.add_boundary_condition(material, 6, 10)
     assert len(bcm._material_list) == 2
     assert bcm._material_list[1].kind == material.kind
     npt.assert_almost_equal(bcm._material_mapping[1], [6, 10])
@@ -181,7 +181,7 @@ def test_MappingBoundaryCondition_apply_material(material):
 
 def test_MappingBoundaryCondition_out(material):
     bcm = BoundaryConditionMapping(12)
-    bcm.apply_material(material, 1, 10)
+    bcm.add_boundary_condition(material, 1, 10)
     nc_boundary, nc_frequency_curve = bcm.to_nc_out()
     npt.assert_string_equal(
         nc_boundary,
@@ -202,7 +202,7 @@ def test_MappingBoundaryCondition_out_freqData():
         ),
         kind=BoundaryConditionType.admittance,
     )
-    bcm.apply_material(material2, 0, 2411)
+    bcm.add_boundary_condition(material2, 0, 2411)
     nc_boundary, nc_frequency_curve = bcm.to_nc_out()
     npt.assert_string_equal(
         nc_boundary,
@@ -226,7 +226,7 @@ def test_MappingBoundaryCondition_out_freqData():
 
 def test_MappingBoundaryCondition_n_frequency_curves(material):
     bcm = BoundaryConditionMapping(12)
-    bcm.apply_material(material, 1, 10)
+    bcm.add_boundary_condition(material, 1, 10)
     assert bcm.n_frequency_curves == 0
 
     # Add another material with different frequency data
@@ -237,5 +237,5 @@ def test_MappingBoundaryCondition_n_frequency_curves(material):
         ),
         kind=BoundaryConditionType.admittance,
     )
-    bcm.apply_material(material2, 11, 12)
+    bcm.add_boundary_condition(material2, 11, 12)
     assert bcm.n_frequency_curves == 2

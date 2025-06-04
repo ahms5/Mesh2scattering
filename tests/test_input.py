@@ -296,7 +296,7 @@ def test__write_nc_inp_boundary_condition(tmpdir):
         kind=m2s.input.bc.BoundaryConditionType.pressure,
         values=0,
     )
-    bcm.apply_material(
+    bcm.add_boundary_condition(
         bc,
         0, n_mesh_elements - 1)
     version = '0.1.0'
