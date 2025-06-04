@@ -12,17 +12,46 @@ class BoundaryConditionType(Enum):
     """Defines the type of the Boundary condition.
     """
 
-    VELO = "VELO"
-    """velocity boundary condition."""
+    velocity = "VELO"
+    """
+    velocity boundary condition.
 
-    PRES = "PRES"
-    """pressure boundary condition."""
+    Cannot be frequency dependent, this means frequency must be 0 and is
+    constant for all frequencies.
+    A velocity of 0 would define a sound hard boundary.
+    """
 
-    ADMI = "ADMI"
-    """admittance boundary condition."""
+    pressure = "PRES"
+    """
+    pressure boundary condition.
 
-    IMPE = "IMPE"
-    """impedance  boundary condition."""
+    Cannot be frequency dependent, this means frequency must be 0 and is
+    constant for all frequencies.
+    A pressure of 0 would define a sound soft boundary.
+    """
+
+    admittance = "ADMI"
+    """
+    normalized admittance boundary condition.
+
+    Can be frequency depended.
+    NumCalc expects normalized admittance, i.e., (rho*c)/admittance.
+    rho is the density of air and c the speed of sound. The normalization is
+    beneficial because a single material file can be used for simulations
+    with differing speed of sound and density of air.
+    """
+
+    impedance = "IMPE"
+    """
+    normalized impedance boundary condition.
+
+    Cannot be frequency dependent, this means frequency must be 0 and is
+    constant for all frequencies.
+    NumCalc expects normalized impedances, i.e., impedance/(rho*c).
+    rho is the density of air and c the speed of sound. The normalization is
+    beneficial because a single material file can be used for simulations
+    with differing speed of sound and density of air.
+    """
 
 
 class BoundaryCondition:
@@ -62,12 +91,15 @@ class BoundaryCondition:
             A comment that is written to the beginning of the material file.
         """
         self.kind = kind
-        if kind in (BoundaryConditionType.PRES, BoundaryConditionType.VELO):
+        if kind in (
+                BoundaryConditionType.pressure,
+                BoundaryConditionType.velocity,
+                BoundaryConditionType.impedance):
             if not (np.isclose(
                     values.frequencies, 0).all() or values.n_bins==1):
                 raise ValueError(
                     "Frequency dependent boundary conditions can only be "
-                    "specified for ADMI and IMPE but not for PRES and VELO.")
+                    "specified for ADMI but not for IMPE, PRES and VELO.")
         self.values = values
         self.comment = comment
 
@@ -176,10 +208,6 @@ class BoundaryCondition:
         self._comment = comment
 
 
-
-
-
-
 class BoundaryConditionMapping():
     """Defines a mapping boundary condition for a mesh.
 
@@ -266,8 +294,11 @@ class BoundaryConditionMapping():
 
         Returns
         -------
-        dict
-            A dictionary containing the mesh mapping and material list.
+        nc_boundary : str
+            The NumCalc formatted boundary condition string.
+        nc_frequency_curve : str
+            The NumCalc formatted boundary condition string and frequency curve
+            string.
         """
         nc_boundary = ''
         n_frequency_curves = self.n_frequency_curves
