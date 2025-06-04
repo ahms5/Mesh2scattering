@@ -236,7 +236,7 @@ class BoundaryConditionMapping():
         """
         return self._n_mesh_faces
 
-    def apply_material(
+    def add_boundary_condition(
             self, material: BoundaryCondition,
             first_element: int, last_element: int):
         """Add a material to the mapping.
