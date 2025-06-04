@@ -177,3 +177,135 @@ class BoundaryCondition:
 
 
 
+
+
+
+class BoundaryConditionMapping():
+    """Defines a mapping boundary condition for a mesh.
+
+    Parameters
+    ----------
+    n_mesh_faces : int
+        The number of mesh faces to which the boundary condition is applied.
+    """
+
+    _material_list: list[int] = None
+    _n_mesh_faces: int = None
+
+    def __init__(self, n_mesh_faces: int):
+        if not isinstance(n_mesh_faces, int) or n_mesh_faces <= 0:
+            raise ValueError("n_mesh_faces must be a positive integer.")
+
+        self._material_list = []
+        self._material_mapping = []
+        self._n_mesh_faces = n_mesh_faces
+
+
+    @property
+    def n_mesh_faces(self):
+        """The number of mesh faces to which the boundary condition is applied.
+
+        Returns
+        -------
+        int
+            The number of mesh faces.
+        """
+        return self._n_mesh_faces
+
+    def apply_material(
+            self, material: BoundaryCondition,
+            first_element: int, last_element: int):
+        """Add a material to the mapping.
+
+        Parameters
+        ----------
+        material : BoundaryCondition
+            The material to add to the mapping.
+        first_element : int
+            The index of the first mesh face to which the material is applied.
+            Counting starts at 1.
+        last_element : int
+            The index of the last mesh face to which the material is applied.
+            Counting starts at 1.
+        """
+        if not isinstance(material, BoundaryCondition):
+            raise ValueError("material must be a BoundaryCondition object.")
+        if not isinstance(first_element, int):
+            raise ValueError("first_element must be an integer.")
+        if not isinstance(last_element, int):
+            raise ValueError("last_element must be an integer.")
+        if first_element < 0 or last_element < 0:
+            raise ValueError("first_element and last_element must be >= 0.")
+        if first_element > last_element:
+            raise ValueError("first_element must be <= last_element.")
+
+        # Add material to list
+        self._material_list.append(material)
+        # Check if first_element and last_element are within the range
+        self._material_mapping.append([first_element, last_element])
+
+    @property
+    def n_frequency_curves(self):
+        """Get the number of frequency curves in the material list.
+
+        Returns
+        -------
+        int
+            The number of frequency curves.
+        """
+        n_frequency_curves = 0
+        for material in self._material_list:
+            if material.values.n_bins > 1 or any(
+                    material.values.frequencies > 1e-12):
+                n_frequency_curves += 2
+        return n_frequency_curves
+
+
+    def to_nc_out(self):
+        """Convert the mapping to a dictionary for output.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the mesh mapping and material list.
+        """
+        nc_boundary = ''
+        n_frequency_curves = self.n_frequency_curves
+        n_max_bins = np.max([m.values.n_bins for m in self._material_list])
+        # first line
+        if n_frequency_curves > 0:
+            nc_frequency_curve = f'{n_frequency_curves} {n_max_bins}\n'
+        else:
+            nc_frequency_curve = ''
+        current_curve = 1
+        for i in range(len(self._material_list)):
+            i_start = self._material_mapping[i][0]
+            i_end = self._material_mapping[i][1]
+
+            values = self._material_list[i].values
+            if self._material_list[i].values.n_bins > 1:
+                freq_curve_real = f'{current_curve} {values.n_bins}\n'
+                curve_real = current_curve
+                current_curve += 1
+                freq_curve_imag = f'{current_curve} {values.n_bins}\n'
+                curve_imag = current_curve
+                current_curve += 1
+                for j in range(values.n_bins):
+                    real = values.freq.real[0, j]
+                    imag = values.freq.imag[0, j]
+                    f = values.frequencies[j]
+                    freq_curve_real += f'{f:.6e} {real:.6e} 0.0\n'
+                    freq_curve_imag += f'{f:.6e} {imag:.6e} 0.0\n'
+                nc_frequency_curve += freq_curve_real
+                nc_frequency_curve += freq_curve_imag
+                real = 1.
+                imag = 1.
+            else:
+                real = values.freq.real[0, 0]
+                imag = values.freq.imag[0, 0]
+                curve_real = -1
+                curve_imag = -1
+            material_kind = self._material_list[i].kind_str
+            nc_boundary += (f"ELEM {i_start} TO {i_end} {material_kind} "
+                            f"{real} {curve_real} {imag} {curve_imag}\n")
+        return nc_boundary, nc_frequency_curve

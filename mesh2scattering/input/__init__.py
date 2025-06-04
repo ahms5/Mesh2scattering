@@ -5,6 +5,7 @@ Provides functions to write input files for mesh2scattering.
 from .BoundaryCondition import (
     BoundaryConditionType,
     BoundaryCondition,
+    BoundaryConditionMapping,
 )
 
 from .input import (
@@ -30,6 +31,7 @@ from .SoundSource import (
 __all__ = [
     'BoundaryConditionType',
     'BoundaryCondition',
+    'BoundaryConditionMapping',
     'write_scattering_project_numcalc',
     'EvaluationGrid',
     'SampleShape',

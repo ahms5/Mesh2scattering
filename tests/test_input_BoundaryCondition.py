@@ -1,8 +1,12 @@
 import pytest
 import pyfar as pf
 import numpy as np
-from mesh2scattering.input import BoundaryConditionType, BoundaryCondition
-
+import numpy.testing as npt
+from mesh2scattering.input import (
+    BoundaryConditionType,
+    BoundaryCondition,
+    BoundaryConditionMapping,
+    )
 
 @pytest.fixture
 def material_frequency_data():
@@ -16,6 +20,13 @@ def material_data():
     return pf.FrequencyData(
         data=1,
         frequencies=0,
+    )
+
+@pytest.fixture
+def material(material_data):
+    return BoundaryCondition(
+        values=material_data,
+        kind=BoundaryConditionType.PRES,
     )
 
 def test_enum_members_exist():
@@ -165,3 +176,86 @@ def test_frequency_dependence_not_allowed(request, kind, values):
             values=values,
             kind=kind,
         )
+
+
+def test_MappingBoundaryCondition():
+    bcm = BoundaryConditionMapping(10)
+    assert bcm._material_list == []
+    assert bcm._material_mapping == []
+    assert bcm.n_mesh_faces == 10
+
+
+def test_MappingBoundaryCondition_apply_material(material):
+    bcm = BoundaryConditionMapping(10)
+    ## add material by indexes
+    bcm.apply_material(material, 1, 5)
+    assert len(bcm._material_list) == 1
+    assert bcm._material_list[0].kind == material.kind
+    npt.assert_almost_equal(bcm._material_mapping[0], [1, 5])
+
+    bcm.apply_material(material, 6, 10)
+    assert len(bcm._material_list) == 2
+    assert bcm._material_list[1].kind == material.kind
+    npt.assert_almost_equal(bcm._material_mapping[1], [6, 10])
+
+
+def test_MappingBoundaryCondition_out(material):
+    bcm = BoundaryConditionMapping(12)
+    bcm.apply_material(material, 1, 10)
+    nc_boundary, nc_frequency_curve = bcm.to_nc_out()
+    npt.assert_string_equal(
+        nc_boundary,
+        "ELEM 1 TO 10 PRES 1.0 -1 0.0 -1\n",
+    )
+    npt.assert_string_equal(
+        nc_frequency_curve,
+        "",
+    )
+
+
+def test_MappingBoundaryCondition_out_freqData():
+    bcm = BoundaryConditionMapping(2411)
+    material2 = BoundaryCondition(
+        values=pf.FrequencyData(
+            data=np.array([0, 1, 2]),
+            frequencies=np.array([0, 1000, 2000]),
+        ),
+        kind=BoundaryConditionType.ADMI,
+    )
+    bcm.apply_material(material2, 0, 2411)
+    nc_boundary, nc_frequency_curve = bcm.to_nc_out()
+    npt.assert_string_equal(
+        nc_boundary,
+        "ELEM 0 TO 2411 ADMI 1.0 1 1.0 2\n",
+    )
+    npt.assert_string_equal(
+        nc_frequency_curve,
+        (
+            "2 3\n"
+            "1 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 1.000000e+00 0.0\n"
+            "2.000000e+03 2.000000e+00 0.0\n"
+            "2 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 0.000000e+00 0.0\n"
+            "2.000000e+03 0.000000e+00 0.0\n"
+        ),
+    )
+
+
+def test_MappingBoundaryCondition_n_frequency_curves(material):
+    bcm = BoundaryConditionMapping(12)
+    bcm.apply_material(material, 1, 10)
+    assert bcm.n_frequency_curves == 0
+
+    # Add another material with different frequency data
+    material2 = BoundaryCondition(
+        values=pf.FrequencyData(
+            data=np.array([2.0]),
+            frequencies=np.array([1000]),
+        ),
+        kind=BoundaryConditionType.IMPE,
+    )
+    bcm.apply_material(material2, 11, 12)
+    assert bcm.n_frequency_curves == 2
