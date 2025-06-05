@@ -74,7 +74,7 @@ class BoundaryCondition:
         assumed to be a constant value for all frequencies.
         If a FrequencyData object is provided, it must be frequency
         dependent and can only be used for admittance data.
-    kind : str
+    kind : BoundaryConditionType
         the kind of boundary condition.
     """
 

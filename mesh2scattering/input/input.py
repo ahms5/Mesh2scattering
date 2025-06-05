@@ -217,11 +217,11 @@ def _write_nc_inp(
     method : str
         solving method for the NumCalc. Options are 'BEM', 'SL-FMM BEM', or
         'ML-FMM BEM'. By default 'ML-FMM BEM' is used.
-    nc_boundary : str
+    nc_boundary : str, None
         The NumCalc formatted boundary condition string.
-    nc_frequency_curve : str
-        The NumCalc formatted boundary condition string and frequency curve
-        string.
+    nc_frequency_curve : str, None
+        The NumCalc formatted frequency curve
+        string for boundary conditions.
     """
     if not isinstance(source_positions, pf.Coordinates):
         raise ValueError(
