@@ -29,6 +29,8 @@ extensions = [
     'sphinx_design',
     'sphinx_favicon',
     'sphinx_mdinclude',
+    'nbsphinx',
+    'nbsphinx_link',
 ]
 
 # show tocs for classes and functions of modules using the autodocsumm
