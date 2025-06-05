@@ -1,0 +1,6 @@
+frequency step, frequency in Hz, NC input file, Input check passed, Converged, Num. iterations, relative error, Comp. time total, Comp. time assembling, Comp. time solving, Comp. time post-proc.
+1, 500.0, NC1-1.out,1, 1, 39, 1.89509e-10, 37, 27, 7, 3
+2, 1000.0, NC2-2.out,1, 1, 38, 2.26399e-10, 37, 27, 7, 3
+3, 2000.0, NC3-3.out,1, 1, 33, 3.45701e-10, 33, 25, 4, 4
+4, 3000.0, NC4-4.out,1, 1, 29, 9.48977e-10, 51, 31, 8, 12
+5, 4000.0, NC5-5.out,1, 1, 23, 2.00553e-10, 57, 29, 8, 20
