@@ -16,7 +16,7 @@ class BoundaryConditionType(Enum):
     """
     velocity boundary condition.
 
-    Cannot be frequency dependent, this means it is 
+    Cannot be frequency dependent, this means it is
     constant for all frequencies.
     A velocity of 0 would define a sound hard boundary.
     """
@@ -25,7 +25,7 @@ class BoundaryConditionType(Enum):
     """
     pressure boundary condition.
 
-    Cannot be frequency dependent, this means it is 
+    Cannot be frequency dependent, this means it is
     constant for all frequencies.
     A pressure of 0 would define a sound soft boundary.
     """
@@ -45,7 +45,7 @@ class BoundaryConditionType(Enum):
     """
     normalized impedance boundary condition.
 
-    Cannot be frequency dependent, this means it is 
+    Cannot be frequency dependent, this means it is
     constant for all frequencies.
     NumCalc expects normalized impedances, i.e., impedance/(rho*c).
     rho is the density of air and c the speed of sound. The normalization is
@@ -141,7 +141,7 @@ class BoundaryCondition:
     def kind(self):
         """Defines the kind of boundary condition.
 
-    See :py:class:`BoundaryConditionType` fro details.
+        See :py:class:`BoundaryConditionType` fro details.
 
         Returns
         -------
