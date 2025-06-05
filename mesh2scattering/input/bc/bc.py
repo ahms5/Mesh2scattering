@@ -73,7 +73,7 @@ class BoundaryCondition:
 
     def __init__(
             self,
-            values: pf.FrequencyData|float,
+            values: pf.FrequencyData,
             kind: BoundaryConditionType,
             ):
         """Initialize the Material object.
