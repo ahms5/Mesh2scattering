@@ -2,6 +2,8 @@
 Provides functions to write input files for mesh2scattering.
 """
 
+from . import bc
+
 from .input import (
     write_scattering_project_numcalc,
     )
@@ -23,6 +25,7 @@ from .SoundSource import (
 )
 
 __all__ = [
+    'bc',
     'write_scattering_project_numcalc',
     'EvaluationGrid',
     'SampleShape',
