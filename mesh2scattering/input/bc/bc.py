@@ -31,38 +31,44 @@ class BoundaryConditionType(Enum):
     """
 
     admittance = "ADMI"
-    """
+    r"""
     normalized admittance boundary condition.
 
     Can be frequency depended.
-    NumCalc expects normalized admittance, i.e., (rho*c)/admittance.
-    rho is the density of air and c the speed of sound. The normalization is
-    beneficial because a single material file can be used for simulations
-    with differing speed of sound and density of air.
+    NumCalc expects normalized admittance, i.e.,
+    :math:`(\rho c)/\text{admittance}`.
+    :math:`\rho` is the density of air and :math:`c` the speed of sound.
+
+    The normalization is beneficial because we dont need to know about the
+    speed of sound and density of air in the simulation.
     """
 
     impedance = "IMPE"
-    """
+    r"""
     normalized impedance boundary condition.
 
     Cannot be frequency dependent, this means it is
     constant for all frequencies.
-    NumCalc expects normalized impedances, i.e., impedance/(rho*c).
-    rho is the density of air and c the speed of sound. The normalization is
-    beneficial because a single material file can be used for simulations
-    with differing speed of sound and density of air.
+    NumCalc expects normalized impedances, i.e.,
+    :math:`\text{impedance}/(\rho c)`.
+    :math:`\rho` is the density of air and :math:`c` the speed of sound.
+
+    The normalization is beneficial because we dont need to know about the
+    speed of sound and density of air in the simulation.
     """
 
 
 class BoundaryCondition:
     """Defines a boundary condition for a mesh, e.g material property.
 
-    NOTE: Frequency dependent boundary conditions can only be specified for
-    ADMI but not for IMPE, PRES and VELO
+    Note
+    ----
+    Frequency dependent boundary conditions can only be specified for
+    admittance but not for impedance, pressure and velocity.
 
     Parameters
     ----------
-    values : pf.FrequencyData, number
+    values : :py:class:`pyfar.FrequencyData`, number
         Defines the boundary condition values. If a number is provided,
         it is
         assumed to be a constant value for all frequencies.
@@ -80,19 +86,7 @@ class BoundaryCondition:
             values: pf.FrequencyData,
             kind: BoundaryConditionType,
             ):
-        """Initialize the Material object.
-
-        Parameters
-        ----------
-        values : pf.FrequencyData, number
-            Defines the boundary condition values. If a number is provided,
-            it is
-            assumed to be a constant value for all frequencies.
-            If a FrequencyData object is provided, it must be frequency
-            dependent and can only be used for admittance data.
-        kind : BoundaryConditionType
-            the kind of boundary condition.
-        """
+        """Initialize the Material object."""
         if isinstance(values, pf.FrequencyData):
             if kind is not BoundaryConditionType.admittance:
                 raise ValueError(
@@ -103,12 +97,13 @@ class BoundaryCondition:
 
     @property
     def values(self):
-        """Defines the boundary condition values with its frequencies.
+        """Get the boundary condition values.
 
         Returns
         -------
-        pf.FrequencyData
-            The boundary condition values with its frequencies.
+        :py:class:`pyfar.FrequencyData`, number
+            The boundary condition values ad FrequencyData if frequency
+            dependent or as single number.
         """
         return self._values
 
@@ -125,7 +120,7 @@ class BoundaryCondition:
 
     @property
     def frequency_dependent(self):
-        """Check if the boundary condition is frequency dependent.
+        """Whether the boundary condition is frequency dependent.
 
         Returns
         -------
@@ -139,7 +134,8 @@ class BoundaryCondition:
 
     @property
     def kind(self):
-        """Defines the kind of boundary condition.
+        """Get the kind of boundary condition as a
+        :py:class:`BoundaryConditionType`.
 
         See :py:class:`BoundaryConditionType` for details.
 
@@ -158,25 +154,25 @@ class BoundaryCondition:
 
     @property
     def kind_str(self):
-        """Get and set the kind of boundary condition as a string.
+        """Get the kind of boundary condition as a string.
 
         - ``'PRES'``
-            Returned if :py:attr:`BoundaryCondition.kind` is
+            if :py:attr:`BoundaryCondition.kind` is
             :py:attr:`BoundaryConditionType.pressure`.
         - ``'VELO'``
-            Returned if :py:attr:`BoundaryCondition.kind` is
+            if :py:attr:`BoundaryCondition.kind` is
             :py:attr:`BoundaryConditionType.velocity`.
         - ``'ADMI'``
-            Returned if :py:attr:`BoundaryCondition.kind` is
+            if :py:attr:`BoundaryCondition.kind` is
             :py:attr:`BoundaryConditionType.admittance`.
         - ``'IMPE'``
-            Returned if :py:attr:`BoundaryCondition.kind` is
+            if :py:attr:`BoundaryCondition.kind` is
             :py:attr:`BoundaryConditionType.impedance`.
 
         Returns
         -------
         str
-            The kind of boundary condition.
+            The string representation of the kind of boundary condition.
         """
         return self._kind.value
 
@@ -204,7 +200,8 @@ class BoundaryConditionMapping():
 
     @property
     def n_mesh_faces(self):
-        """The number of mesh faces to which the boundary condition is applied.
+        """Get the number of mesh faces to which the boundary condition
+        is applied.
 
         Returns
         -------
@@ -216,7 +213,10 @@ class BoundaryConditionMapping():
     def add_boundary_condition(
             self, material: BoundaryCondition,
             first_element: int, last_element: int):
-        """Add a material to the mapping.
+        """Add a boundary condition to the mapping.
+
+        Several boundary conditions can be added.
+        The testing for consistency is not done here, but done in NumCalc.
 
         Parameters
         ----------
@@ -224,10 +224,10 @@ class BoundaryConditionMapping():
             The material to add to the mapping.
         first_element : int
             The index of the first mesh face to which the material is applied.
-            Counting starts at 1.
+            Counting starts at 0.
         last_element : int
             The index of the last mesh face to which the material is applied.
-            Counting starts at 1.
+            Counting starts at 0.
         """
         if not isinstance(material, BoundaryCondition):
             raise ValueError("material must be a BoundaryCondition object.")
@@ -266,15 +266,18 @@ class BoundaryConditionMapping():
 
 
     def to_nc_out(self):
-        """Convert the mapping to a dictionary for output.
+        """Convert the mapping to a string for the nc definition file.
+
+        See https://github.com/Any2HRTF/Mesh2HRTF/wiki/Structure_of_NC.inp
+        for mor details.
 
         Returns
         -------
         nc_boundary : str
             The NumCalc formatted boundary condition string.
         nc_frequency_curve : str
-            The NumCalc formatted boundary condition string and frequency curve
-            string.
+            The NumCalc formatted frequency curves for the boundary condition.
+            If it is not frequency dependent, it is an empty.
         """
         nc_boundary = ''
         n_frequency_curves = self.n_frequency_curves
