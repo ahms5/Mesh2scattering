@@ -14,6 +14,7 @@ Modules
    :maxdepth: 1
 
    modules/mesh2scattering.input
+   modules/mesh2scattering.input.bc
    modules/mesh2scattering.numcalc
    modules/mesh2scattering.output
    modules/mesh2scattering.process
