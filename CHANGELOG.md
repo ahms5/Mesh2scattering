@@ -3,8 +3,6 @@
 
 ## mesh2scattering
 
-### v1.1.0 - ()
-
 - introduce boundary condition module (m2s.input.bc) to handle non sound hard surfaces ([#53](https://github.com/ahms5/Mesh2scattering/pulls/53))
 
 ### v1.0.1 - (2025-04-25)
