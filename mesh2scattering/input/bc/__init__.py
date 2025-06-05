@@ -24,12 +24,11 @@ here is a short example of a sound soft boundary condition with a mesh with
     >>> import mesh2scattering.input as m2si
     >>> import pyfar as pf
     >>> bc = m2si.bc.BoundaryCondition(
-    >>>     kind=m2si.BoundaryConditionType.pressure,
-    >>>     values=pf.FrequencyData(0, 0),
+    >>>     kind=m2si.bc.BoundaryConditionType.pressure,
+    >>>     values=0,
     >>> )
     >>> mapping = m2si.bc.BoundaryConditionMapping(100)
-    >>> mapping.add_material(bc, 0, 99)  # apply to all elements
-    >>> mesh = m2si.Mesh(elements=100, boundary_conditions=mapping)
+    >>> mapping.add_boundary_condition(bc, 0, 99)  # apply to all elements
 
 """
 
