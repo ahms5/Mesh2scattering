@@ -141,7 +141,7 @@ class BoundaryCondition:
     def kind(self):
         """Defines the kind of boundary condition.
 
-        See :py:class:`BoundaryConditionType` fro details.
+        See :py:class:`BoundaryConditionType` for details.
 
         Returns
         -------
