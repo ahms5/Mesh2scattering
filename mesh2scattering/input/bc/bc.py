@@ -176,25 +176,17 @@ class BoundaryCondition:
         """Get and set the kind of boundary condition as a string.
 
         - ``'PRES'``
-            A pressure boundary condition can be used to force a certain
-            pressure on the boundary of the mesh. E.g., a pressure of 0 would
-            define a sound soft boundary.
-            Cannot be frequency dependent, this means frequency must be 0.
+            Returned if :py:attr:`BoundaryCondition.kind` is
+            :py:attr:`BoundaryConditionType.pressure`.
         - ``'VELO'``
-            A velocity boundary condition can be used to force a certain
-            velocity on the boundary of the mesh. E.g., a velocity of 0 would
-            define a sound hard boundary.
-            Cannot be frequency dependent, this means frequency must be 0.
+            Returned if :py:attr:`BoundaryCondition.kind` is
+            :py:attr:`BoundaryConditionType.velocity`.
         - ``'ADMI'``
-            A normalized admittance boundary condition can be used to define
-            arbitrary boundaries. The admittance must be normalized, i.e.,
-            admittance/(rho*c) has to be provided, which rho being the density
-            of air in kg/m**3 and c the speed of sound in m/s.
+            Returned if :py:attr:`BoundaryCondition.kind` is
+            :py:attr:`BoundaryConditionType.admittance`.
         - ``'IMPE'``
-            A normalized impedance boundary condition can be used to define
-            arbitrary boundaries. The impedance must be normalized, i.e.,
-            impedance/(rho*c) has to be provided, which rho being the density
-            of air in kg/m**3 and c the speed of sound in m/s.
+            Returned if :py:attr:`BoundaryCondition.kind` is
+            :py:attr:`BoundaryConditionType.impedance`.
 
         Returns
         -------
