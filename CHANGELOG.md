@@ -3,6 +3,10 @@
 
 ## mesh2scattering
 
+### unreleased
+
+- introduce boundary condition module (m2s.input.bc) to handle non sound hard surfaces ([#53](https://github.com/ahms5/Mesh2scattering/pulls/53))
+
 ### v1.0.5 - (2026-04-02)
 
 - MAINT: deprecate pyfar 3.9 and 3.10 ([#80](https://github.com/ahms5/Mesh2scattering/pulls/80))
