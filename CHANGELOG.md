@@ -3,6 +3,10 @@
 
 ## mesh2scattering
 
+### v1.1.0 - ()
+
+- other boundary conditions are supported now, by the input.bc module (#53)
+
 ### v1.0.1 - (2025-04-25)
 
 - fix copyright in documentation
