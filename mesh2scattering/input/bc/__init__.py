@@ -1,6 +1,6 @@
 """
 In mesh2scattering all boundary conditions are assumed as sound
-hard if not specified.
+hard, if not specified.
 
 This module provides the boundary condition classes and types to define
 custom boundary conditions for each mesh element.

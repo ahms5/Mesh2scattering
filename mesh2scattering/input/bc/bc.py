@@ -1,7 +1,7 @@
 """Defines a boundary condition for a mesh, e.g material property.
 
 Frequency dependent boundary conditions can only be specified for
-ADMI  but not for IMPE, PRES and VELO.
+ADMI, but not for IMPE, PRES and VELO.
 """
 import numpy as np
 import pyfar as pf
@@ -16,7 +16,7 @@ class BoundaryConditionType(Enum):
     """
     velocity boundary condition.
 
-    Cannot be frequency dependent, this means frequency must be 0 and is
+    Cannot be frequency dependent, this means it is 
     constant for all frequencies.
     A velocity of 0 would define a sound hard boundary.
     """
@@ -25,7 +25,7 @@ class BoundaryConditionType(Enum):
     """
     pressure boundary condition.
 
-    Cannot be frequency dependent, this means frequency must be 0 and is
+    Cannot be frequency dependent, this means it is 
     constant for all frequencies.
     A pressure of 0 would define a sound soft boundary.
     """
@@ -45,7 +45,7 @@ class BoundaryConditionType(Enum):
     """
     normalized impedance boundary condition.
 
-    Cannot be frequency dependent, this means frequency must be 0 and is
+    Cannot be frequency dependent, this means it is 
     constant for all frequencies.
     NumCalc expects normalized impedances, i.e., impedance/(rho*c).
     rho is the density of air and c the speed of sound. The normalization is
@@ -62,8 +62,12 @@ class BoundaryCondition:
 
     Parameters
     ----------
-    values : pf.FrequencyData
-        Defines the boundary condition values with its frequencies.
+    values : pf.FrequencyData, number
+        Defines the boundary condition values. If a number is provided,
+        it is
+        assumed to be a constant value for all frequencies.
+        If a FrequencyData object is provided, it must be frequency
+        dependent and can only be used for admittance data.
     kind : str
         the kind of boundary condition.
     """
@@ -137,26 +141,7 @@ class BoundaryCondition:
     def kind(self):
         """Defines the kind of boundary condition.
 
-        - ``BoundaryConditionType.PRES``
-            A pressure boundary condition can be used to force a certain
-            pressure on the boundary of the mesh. E.g., a pressure of 0 would
-            define a sound soft boundary.
-            Cannot be frequency dependent, this means frequency must be 0.
-        - ``BoundaryConditionType.VELO``
-            A velocity boundary condition can be used to force a certain
-            velocity on the boundary of the mesh. E.g., a velocity of 0 would
-            define a sound hard boundary.
-            Cannot be frequency dependent, this means frequency must be 0.
-        - ``BoundaryConditionType.ADMI``
-            A normalized admittance boundary condition can be used to define
-            arbitrary boundaries. The admittance must be normalized, i.e.,
-            admittance/(rho*c) has to be provided, which rho being the density
-            of air in kg/m**3 and c the speed of sound in m/s.
-        - ``BoundaryConditionType.IMPE``
-            A normalized impedance boundary condition can be used to define
-            arbitrary boundaries. The impedance must be normalized, i.e.,
-            impedance/(rho*c) has to be provided, which rho being the density
-            of air in kg/m**3 and c the speed of sound in m/s.
+    See :py:class:`BoundaryConditionType` fro details.
 
         Returns
         -------
