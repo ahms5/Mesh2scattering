@@ -227,11 +227,11 @@ def test_MappingBoundaryCondition_out_freqData():
         ),
         kind=BoundaryConditionType.admittance,
     )
-    bcm.add_boundary_condition(material2, 0, 2411)
+    bcm.add_boundary_condition(material2, 0, 2410)
     nc_boundary, nc_frequency_curve = bcm.to_nc_out()
     npt.assert_string_equal(
         nc_boundary,
-        "ELEM 0 TO 2411 ADMI 1.0 1 1.0 2\n",
+        "ELEM 0 TO 2410 ADMI 1.0 1 1.0 2\n",
     )
     npt.assert_string_equal(
         nc_frequency_curve,
@@ -251,7 +251,7 @@ def test_MappingBoundaryCondition_out_freqData():
 
 def test_MappingBoundaryCondition_n_frequency_curves(material):
     bcm = BoundaryConditionMapping(12)
-    bcm.add_boundary_condition(material, 1, 10)
+    bcm.add_boundary_condition(material, 0, 10)
     assert bcm.n_frequency_curves == 0
 
     # Add another material with different frequency data
@@ -262,5 +262,48 @@ def test_MappingBoundaryCondition_n_frequency_curves(material):
         ),
         kind=BoundaryConditionType.admittance,
     )
-    bcm.add_boundary_condition(material2, 11, 12)
+    bcm.add_boundary_condition(material2, 11, 11)
     assert bcm.n_frequency_curves == 2
+
+
+@pytest.mark.parametrize(("first_element", "last_element"), [
+    (10, 11),
+    (0, 10),
+    (9, 10),
+])
+def test_add_boundary_condition_indices_out_of_range_raises(
+        material, first_element, last_element):
+    bcm = BoundaryConditionMapping(10)
+    with pytest.raises(
+            ValueError,
+            match="first_element and last_element must be < n_mesh_faces."):
+        bcm.add_boundary_condition(material, first_element, last_element)
+
+def test_add_boundary_condition_non_boundary_condition_object_raises():
+    bcm = BoundaryConditionMapping(5)
+    with pytest.raises(
+            ValueError, match="material must be a BoundaryCondition object."):
+        bcm.add_boundary_condition("not_a_material", 0, 1)
+
+def test_add_boundary_condition_non_integer_indices_raises(material):
+    bcm = BoundaryConditionMapping(5)
+    with pytest.raises(ValueError, match="first_element must be an integer."):
+        bcm.add_boundary_condition(material, "a", 2)
+    with pytest.raises(ValueError, match="last_element must be an integer."):
+        bcm.add_boundary_condition(material, 1, "b")
+
+
+@pytest.mark.parametrize(("first_element", "last_element"), [
+    (0, 0),
+    (4, 4),
+    (0, 4),
+    (1, 2),
+])
+def test_add_boundary_condition_overlapping_ranges_raises(
+        material, first_element, last_element):
+    bcm = BoundaryConditionMapping(10)
+    bcm.add_boundary_condition(material, 0, 4)
+    with pytest.raises(
+            ValueError,
+            match="The same mesh faces are used for different materials."):
+        bcm.add_boundary_condition(material, first_element, last_element)
