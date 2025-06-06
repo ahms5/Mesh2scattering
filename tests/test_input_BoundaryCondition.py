@@ -249,8 +249,7 @@ def test_MappingBoundaryCondition_out_freqData():
     )
 
 
-
-def test_MappingBoundaryCondition_out_freqData_more_assignments():
+def test_MappingBoundaryCondition_out_freqData_more_assignments(material):
     bcm = BoundaryConditionMapping(2411)
     material2 = BoundaryCondition(
         values=pf.FrequencyData(
@@ -259,18 +258,30 @@ def test_MappingBoundaryCondition_out_freqData_more_assignments():
         ),
         kind=BoundaryConditionType.admittance,
     )
+    material3 = BoundaryCondition(
+        values=pf.FrequencyData(
+            data=np.array([0, 3+3j, 4+4j]),
+            frequencies=np.array([0, 1000, 2000]),
+        ),
+        kind=BoundaryConditionType.admittance,
+    )
     bcm.add_boundary_condition(material2, 0, 99)
-    bcm.add_boundary_condition(material2, 100, 2410)
+    bcm.add_boundary_condition(material2, 102, 2410)
+    bcm.add_boundary_condition(material, 100, 100)
+    bcm.add_boundary_condition(material3, 101, 101)
     nc_boundary, nc_frequency_curve = bcm.to_nc_out()
     npt.assert_string_equal(
         nc_boundary,
         ("ELEM 0 TO 99 ADMI 1.0 1 1.0 2\n"
-         "ELEM 100 TO 2410 ADMI 1.0 1 1.0 2\n"),
+         "ELEM 102 TO 2410 ADMI 1.0 1 1.0 2\n"
+         "ELEM 100 TO 100 PRES 1.0 -1 0.0 -1\n"
+         "ELEM 101 TO 101 ADMI 1.0 3 1.0 4\n"
+         ),
     )
     npt.assert_string_equal(
         nc_frequency_curve,
         (
-            "2 3\n"
+            "4 3\n"
             "1 3\n"
             "0.000000e+00 0.000000e+00 0.0\n"
             "1.000000e+03 1.000000e+00 0.0\n"
@@ -279,6 +290,14 @@ def test_MappingBoundaryCondition_out_freqData_more_assignments():
             "0.000000e+00 0.000000e+00 0.0\n"
             "1.000000e+03 0.000000e+00 0.0\n"
             "2.000000e+03 0.000000e+00 0.0\n"
+            "3 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 3.000000e+00 0.0\n"
+            "2.000000e+03 4.000000e+00 0.0\n"
+            "4 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 3.000000e+00 0.0\n"
+            "2.000000e+03 4.000000e+00 0.0\n"
         ),
     )
 
