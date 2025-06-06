@@ -179,7 +179,9 @@ class BoundaryConditionMapping():
     """
 
     _material_list: list[int] = None
+    _material_mapping: list[BoundaryCondition] = None
     _n_mesh_faces: int = None
+    _assigned_mesh_faces: np.ndarray[bool] = None
 
     def __init__(self, n_mesh_faces: int):
         if not isinstance(n_mesh_faces, int) or n_mesh_faces <= 0:
@@ -188,6 +190,7 @@ class BoundaryConditionMapping():
         self._material_list = []
         self._material_mapping = []
         self._n_mesh_faces = n_mesh_faces
+        self._assigned_mesh_faces = np.zeros(n_mesh_faces, dtype=bool)
 
 
     @property
@@ -241,12 +244,8 @@ class BoundaryConditionMapping():
             raise ValueError(
                 "first_element and last_element must be < n_mesh_faces.")
         # check if the same mesh faces are used for different materials
-        all_indexes = np.zeros(self._n_mesh_faces, dtype=bool)
-        for i in range(len(self._material_mapping)):
-            first = self._material_mapping[i][1]
-            last = self._material_mapping[i][2]
-            all_indexes[first:last + 1] = True
-        if np.sum(all_indexes[first_element:last_element + 1]) > 0:
+        if np.sum(
+                self._assigned_mesh_faces[first_element:last_element + 1]) > 0:
             raise ValueError(
                 "The same mesh faces are used for different materials.")
 
@@ -260,6 +259,7 @@ class BoundaryConditionMapping():
         # Add range to mapping
         self._material_mapping.append(
             [current_index, first_element, last_element])
+        self._assigned_mesh_faces[first_element:last_element + 1] = True
 
     @property
     def n_frequency_curves(self):
