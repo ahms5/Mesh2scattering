@@ -2,6 +2,7 @@
 import trimesh
 import os
 from enum import Enum
+import mesh2scattering.input.bc as bc
 
 class SurfaceType(Enum):
     """Defines the type of a sample mesh.
@@ -136,7 +137,6 @@ class SurfaceDescription():
         self._surface_type = surface_type
         self._structural_depth = structural_depth
 
-
     @property
     def structural_wavelength_x(self):
         """Defines the structural wavelength in x direction.
@@ -254,6 +254,7 @@ class SampleMesh():
             sample_baseplate_hight: float=.01,
             sample_diameter: float=0.8,
             sample_shape: SampleShape=SampleShape.ROUND,
+            bc_mapping: bc.BoundaryConditionMapping=None,
             ) -> None:
         """Initialize the SampleMesh object.
 
@@ -269,6 +270,9 @@ class SampleMesh():
             diameter of the sample, by default 0.8
         sample_shape : str, optional
             shape of the sample, by default 'round'
+        bc_mapping : BoundaryConditionMapping, None
+            boundary condition mapping for the sample mesh, by default None,
+            which means that the mesh surface is sound hard.
 
         Returns
         -------
@@ -290,12 +294,27 @@ class SampleMesh():
         if not isinstance(surface_description, SurfaceDescription):
             raise ValueError(
                 "surface_description must be a SurfaceDescription object.")
+        if bc_mapping is not None:
+            if not isinstance(
+                    bc_mapping, bc.BoundaryConditionMapping):
+                raise ValueError(
+                    "bc_mapping must be a "
+                    "BoundaryConditionMapping object or None.")
+
+        # check if BoundaryConditionMapping matches the mesh properties
+        if bc_mapping is not None:
+            if bc_mapping.n_mesh_faces != mesh.faces.shape[0]:
+                raise ValueError(
+                    "The number of elements in the BoundaryConditionMapping "
+                    "must match the number of faces in the mesh.")
 
         self._mesh = mesh
         self._surface_description = surface_description
         self._sample_diameter = sample_diameter
         self._sample_shape = sample_shape
         self._sample_baseplate_hight = sample_baseplate_hight
+        self._bc_mapping = bc_mapping
+
         # calculate Number of repetitions in x and y direction
         Lambda_x = surface_description.structural_wavelength_x
         Lambda_y = surface_description.structural_wavelength_y
@@ -303,6 +322,17 @@ class SampleMesh():
             sample_diameter / Lambda_x) if Lambda_x > 0 else 0
         self._n_repetitions_y = (
             sample_diameter / Lambda_y) if Lambda_y > 0 else 0
+
+    @property
+    def bc_mapping(self):
+        """Get the boundary condition mapping of the sample mesh.
+
+        Returns
+        -------
+        bc_mapping : BoundaryConditionMapping, None
+            The boundary condition mapping of the sample mesh.
+        """
+        return self._bc_mapping
 
     @property
     def sample_baseplate_hight(self):
