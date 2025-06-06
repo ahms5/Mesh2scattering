@@ -171,12 +171,21 @@ def test_MappingBoundaryCondition_apply_material(material):
     bcm.add_boundary_condition(material, 1, 5)
     assert len(bcm._material_list) == 1
     assert bcm._material_list[0].kind == material.kind
-    npt.assert_almost_equal(bcm._material_mapping[0], [1, 5])
+    npt.assert_almost_equal(bcm._material_mapping[0], [0, 1, 5])
 
-    bcm.add_boundary_condition(material, 6, 10)
+    ## add same material
+    bcm.add_boundary_condition(material, 6, 7)
+    assert len(bcm._material_list) == 1
+    npt.assert_almost_equal(bcm._material_mapping[1], [0, 6, 7])
+
+    # add new material
+    material2 = BoundaryCondition(
+        values=1,
+        kind=BoundaryConditionType.admittance,
+    )
+    bcm.add_boundary_condition(material2, 8, 9)
     assert len(bcm._material_list) == 2
-    assert bcm._material_list[1].kind == material.kind
-    npt.assert_almost_equal(bcm._material_mapping[1], [6, 10])
+    npt.assert_almost_equal(bcm._material_mapping[2], [1, 8, 9])
 
 
 def test_MappingBoundaryCondition_out(material):
@@ -186,6 +195,22 @@ def test_MappingBoundaryCondition_out(material):
     npt.assert_string_equal(
         nc_boundary,
         "ELEM 1 TO 10 PRES 1.0 -1 0.0 -1\n",
+    )
+    npt.assert_string_equal(
+        nc_frequency_curve,
+        "",
+    )
+
+
+def test_MappingBoundaryCondition_out_two_ranges(material):
+    bcm = BoundaryConditionMapping(12)
+    bcm.add_boundary_condition(material, 1, 5)
+    bcm.add_boundary_condition(material, 6, 7)
+    nc_boundary, nc_frequency_curve = bcm.to_nc_out()
+    npt.assert_string_equal(
+        nc_boundary,
+        ("ELEM 1 TO 5 PRES 1.0 -1 0.0 -1\n"
+         "ELEM 6 TO 7 PRES 1.0 -1 0.0 -1\n"),
     )
     npt.assert_string_equal(
         nc_frequency_curve,
