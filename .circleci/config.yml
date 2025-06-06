@@ -230,7 +230,7 @@ jobs:
 
   publish_github_release:
     docker:
-      - image: circleci/golang:1.17
+      - image: circleci/golang:1.22
     steps:
       - checkout
       - run:
