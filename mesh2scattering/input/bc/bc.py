@@ -245,9 +245,14 @@ class BoundaryConditionMapping():
             raise ValueError("first_element must be <= last_element.")
 
         # Add material to list
-        self._material_list.append(material)
+        if material in self._material_list:
+            current_index = self._material_list.index(material)
+        else:
+            self._material_list.append(material)
+            current_index = len(self._material_list) - 1
         # Check if first_element and last_element are within the range
-        self._material_mapping.append([first_element, last_element])
+        self._material_mapping.append(
+            [current_index, first_element, last_element])
 
     @property
     def n_frequency_curves(self):
@@ -288,12 +293,13 @@ class BoundaryConditionMapping():
         else:
             nc_frequency_curve = ''
         current_curve = 1
-        for i in range(len(self._material_list)):
-            i_start = self._material_mapping[i][0]
-            i_end = self._material_mapping[i][1]
+        for i in range(len(self._material_mapping)):
+            index_bc = self._material_mapping[i][0]
+            i_start = self._material_mapping[i][1]
+            i_end = self._material_mapping[i][2]
 
-            values = self._material_list[i].values
-            if self._material_list[i].frequency_dependent:
+            values = self._material_list[index_bc].values
+            if self._material_list[index_bc].frequency_dependent:
                 freq_curve_real = f'{current_curve} {values.n_bins}\n'
                 curve_real = current_curve
                 current_curve += 1
@@ -315,7 +321,7 @@ class BoundaryConditionMapping():
                 imag = np.imag(values)
                 curve_real = -1
                 curve_imag = -1
-            material_kind = self._material_list[i].kind_str
+            material_kind = self._material_list[index_bc].kind_str
             nc_boundary += (f"ELEM {i_start} TO {i_end} {material_kind} "
                             f"{real} {curve_real} {imag} {curve_imag}\n")
         return nc_boundary, nc_frequency_curve
