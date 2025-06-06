@@ -3,6 +3,8 @@
 
 ## mesh2scattering
 
+- doc: add examples to documentation ([#59](https://github.com/ahms5/Mesh2scattering/pulls/59))
+
 ### v1.0.1 - (2025-04-25)
 
 - fix copyright in documentation
