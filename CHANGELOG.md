@@ -4,6 +4,7 @@
 ## mesh2scattering
 
 - doc: add examples to documentation ([#59](https://github.com/ahms5/Mesh2scattering/pulls/59))
+- ci: fix auto release on github ([#58](https://github.com/ahms5/Mesh2scattering/pulls/58))
 
 ### v1.0.1 - (2025-04-25)
 
