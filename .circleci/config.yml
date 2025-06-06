@@ -307,8 +307,6 @@ workflows:
           requires:
             - build_and_test
 
-      - publish_github_release
-
 
   test_and_publish:
     # Test and publish on new git version tags
