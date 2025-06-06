@@ -249,6 +249,40 @@ def test_MappingBoundaryCondition_out_freqData():
     )
 
 
+
+def test_MappingBoundaryCondition_out_freqData_more_assignments():
+    bcm = BoundaryConditionMapping(2411)
+    material2 = BoundaryCondition(
+        values=pf.FrequencyData(
+            data=np.array([0, 1, 2]),
+            frequencies=np.array([0, 1000, 2000]),
+        ),
+        kind=BoundaryConditionType.admittance,
+    )
+    bcm.add_boundary_condition(material2, 0, 99)
+    bcm.add_boundary_condition(material2, 100, 2410)
+    nc_boundary, nc_frequency_curve = bcm.to_nc_out()
+    npt.assert_string_equal(
+        nc_boundary,
+        ("ELEM 0 TO 99 ADMI 1.0 1 1.0 2\n"
+         "ELEM 100 TO 2410 ADMI 1.0 1 1.0 2\n"),
+    )
+    npt.assert_string_equal(
+        nc_frequency_curve,
+        (
+            "2 3\n"
+            "1 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 1.000000e+00 0.0\n"
+            "2.000000e+03 2.000000e+00 0.0\n"
+            "2 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 0.000000e+00 0.0\n"
+            "2.000000e+03 0.000000e+00 0.0\n"
+        ),
+    )
+
+
 def test_MappingBoundaryCondition_n_frequency_curves(material):
     bcm = BoundaryConditionMapping(12)
     bcm.add_boundary_condition(material, 0, 10)
