@@ -6,6 +6,7 @@ mesh2scattering
    :hidden:
 
    readme
+   examples
    api_reference
    contributing
    history
@@ -28,6 +29,17 @@ Python Boilerplate contains all the boilerplate you need to create a Python pack
 
             <i class="fa-solid fa-rocket icon-style"></i>
 
+    .. grid-item-card::
+        :link: examples.html
+        :text-align: center
+        :padding: 0 0 3 3
+
+        **Examples**
+        ^^^^
+
+        .. raw:: html
+
+            <i class="fa-solid fa-book icon-style"></i>
 
     .. grid-item-card::
         :link: api_reference

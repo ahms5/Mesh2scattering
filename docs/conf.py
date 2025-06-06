@@ -29,7 +29,10 @@ extensions = [
     'sphinx_design',
     'sphinx_favicon',
     'sphinx_mdinclude',
+    'nbsphinx',
+    'nbsphinx_link',
 ]
+suppress_warnings = ["config.cache"]
 
 # show tocs for classes and functions of modules using the autodocsumm
 # package
@@ -73,7 +76,12 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = [
+    '_build',
+    'Thumbs.db',
+    '.DS_Store',
+    '**.ipynb_checkpoints',
+    ]
 
 # The name of the Pygments (syntax highlighting) style to use (Not defining
 # uses the default style of the html_theme).
@@ -120,7 +128,7 @@ html_theme_options = {
     "icon_links": [
         {
           "name": "GitHub",
-          "url": "https://github.com/pyfar",
+          "url": "https://github.com/ahms/mesh2scattering",
           "icon": "fa-brands fa-square-github",
           "type": "fontawesome",
         },

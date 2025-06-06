@@ -56,6 +56,10 @@ docs = [
     "sphinx-design",
     "sphinx-favicon",
     "sphinx-reredirects",
+    "nbsphinx",
+    "sphinx_gallery",
+    "nbsphinx_link",
+    "ipython",
 ]
 dev = ["mesh2scattering[deploy,tests,docs]"]
 
