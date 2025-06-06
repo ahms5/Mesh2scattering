@@ -299,7 +299,10 @@ class BoundaryConditionMapping():
         n_frequency_curves = self.n_frequency_curves
         # first line
         if n_frequency_curves > 0:
-            n_max_bins = np.max([m.values.n_bins for m in self._material_list])
+            n_max_bins = 0
+            for m in self._material_list:
+                if m.frequency_dependent:
+                    n_max_bins = max(n_max_bins, m.values.n_bins)
             nc_frequency_curve = f'{n_frequency_curves} {n_max_bins}\n'
         else:
             nc_frequency_curve = ''
