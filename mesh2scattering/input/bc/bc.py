@@ -134,7 +134,7 @@ class BoundaryCondition:
 
     @property
     def kind(self):
-        """GGet the type of boundary condition as a
+        """Get the type of boundary condition as a
         :py:class:`BoundaryConditionType`.
 
         See :py:class:`BoundaryConditionType` for more information.
