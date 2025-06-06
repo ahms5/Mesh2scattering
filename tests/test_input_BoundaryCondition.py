@@ -171,12 +171,21 @@ def test_MappingBoundaryCondition_apply_material(material):
     bcm.add_boundary_condition(material, 1, 5)
     assert len(bcm._material_list) == 1
     assert bcm._material_list[0].kind == material.kind
-    npt.assert_almost_equal(bcm._material_mapping[0], [1, 5])
+    npt.assert_almost_equal(bcm._material_mapping[0], [0, 1, 5])
 
-    bcm.add_boundary_condition(material, 6, 10)
+    ## add same material
+    bcm.add_boundary_condition(material, 6, 7)
+    assert len(bcm._material_list) == 1
+    npt.assert_almost_equal(bcm._material_mapping[1], [0, 6, 7])
+
+    # add new material
+    material2 = BoundaryCondition(
+        values=1,
+        kind=BoundaryConditionType.admittance,
+    )
+    bcm.add_boundary_condition(material2, 8, 9)
     assert len(bcm._material_list) == 2
-    assert bcm._material_list[1].kind == material.kind
-    npt.assert_almost_equal(bcm._material_mapping[1], [6, 10])
+    npt.assert_almost_equal(bcm._material_mapping[2], [1, 8, 9])
 
 
 def test_MappingBoundaryCondition_out(material):
@@ -193,6 +202,22 @@ def test_MappingBoundaryCondition_out(material):
     )
 
 
+def test_MappingBoundaryCondition_out_two_ranges(material):
+    bcm = BoundaryConditionMapping(12)
+    bcm.add_boundary_condition(material, 1, 5)
+    bcm.add_boundary_condition(material, 6, 7)
+    nc_boundary, nc_frequency_curve = bcm.to_nc_out()
+    npt.assert_string_equal(
+        nc_boundary,
+        ("ELEM 1 TO 5 PRES 1.0 -1 0.0 -1\n"
+         "ELEM 6 TO 7 PRES 1.0 -1 0.0 -1\n"),
+    )
+    npt.assert_string_equal(
+        nc_frequency_curve,
+        "",
+    )
+
+
 def test_MappingBoundaryCondition_out_freqData():
     bcm = BoundaryConditionMapping(2411)
     material2 = BoundaryCondition(
@@ -202,11 +227,11 @@ def test_MappingBoundaryCondition_out_freqData():
         ),
         kind=BoundaryConditionType.admittance,
     )
-    bcm.add_boundary_condition(material2, 0, 2411)
+    bcm.add_boundary_condition(material2, 0, 2410)
     nc_boundary, nc_frequency_curve = bcm.to_nc_out()
     npt.assert_string_equal(
         nc_boundary,
-        "ELEM 0 TO 2411 ADMI 1.0 1 1.0 2\n",
+        "ELEM 0 TO 2410 ADMI 1.0 1 1.0 2\n",
     )
     npt.assert_string_equal(
         nc_frequency_curve,
@@ -224,9 +249,62 @@ def test_MappingBoundaryCondition_out_freqData():
     )
 
 
+def test_MappingBoundaryCondition_out_freqData_more_assignments(material):
+    bcm = BoundaryConditionMapping(2411)
+    material2 = BoundaryCondition(
+        values=pf.FrequencyData(
+            data=np.array([0, 1, 2]),
+            frequencies=np.array([0, 1000, 2000]),
+        ),
+        kind=BoundaryConditionType.admittance,
+    )
+    material3 = BoundaryCondition(
+        values=pf.FrequencyData(
+            data=np.array([0, 3+3j, 4+4j]),
+            frequencies=np.array([0, 1000, 2000]),
+        ),
+        kind=BoundaryConditionType.admittance,
+    )
+    bcm.add_boundary_condition(material2, 0, 99)
+    bcm.add_boundary_condition(material2, 102, 2410)
+    bcm.add_boundary_condition(material, 100, 100)
+    bcm.add_boundary_condition(material3, 101, 101)
+    nc_boundary, nc_frequency_curve = bcm.to_nc_out()
+    npt.assert_string_equal(
+        nc_boundary,
+        ("ELEM 0 TO 99 ADMI 1.0 1 1.0 2\n"
+         "ELEM 102 TO 2410 ADMI 1.0 1 1.0 2\n"
+         "ELEM 100 TO 100 PRES 1.0 -1 0.0 -1\n"
+         "ELEM 101 TO 101 ADMI 1.0 3 1.0 4\n"
+         ),
+    )
+    npt.assert_string_equal(
+        nc_frequency_curve,
+        (
+            "4 3\n"
+            "1 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 1.000000e+00 0.0\n"
+            "2.000000e+03 2.000000e+00 0.0\n"
+            "2 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 0.000000e+00 0.0\n"
+            "2.000000e+03 0.000000e+00 0.0\n"
+            "3 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 3.000000e+00 0.0\n"
+            "2.000000e+03 4.000000e+00 0.0\n"
+            "4 3\n"
+            "0.000000e+00 0.000000e+00 0.0\n"
+            "1.000000e+03 3.000000e+00 0.0\n"
+            "2.000000e+03 4.000000e+00 0.0\n"
+        ),
+    )
+
+
 def test_MappingBoundaryCondition_n_frequency_curves(material):
     bcm = BoundaryConditionMapping(12)
-    bcm.add_boundary_condition(material, 1, 10)
+    bcm.add_boundary_condition(material, 0, 10)
     assert bcm.n_frequency_curves == 0
 
     # Add another material with different frequency data
@@ -237,5 +315,48 @@ def test_MappingBoundaryCondition_n_frequency_curves(material):
         ),
         kind=BoundaryConditionType.admittance,
     )
-    bcm.add_boundary_condition(material2, 11, 12)
+    bcm.add_boundary_condition(material2, 11, 11)
     assert bcm.n_frequency_curves == 2
+
+
+@pytest.mark.parametrize(("first_element", "last_element"), [
+    (10, 11),
+    (0, 10),
+    (9, 10),
+])
+def test_add_boundary_condition_indices_out_of_range_raises(
+        material, first_element, last_element):
+    bcm = BoundaryConditionMapping(10)
+    with pytest.raises(
+            ValueError,
+            match="first_element and last_element must be < n_mesh_faces."):
+        bcm.add_boundary_condition(material, first_element, last_element)
+
+def test_add_boundary_condition_non_boundary_condition_object_raises():
+    bcm = BoundaryConditionMapping(5)
+    with pytest.raises(
+            ValueError, match="material must be a BoundaryCondition object."):
+        bcm.add_boundary_condition("not_a_material", 0, 1)
+
+def test_add_boundary_condition_non_integer_indices_raises(material):
+    bcm = BoundaryConditionMapping(5)
+    with pytest.raises(ValueError, match="first_element must be an integer."):
+        bcm.add_boundary_condition(material, "a", 2)
+    with pytest.raises(ValueError, match="last_element must be an integer."):
+        bcm.add_boundary_condition(material, 1, "b")
+
+
+@pytest.mark.parametrize(("first_element", "last_element"), [
+    (0, 0),
+    (4, 4),
+    (0, 4),
+    (1, 2),
+])
+def test_add_boundary_condition_overlapping_ranges_raises(
+        material, first_element, last_element):
+    bcm = BoundaryConditionMapping(10)
+    bcm.add_boundary_condition(material, 0, 4)
+    with pytest.raises(
+            ValueError,
+            match="The same mesh faces are used for different materials."):
+        bcm.add_boundary_condition(material, first_element, last_element)
