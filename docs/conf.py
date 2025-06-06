@@ -128,7 +128,7 @@ html_theme_options = {
     "icon_links": [
         {
           "name": "GitHub",
-          "url": "https://github.com/ahms/mesh2scattering",
+          "url": "https://github.com/ahms5/mesh2scattering",
           "icon": "fa-brands fa-square-github",
           "type": "fontawesome",
         },
