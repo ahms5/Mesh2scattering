@@ -1,32 +1,30 @@
 """
-In mesh2scattering all boundary conditions are assumed as sound
-hard, if not specified.
+By default, all boundary conditions in mesh2scattering are assumed to be
+sound hard unless specified otherwise.
 
-This module provides the boundary condition classes and types to define
-custom boundary conditions for each mesh element.
+This module provides classes and types to define custom boundary conditions
+for individual mesh elements.
 
-Different types of boundary conditions are supported, see
-:py:class:`BoundaryConditionType` for details.
-The :py:class:`BoundaryCondition` class is used to define the complex vales
-of the boundary conditions.
-The :py:class:`BoundaryConditionMapping` class is used to map the boundary
-conditions to the mesh elements as defined in the Mesh. The element counting
-starts at 0, so the first element has index 0.
-
+Supported boundary condition types are described in
+:py:class:`BoundaryConditionType`.
+Use the :py:class:`BoundaryCondition` class to specify the complex values of
+boundary conditions.
+The :py:class:`BoundaryConditionMapping` class maps boundary conditions to
+mesh elements as defined in the Mesh, with element indices starting at 0.
 
 Examples
 --------
-here is a short example of a sound soft boundary condition with a mesh with
-100 elements:
+The following example demonstrates how to define a sound soft boundary
+condition for a mesh with 100 elements:
 
 .. plot::
 
     >>> import mesh2scattering.input as m2si
     >>> import pyfar as pf
     >>> bc = m2si.bc.BoundaryCondition(
-    >>>     kind=m2si.bc.BoundaryConditionType.pressure,
-    >>>     values=0,
-    >>> )
+    ...     kind=m2si.bc.BoundaryConditionType.pressure,
+    ...     values=0,
+    ... )
     >>> mapping = m2si.bc.BoundaryConditionMapping(100)
     >>> mapping.add_boundary_condition(bc, 0, 99)  # apply to all elements
 
