@@ -304,6 +304,8 @@ class BoundaryConditionMapping():
         else:
             nc_frequency_curve = ''
         current_curve = 1
+        frequency_curves_written = np.zeros(
+            (len(self._material_list), 2), dtype=int)-1
         for i in range(len(self._material_mapping)):
             index_bc = self._material_mapping[i][0]
             i_start = self._material_mapping[i][1]
@@ -311,20 +313,24 @@ class BoundaryConditionMapping():
 
             values = self._material_list[index_bc].values
             if self._material_list[index_bc].frequency_dependent:
-                freq_curve_real = f'{current_curve} {values.n_bins}\n'
-                curve_real = current_curve
-                current_curve += 1
-                freq_curve_imag = f'{current_curve} {values.n_bins}\n'
-                curve_imag = current_curve
-                current_curve += 1
-                for j in range(values.n_bins):
-                    real = values.freq.real[0, j]
-                    imag = values.freq.imag[0, j]
-                    f = values.frequencies[j]
-                    freq_curve_real += f'{f:.6e} {real:.6e} 0.0\n'
-                    freq_curve_imag += f'{f:.6e} {imag:.6e} 0.0\n'
-                nc_frequency_curve += freq_curve_real
-                nc_frequency_curve += freq_curve_imag
+                if frequency_curves_written[index_bc, 0]<0:
+                    # write frequency curves
+                    freq_curve_real = f'{current_curve} {values.n_bins}\n'
+                    frequency_curves_written[index_bc, 0] = current_curve
+                    current_curve += 1
+                    freq_curve_imag = f'{current_curve} {values.n_bins}\n'
+                    frequency_curves_written[index_bc, 1] = current_curve
+                    current_curve += 1
+                    for j in range(values.n_bins):
+                        real = values.freq.real[0, j]
+                        imag = values.freq.imag[0, j]
+                        f = values.frequencies[j]
+                        freq_curve_real += f'{f:.6e} {real:.6e} 0.0\n'
+                        freq_curve_imag += f'{f:.6e} {imag:.6e} 0.0\n'
+                    nc_frequency_curve += freq_curve_real
+                    nc_frequency_curve += freq_curve_imag
+                curve_real = frequency_curves_written[index_bc, 0]
+                curve_imag = frequency_curves_written[index_bc, 1]
                 real = 1.
                 imag = 1.
             else:
