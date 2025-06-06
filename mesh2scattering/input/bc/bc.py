@@ -156,7 +156,7 @@ class BoundaryCondition:
     def kind_str(self):
         """Get the boundary condition type as a string.
 
-        - ``'PRES'`` for:py:attr:`BoundaryConditionType.pressure`.
+        - ``'PRES'`` for :py:attr:`BoundaryConditionType.pressure`.
         - ``'VELO'`` for :py:attr:`BoundaryConditionType.velocity`.
         - ``'ADMI'`` for :py:attr:`BoundaryConditionType.admittance`.
         - ``'IMPE'`` for :py:attr:`BoundaryConditionType.impedance`.
