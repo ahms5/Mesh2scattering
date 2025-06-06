@@ -240,7 +240,7 @@ jobs:
           name: "Publish Release on GitHub"
           command: |
             go install github.com/tcnksm/ghr@latest
-            ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering -draft ${CIRCLE_SHA1} ./release/
+            @REM ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering -draft ${CIRCLE_SHA1} ./release/
   
 
 # Invoke jobs via workflows
@@ -306,6 +306,13 @@ workflows:
                 - "3.13"
           requires:
             - build_and_test
+
+      - publish_github_release:
+          matrix:
+            parameters:
+              version:
+                - "3.13"
+
 
   test_and_publish:
     # Test and publish on new git version tags
