@@ -240,7 +240,7 @@ jobs:
           name: "Publish Release on GitHub"
           command: |
             go install github.com/tcnksm/ghr@latest
-            ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering -draft ${CIRCLE_SHA1} ./release/
+            ghr -t ${GITHUB_TOKEN} -u ahms5 -r Mesh2scattering -generatenotes -draft ${CIRCLE_SHA1} ./release/
   
 
 # Invoke jobs via workflows
