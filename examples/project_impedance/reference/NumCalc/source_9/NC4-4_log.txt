@@ -1,0 +1,49 @@
+istart= 4 iend = 4
+
+---------- NumCalc started: 5/6/2025 13:36:21 ----------
+
+Running on:         147-090.eduroam.rwth-aachen.de
+
+3D analysis
+Job title: reference
+
+Step 4, Frequency = 3000 Hz
+
+Direct multilevel fast multipole BEM
+
+Number of equations = 16460
+
+Informations about clusters:
+   Level    Num. of clusters    Maximum radius   Minimum radius
+     0           60                0.079496         0.0472832
+     1          218                0.0478861         0.0284976
+ resu. nets    4096                     0              0
+
+
+Informations about the FMM expansion:
+   Level    N. expa. terms    N. p. theta    N. p. phi    N. p. sphere
+     0          11              11              22           242
+     1           8               8              16           128
+
+CGS: err_ori = 0.00594464
+10 0.00207883
+10 Abs Error:1.23579e-05
+20 4.52893e-07
+20 Abs Error:2.69228e-09
+26 9.21579e-10
+
+Assembling the equation system         : 30
+Solving the equation system            : 7
+Post processing                        : 13
+Total                                  : 50
+
+
+Time Statistic for the job (in second):
+Input ............................ 1
+Address computation .............. 0
+Assembling the equation system ... 30
+Solving the equation system ...... 7
+Post processing .................. 13
+The whole job .................... 51
+
+---------- NumCalc ended: 5/6/2025 13:37:12 ----------
