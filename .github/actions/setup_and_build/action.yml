@@ -34,7 +34,7 @@ runs:
     - name: zip example folder into dist folder
       shell: bash
       run: |
-        zip -r ./release/examples.zip ./dist
+        zip -r ./dist/examples.zip ./examples
         mv release/NumCalc_WindowsExe.zip dist
 
     - name: Upload artifacts
