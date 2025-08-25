@@ -42,6 +42,7 @@ jobs:
       - uses: ./.github/actions/build_docs
 
   setup_and_build:
+    needs: [test_examples, linting, build_docs]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

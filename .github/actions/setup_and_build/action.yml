@@ -38,7 +38,7 @@ runs:
         mv release/NumCalc_WindowsExe.zip dist
 
     - name: Upload artifacts
-      if: ${{ inputs.upload == 'true' }}
+      if: inputs.upload == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: dist
