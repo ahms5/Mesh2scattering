@@ -3,6 +3,8 @@
 
 ## mesh2scattering
 
+- switch from circleCI to Github Actions ([#67](https://github.com/ahms5/Mesh2scattering/pulls/67))
+
 ### v1.0.2 - (2025-06-06)
 
 - doc: add examples to documentation ([#59](https://github.com/ahms5/Mesh2scattering/pulls/59))
