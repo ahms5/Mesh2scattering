@@ -1,0 +1,36 @@
+name: 'setup_and_build'
+description: 'Set up Python environment and build the project'
+inputs:
+  python-version:
+    description: 'The Python version'
+    required: false
+    default: '3.11'
+runs:
+  using: "composite"
+  steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        run: pip install ".[deploy]"
+
+      - name: Build source and wheel distribution
+        run: |
+          python -m build
+
+      - name: check wheel distribution
+        run: |
+          twine check dist/*
+          
+      - name: zip example folder into release folder
+        run: |
+          zip -r ./release/examples.zip ./examples
+          mv release dist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
