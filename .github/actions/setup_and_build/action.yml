@@ -5,6 +5,10 @@ inputs:
     description: 'The Python version'
     required: false
     default: '3.11'
+  upload:
+    description: 'Whether to upload the distribution'
+    required: false
+    default: false
 runs:
   using: "composite"
   steps:
@@ -27,13 +31,14 @@ runs:
       run: |
         twine check dist/*
         
-    - name: zip example folder into release folder
+    - name: zip example folder into dist folder
       shell: bash
       run: |
-        zip -r ./release/examples.zip ./examples
-        mv release dist
+        zip -r ./release/examples.zip ./dist
+        mv release/NumCalc_WindowsExe.zip dist
 
     - name: Upload artifacts
+      if: ${{ inputs.upload }}
       uses: actions/upload-artifact@v4
       with:
         name: dist

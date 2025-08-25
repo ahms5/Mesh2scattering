@@ -101,6 +101,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_and_build
+        with:
+          upload: true
 
   pypi_publish:
     name: Upload release to PyPI
