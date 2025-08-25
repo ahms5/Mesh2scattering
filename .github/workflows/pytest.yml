@@ -56,3 +56,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_and_build
+
+
+  build:
+    name: "My fancy build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: CSchoel/release-notes-from-changelog@v1
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: RELEASE.md
+          path: RELEASE.md
