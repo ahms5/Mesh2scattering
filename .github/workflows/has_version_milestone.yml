@@ -3,10 +3,7 @@ name: pull_request version milestone
 on:
   pull_request:
     types:
-      - opened
-      - labeled
-      - unlabeled
-      - synchronize
+      - closed
 
 jobs:
   check-labels:

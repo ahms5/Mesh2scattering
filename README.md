@@ -5,7 +5,7 @@
 [![CircleCI](https://circleci.com/gh/ahms5/mesh2scattering.svg?style=shield)](https://circleci.com/gh/ahms5/mesh2scattering)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pyfar/gallery/main?labpath=docs/gallery/interactive/pyfar_introduction.ipynb)
 
-Mesh2scattering is based on [Mesh2HRTF](https://github.com/Any2HRTF/Mesh2HRTF) and is an open-source project aiming an easy-to-use software package for the numerical calculation of scattering pattern and scattering and diffusion coefficients of any surface. In a nutshell, Mesh2scattering consists of three parts:
+Mesh2scattering is based on [Mesh2HRTF](https://github.com/Any2HRTF/Mesh2HRTF) and is an open-source project aiming an easy-to-use software package for the numerical calculation of scattering pattern and scattering and diffusion coefficients of any surface. In a nutshell, Mesh2scattering consists of five parts:
 
 - input: prepares geometrical data and acoustic parameters for the simulation,
 - numcalc: based on the input from ``input``, it calculates the corresponding sound field
