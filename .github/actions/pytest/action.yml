@@ -1,0 +1,37 @@
+name: 'pytest'
+description: 'Run pytest'
+inputs:
+  python-version:
+    description: 'The Python version'
+    required: false
+    default: '3.13'
+  fail-on-deprecation-warnings:
+    description: 'Enable deprecation warnings'
+    required: false
+    default: false
+runs:
+  using: "composite"
+  steps:
+    - name: Install System Dependencies
+      shell: bash
+      run: |
+        sudo apt-get update && sudo apt-get install -y build-essential
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install ".[tests]"
+    - name: Test with pytest
+      if: inputs.fail-on-deprecation-warnings == 'false'
+      shell: bash
+      run: |
+        pytest
+    - name: Test with pytest and DeprecationWarning
+      if: inputs.fail-on-deprecation-warnings == 'true'
+      shell: bash
+      run: |
+        pytest tests -W error::DeprecationWarning
+

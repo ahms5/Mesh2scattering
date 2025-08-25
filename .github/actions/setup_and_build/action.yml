@@ -1,0 +1,45 @@
+name: 'setup_and_build'
+description: 'Set up Python environment and build the project'
+inputs:
+  python-version:
+    description: 'The Python version'
+    required: false
+    default: '3.13'
+  upload:
+    description: 'Whether to upload the distribution'
+    required: false
+    default: false
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install dependencies
+      shell: bash
+      run: pip install ".[deploy]"
+
+    - name: Build source and wheel distribution
+      shell: bash
+      run: |
+        python -m build
+
+    - name: check wheel distribution
+      shell: bash
+      run: |
+        twine check dist/*
+        
+    - name: zip example folder into dist folder
+      shell: bash
+      run: |
+        zip -r ./dist/examples.zip ./examples
+        mv release/NumCalc_WindowsExe.zip dist
+
+    - name: Upload artifacts
+      if: inputs.upload == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist/

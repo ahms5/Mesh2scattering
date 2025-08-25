@@ -1,0 +1,29 @@
+name: 'build_docs'
+description: 'Build documentation using Sphinx'
+inputs:
+  python-version:
+    description: 'The Python version'
+    required: false
+    default: '3.13'
+runs:
+  using: "composite"
+  steps:
+    - name: Install pandoc
+      uses: pandoc/actions/setup@v1
+    - name: Install System Dependencies
+      shell: bash
+      run: |
+        sudo apt-get update && sudo apt-get install -y build-essential
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install dependencies
+      shell: bash
+      run: |
+          pip install ".[docs]"
+    - name: build docs
+      shell: bash
+      run: |            
+          cd docs/
+          make html SPHINXOPTS="-W"
