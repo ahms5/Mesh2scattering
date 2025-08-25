@@ -23,7 +23,6 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        python -m pip install --upgrade pip
         pip install ".[tests]"
     - name: Test with pytest
       if: inputs.fail-on-deprecation-warnings == 'false'
