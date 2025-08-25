@@ -20,6 +20,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+  pytest_fail_on_deprecation_warnings:
+    needs: [pytest]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/pytest
+        with:
+          fail-on-deprecation-warnings: true
+
   test_examples:
     needs: [pytest]
     runs-on: ubuntu-latest
@@ -42,7 +51,7 @@ jobs:
       - uses: ./.github/actions/build_docs
 
   setup_and_build:
-    needs: [test_examples, linting, build_docs]
+    needs: [test_examples, linting, build_docs, pytest_fail_on_deprecation_warnings]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

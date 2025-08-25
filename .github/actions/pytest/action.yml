@@ -5,6 +5,10 @@ inputs:
     description: 'The Python version'
     required: false
     default: '3.11'
+  fail-on-deprecation-warnings:
+    description: 'Enable deprecation warnings'
+    required: false
+    default: false
 runs:
   using: "composite"
   steps:
@@ -22,7 +26,13 @@ runs:
         python -m pip install --upgrade pip
         pip install ".[tests]"
     - name: Test with pytest
+      if: inputs.fail-on-deprecation-warnings == 'false'
       shell: bash
       run: |
         pytest
+    - name: Test with pytest and DeprecationWarning
+      if: inputs.fail-on-deprecation-warnings == 'true'
+      shell: bash
+      run: |
+        pytest tests -W error::DeprecationWarning
 
