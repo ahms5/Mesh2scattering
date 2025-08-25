@@ -8,29 +8,33 @@ inputs:
 runs:
   using: "composite"
   steps:
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ inputs.python-version }}
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
 
-      - name: Install dependencies
-        run: pip install ".[deploy]"
+    - name: Install dependencies
+      shell: bash
+      run: pip install ".[deploy]"
 
-      - name: Build source and wheel distribution
-        run: |
-          python -m build
+    - name: Build source and wheel distribution
+      shell: bash
+      run: |
+        python -m build
 
-      - name: check wheel distribution
-        run: |
-          twine check dist/*
-          
-      - name: zip example folder into release folder
-        run: |
-          zip -r ./release/examples.zip ./examples
-          mv release dist
+    - name: check wheel distribution
+      shell: bash
+      run: |
+        twine check dist/*
+        
+    - name: zip example folder into release folder
+      shell: bash
+      run: |
+        zip -r ./release/examples.zip ./examples
+        mv release dist
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist/
