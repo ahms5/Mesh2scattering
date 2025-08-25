@@ -85,7 +85,7 @@ def test_write_project(tmpdir):
                     density_of_medium=1.1839,
                     )
     m2s.numcalc.manage_numcalc(
-        tmpdir, numcalc, wait_time=0)
+        tmpdir, numcalc, wait_time=0, max_instances=1)
     for frequencies in [1, 2]:
         for source_type in ['POINT_SOURCE', 'PLANE_WAVE']:
             for sources in [1, 2]:
