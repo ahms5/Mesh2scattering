@@ -4,7 +4,7 @@
 
 __author__ = """The Mesh2hrtf and mesh2scattering developers"""
 __email__ = ''
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 from . import input  # noqa: A004
 from . import numcalc
