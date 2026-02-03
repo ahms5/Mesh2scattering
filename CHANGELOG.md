@@ -5,6 +5,7 @@
 
 - introduce boundary condition module (m2s.input.bc) to handle non sound hard surfaces ([#53](https://github.com/ahms5/Mesh2scattering/pulls/53), [#60](https://github.com/ahms5/Mesh2scattering/pulls/60))
 - allow EvaluationGrid can now be used without faces for any evaluation grids ([#73](https://github.com/ahms5/Mesh2scattering/pulls/73))
+- deprecate EvaluationGrid.from_parallel_to_plane, EvaluationGrid.from_spherical in v1.3.0, because NumCalc does not require triangulated evaluation grids. Please use 'from_coordinates' instead. It will create EvaluationGrids without faces for any arbitrary sampling. ([#73](https://github.com/ahms5/Mesh2scattering/pulls/73))
 
 ### v1.0.4 - (2026-02-03)
 
