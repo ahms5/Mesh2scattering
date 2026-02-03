@@ -96,7 +96,7 @@ jobs:
           fi
 
   setup_and_build:
-    needs: [details, check_pypi]
+    needs: [check_pypi, test_examples, linting, build_docs]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -104,9 +104,18 @@ jobs:
         with:
           upload: true
 
+  zip_and_upload_examples:
+    needs: [check_pypi, test_examples, linting, build_docs]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/zip_and_upload_examples
+        with:
+          upload: true
+
   pypi_publish:
     name: Upload release to PyPI
-    needs: [setup_and_build, details, test_examples, linting, build_docs]
+    needs: [setup_and_build, zip_and_upload_examples]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -122,7 +131,7 @@ jobs:
 
   github_release:
     name: Create GitHub Release
-    needs: [setup_and_build, details, test_examples, linting, build_docs]
+    needs: [setup_and_build, zip_and_upload_examples]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -135,11 +144,9 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dist
-          path: dist/
+          name: example_builds
+          path: example_builds/
           
-      - uses: CSchoel/release-notes-from-changelog@v1
-
       - name: Create GitHub Release
         id: create_release
         env:
@@ -147,7 +154,7 @@ jobs:
         run: >
           gh release create 
           ${{ needs.details.outputs.tag_name }} 
-          dist/* 
-          -F RELEASE.md
+          example_builds/*
+          -F CHANGELOG.md
           --title ${{ needs.details.outputs.tag_name }}
           --draft

@@ -3,6 +3,8 @@
 
 ## mesh2scattering
 
+### v1.0.3 - (2026-02-03)
+
 - switch from circleCI to Github Actions ([#67](https://github.com/ahms5/Mesh2scattering/pulls/67))
 - Fixed license definition in project config ([#68](https://github.com/ahms5/Mesh2scattering/pulls/68))
 - exclude buggy netCDF4 version, strings can be saved again in sofar ([#72](https://github.com/ahms5/Mesh2scattering/pulls/72))

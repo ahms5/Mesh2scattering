@@ -1,5 +1,5 @@
-name: 'setup_and_build'
-description: 'Set up Python environment and build the project'
+name: 'zip_and_upload_examples'
+description: 'Zip and upload example folder'
 inputs:
   python-version:
     description: 'The Python version'
@@ -16,24 +16,17 @@ runs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ inputs.python-version }}
-
-    - name: Install dependencies
-      shell: bash
-      run: pip install ".[deploy]"
-
-    - name: Build source and wheel distribution
-      shell: bash
-      run: |
-        python -m build
-
-    - name: check wheel distribution
-      shell: bash
-      run: |
-        twine check dist/*
         
+    - name: zip example folder into example_builds folder
+      shell: bash
+      run: |
+        mkdir -p ./example_builds
+        zip -r ./example_builds/examples.zip ./examples
+        mv release/NumCalc_WindowsExe.zip example_builds
+
     - name: Upload artifacts
       if: inputs.upload == 'true'
       uses: actions/upload-artifact@v4
       with:
-        name: dist
-        path: dist/
+        name: example_builds
+        path: ./example_builds/
