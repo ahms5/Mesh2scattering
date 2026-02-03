@@ -3,7 +3,7 @@
 
 ## mesh2scattering
 
-### v1.0.3 - (2026-02-03)
+### v1.0.4 - (2026-02-03)
 
 - switch from circleCI to Github Actions ([#67](https://github.com/ahms5/Mesh2scattering/pulls/67))
 - Fixed license definition in project config ([#68](https://github.com/ahms5/Mesh2scattering/pulls/68))
