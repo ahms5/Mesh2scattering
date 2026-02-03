@@ -22,7 +22,7 @@ runs:
       run: |
         mkdir -p ./example_builds
         zip -r ./example_builds/examples.zip ./examples
-        mv release/NumCalc_WindowsExe.zip example_builds
+        mv release/NumCalc_WindowsExe.zip ./example_builds
 
     - name: Upload artifacts
       if: inputs.upload == 'true'
