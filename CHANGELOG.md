@@ -7,6 +7,7 @@
 - Fixed license definition in project config ([#68](https://github.com/ahms5/Mesh2scattering/pulls/68))
 - exclude buggy netCDF4 version, strings can be saved again in sofar ([#72](https://github.com/ahms5/Mesh2scattering/pulls/72))
 - add tests for python 3.14 on ci ([#71](https://github.com/ahms5/Mesh2scattering/pulls/71))
+- Add general information to documentation ([#70](https://github.com/ahms5/Mesh2scattering/pulls/70))
 
 ### v1.0.2 - (2025-06-06)
 
