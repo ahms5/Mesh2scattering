@@ -4,6 +4,7 @@
 ## mesh2scattering
 
 - introduce boundary condition module (m2s.input.bc) to handle non sound hard surfaces ([#53](https://github.com/ahms5/Mesh2scattering/pulls/53), [#60](https://github.com/ahms5/Mesh2scattering/pulls/60))
+- allow EvaluationGrid can now be used without faces for any evaluation grids ([#73](https://github.com/ahms5/Mesh2scattering/pulls/73))
 
 ### v1.0.4 - (2026-02-03)
 
