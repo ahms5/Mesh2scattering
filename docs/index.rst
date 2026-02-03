@@ -12,7 +12,11 @@ mesh2scattering
    history
 
 
-Python Boilerplate contains all the boilerplate you need to create a Python package.
+Numerical calculation of surface scattering.
+
+Mesh2scattering is based on https://github.com/Any2HRTF/Mesh2HRTF and is an open-source project aiming an easy-to-use software package for the numerical calculation of scattering pattern and scattering and diffusion coefficients of any surface. 
+Please notice that this project does not support HRTF post processing, use https://github.com/Any2HRTF/Mesh2HRTF instead.
+
 
 .. grid:: 1 2 2 2
     :gutter: 4

@@ -3,9 +3,13 @@
 API Reference
 =============
 
-The following gives detailed information about all mesh2scattering functions sorted
-according to their modules.
+In a nutshell, Mesh2scattering consists of five modules:
 
+- ``input``: prepares geometrical data and acoustic parameters for the simulation,
+- ``numcalc``: based on the input from ``input``, it calculates the corresponding sound field
+- ``output``: processes the output from NumCalc to scattering pattern.
+- ``process``: processes the output to scattering and/or diffusion coefficients.
+- ``utils``: helping functions.
 
 Modules
 -------
