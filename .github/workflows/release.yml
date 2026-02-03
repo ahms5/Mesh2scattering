@@ -115,7 +115,7 @@ jobs:
 
   pypi_publish:
     name: Upload release to PyPI
-    needs: [setup_and_build, zip_and_upload_examples]
+    needs: [setup_and_build, zip_and_upload_examples, details]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -131,7 +131,7 @@ jobs:
 
   github_release:
     name: Create GitHub Release
-    needs: [setup_and_build, zip_and_upload_examples]
+    needs: [setup_and_build, zip_and_upload_examples, details]
     runs-on: ubuntu-latest
     permissions:
       contents: write
