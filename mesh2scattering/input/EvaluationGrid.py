@@ -57,15 +57,38 @@ class EvaluationGrid():
             raise ValueError("coordinates must have weights.")
         if not isinstance(name, str):
             raise ValueError("name must be a string.")
-        if not isinstance(faces, np.ndarray):
-            raise ValueError("faces must be a np.ndarray.")
-        if faces.ndim != 2 or faces.shape[1] != 3:
-            raise ValueError("faces must be of shape (n, 3).")
-        faces = np.atleast_2d(np.array(faces, dtype=int))
+        if faces is not None:
+            if not isinstance(faces, np.ndarray):
+                raise ValueError("faces must be a np.ndarray.")
+            if faces.ndim != 2 or faces.shape[1] != 3:
+                raise ValueError("faces must be of shape (n, 3).")
+            faces = np.atleast_2d(np.array(faces, dtype=int))
 
         self._coordinates = coordinates
         self._faces = faces
         self._name = name
+
+    @classmethod
+    def from_coordinates(cls, coordinates, name):
+        """Return the evaluation grid with the given coordinates.
+
+        Faces are set to None, since they are not required in NumCalc.
+
+
+        Parameters
+        ----------
+        coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
+            The coordinates of the evaluation grid. It must contain weights.
+        name : str
+            The name of the evaluation grid.
+
+        Returns
+        -------
+        EvaluationGrid
+            The evaluation grid with the given coordinates.
+        """
+        return cls(coordinates, None, name)
+
 
     @classmethod
     def from_spherical(cls, coordinates, name):
@@ -74,7 +97,7 @@ class EvaluationGrid():
         Parameters
         ----------
         coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
-            The coordinates of the evaluation grid.
+            The coordinates of the evaluation grid. It must contain weights.
         name : str
             The name of the evaluation grid.
 
@@ -88,6 +111,7 @@ class EvaluationGrid():
         faces = tri.simplices
         return cls(coordinates, faces, name)
 
+
     @classmethod
     def from_parallel_to_plane(cls, coordinates, plane, name):
         """Build a Evaluation grid from a sampling parallel to
@@ -95,8 +119,8 @@ class EvaluationGrid():
 
         Parameters
         ----------
-        coordinates ::py:class:`~pyfar.classes.coordinates.Coordinates`
-            The coordinates of the evaluation grid.
+        coordinates :py:class:`~pyfar.classes.coordinates.Coordinates`
+            The coordinates of the evaluation grid. It must contain weights.
         plane : "xy", "yz", "xz"
             In case all values of the evaluation grid are constant for one
             dimension, this dimension has to be discarded during the
@@ -212,14 +236,15 @@ class EvaluationGrid():
             f_id.write(nodes)
 
         # write elements
-        N = int(faces.shape[0])
-        elems = f"{N}\n"
-        for nn in range(N):
-            elems += (f"{int(start + nn)} "
-                    f"{faces[nn, 0] + start} "
-                    f"{faces[nn, 1] + start} "
-                    f"{faces[nn, 2] + start} "
-                    "2 0 1\n")
+        if faces is not None:
+            N = int(faces.shape[0])
+            elems = f"{N}\n"
+            for nn in range(N):
+                elems += (f"{int(start + nn)} "
+                        f"{faces[nn, 0] + start} "
+                        f"{faces[nn, 1] + start} "
+                        f"{faces[nn, 2] + start} "
+                        "2 0 1\n")
 
-        with open(os.path.join(folder_path, "Elements.txt"), "w") as f_id:
-            f_id.write(elems)
+            with open(os.path.join(folder_path, "Elements.txt"), "w") as f_id:
+                f_id.write(elems)

@@ -61,6 +61,16 @@ def test_from_spherical():
     npt.assert_array_equal(grid.faces.shape, (336, 3))
 
 
+def test_from_coordinates():
+    points = pf.samplings.sph_lebedev(sh_order=10)
+    grid = EvaluationGrid.from_coordinates(
+       points, "Lebedev_N10")
+    npt.assert_almost_equal(grid.coordinates.cartesian, points.cartesian)
+    assert grid.name == "Lebedev_N10"
+    npt.assert_almost_equal(grid.weights, points.weights)
+    assert grid.faces is None
+
+
 @pytest.mark.parametrize("plane", ['xy', 'yz', 'xz'])
 def test_from_parallel_to_plane(plane):
     x = np.arange(0, 50, 10)
@@ -123,6 +133,33 @@ def test_write(start, tmpdir):
         file = f_id.readlines()
     assert len(file) == int(file[0]) + 1
     assert int(file[0]) == grid.faces.shape[0]
+
+
+@pytest.mark.parametrize("start", [0, 100])
+def test_write_without_faces(start, tmpdir):
+    points = pf.samplings.sph_lebedev(sh_order=10)
+    grid = EvaluationGrid.from_coordinates(
+       points, "Lebedev_N10")
+
+    filename = os.path.join(tmpdir, "test_write_without_faces")
+
+    grid.export_numcalc(filename, start)
+    # read and check Nodes
+    with open(filename + "/Nodes.txt", "r") as f_id:
+        file = f_id.readlines()
+    file = "".join(file)
+
+    x = points.x
+    y = points.y
+    z = points.z
+    first_row = f"{points.csize}\n"
+    second_row = f"{start} {x[0]} {y[0]} {z[0]}\n"
+    assert file.startswith(first_row+second_row)
+    assert file.endswith(
+        f"\n{start+points.csize-1} {x[-1]} {y[-1]} {z[-1]}\n")
+
+    # read and check Elements
+    assert os.path.isfile(filename + "/Elements.txt") is False
 
 
 def test_read_write(tmpdir):
