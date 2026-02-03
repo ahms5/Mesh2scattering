@@ -1,0 +1,49 @@
+istart= 3 iend = 3
+
+---------- NumCalc started: 5/6/2025 13:32:23 ----------
+
+Running on:         147-090.eduroam.rwth-aachen.de
+
+3D analysis
+Job title: impedance
+
+Step 3, Frequency = 2000 Hz
+
+Direct multilevel fast multipole BEM
+
+Number of equations = 16460
+
+Informations about clusters:
+   Level    Num. of clusters    Maximum radius   Minimum radius
+     0           60                0.079496         0.0472832
+     1          218                0.0478861         0.0284976
+ resu. nets    4096                     0              0
+
+
+Informations about the FMM expansion:
+   Level    N. expa. terms    N. p. theta    N. p. phi    N. p. sphere
+     0           8               8              16           128
+     1           8               8              16           128
+
+CGS: err_ori = 0.00138626
+10 0.00735432
+10 Abs Error:1.0195e-05
+20 1.46367e-06
+20 Abs Error:2.02903e-09
+28 3.79246e-10
+
+Assembling the equation system         : 26
+Solving the equation system            : 7
+Post processing                        : 5
+Total                                  : 38
+
+
+Time Statistic for the job (in second):
+Input ............................ 0
+Address computation .............. 0
+Assembling the equation system ... 26
+Solving the equation system ...... 7
+Post processing .................. 5
+The whole job .................... 38
+
+---------- NumCalc ended: 5/6/2025 13:33:1 ----------
