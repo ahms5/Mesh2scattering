@@ -113,6 +113,10 @@ def write_scattering_project_numcalc(
     n_mesh_nodes = sample_mesh.n_mesh_nodes
     n_grid_elements = sum([grid.faces.shape[0] for grid in evaluation_grids])
     n_grid_nodes = sum([grid.coordinates.csize for grid in evaluation_grids])
+    if sample_mesh.bc_mapping is not None:
+        nc_boundary, nc_frequency_curve = sample_mesh.bc_mapping.to_nc_out()
+    else:
+        nc_boundary, nc_frequency_curve = None, None
     _write_nc_inp(
         project_path, version_m2s, project_title,
         speed_of_sound, density_of_medium,
@@ -121,7 +125,9 @@ def write_scattering_project_numcalc(
         source_type, source_positions,
         n_mesh_elements, n_mesh_nodes,
         n_grid_elements, n_grid_nodes,
-        bem_method)
+        bem_method,
+        nc_boundary, nc_frequency_curve,
+        )
 
     # write parameters.json
     surface = sample_mesh.surface_description
@@ -171,7 +177,9 @@ def _write_nc_inp(
         evaluation_grid_names: list[str],
         source_type: SoundSourceType, source_positions: pf.Coordinates,
         n_mesh_elements: int, n_mesh_nodes: int,
-        n_grid_elements: int, n_grid_nodes: int, method:str='ML-FMM BEM'):
+        n_grid_elements: int, n_grid_nodes: int, method:str='ML-FMM BEM',
+        nc_boundary='', nc_frequency_curve='',
+        ):
     """Write NC.inp file that is read by NumCalc to start the simulation.
 
     The file format is documented at:
@@ -209,8 +217,12 @@ def _write_nc_inp(
     method : str
         solving method for the NumCalc. Options are 'BEM', 'SL-FMM BEM', or
         'ML-FMM BEM'. By default 'ML-FMM BEM' is used.
+    nc_boundary : str, None
+        The NumCalc formatted boundary condition string.
+    nc_frequency_curve : str, None
+        The NumCalc formatted frequency curve
+        string for boundary conditions.
     """
-    materials = None
     if not isinstance(source_positions, pf.Coordinates):
         raise ValueError(
             "source_positions must be a pyfar.Coordinates object.")
@@ -323,22 +335,8 @@ def _write_nc_inp(
         # assign mesh elements to boundary conditions -------------------------
         fw("BOUNDARY\n")
         # remaining conditions defined by frequency curves
-        curves = 0
-        steps = 0
-        if materials is not None:
-            for m in materials:
-                if materials[m]["path"] is None:
-                    continue
-                # write information
-                fw(f"# Material: {m}\n")
-                fw("ELEM %i TO %i %s 1.0 %i 1.0 %i\n" % (
-                    materials[m]["index_start"],
-                    materials[m]["index_end"],
-                    materials[m]["boundary"],
-                    curves + 1, curves + 2))
-                # update metadata
-                steps = max(steps, len(materials[m]["freqs"]))
-                curves += 2
+        if nc_boundary is not None and nc_boundary != '':
+            fw(nc_boundary)
 
         fw("RETU\n")
         fw("##\n")
@@ -355,27 +353,10 @@ def _write_nc_inp(
         fw("##\n")
 
         # curves defining boundary conditions of the mesh ---------------------
-        if curves > 0:
+        if nc_frequency_curve is not None and nc_frequency_curve != '':
             fw("CURVES\n")
             # number of curves and maximum number of steps
-            fw(f"{curves} {steps}\n")
-            curves = 0
-            for m in materials:
-                if materials[m]["path"] is None:
-                    continue
-                # write curve for real values
-                curves += 1
-                fw(f"{curves} {len(materials[m]['freqs'])}\n")
-                for f, v in zip(materials[m]['freqs'],
-                                materials[m]['real']):
-                    fw(f"{f} {v} 0.0\n")
-                # write curve for imaginary values
-                curves += 1
-                fw(f"{curves} {len(materials[m]['freqs'])}\n")
-                for f, v in zip(materials[m]['freqs'],
-                                materials[m]['imag']):
-                    fw(f"{f} {v} 0.0\n")
-
+            fw(nc_frequency_curve)
         else:
             fw("# CURVES\n")
         fw("##\n")
