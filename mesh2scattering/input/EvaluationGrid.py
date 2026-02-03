@@ -3,6 +3,7 @@ import pyfar as pf
 import numpy as np
 import os
 from scipy.spatial import Delaunay, ConvexHull
+import warnings
 
 
 class EvaluationGrid():
@@ -64,16 +65,23 @@ class EvaluationGrid():
                 raise ValueError("faces must be of shape (n, 3).")
             faces = np.atleast_2d(np.array(faces, dtype=int))
 
+            warnings.warn((
+                "'from_parallel_to_plane', 'from_spherical' and 'faces' "
+                "will be deprecated in v1.3.0, because NumCalc "
+                "does not require triangulated evaluation grids. Please use "
+                "'from_coordinates' instead. It will create EvaluationGrids "
+                "without faces for any arbitrary sampling."),
+                DeprecationWarning, stacklevel=2)
+
         self._coordinates = coordinates
         self._faces = faces
         self._name = name
 
     @classmethod
     def from_coordinates(cls, coordinates, name):
-        """Return the evaluation grid with the given coordinates.
+        """Return the evaluation points with the given coordinates.
 
         Faces are set to None, since they are not required in NumCalc.
-
 
         Parameters
         ----------
@@ -93,6 +101,12 @@ class EvaluationGrid():
     @classmethod
     def from_spherical(cls, coordinates, name):
         """Return the evaluation grid with the spherical coordinates.
+
+        .. warning::
+            This function will be deprecated in v1.3.0, because NumCalc
+            does not require triangulated evaluation grids. Please use
+            :py:func:`from_coordinates` instead. It will create EvaluationGrids
+            without faces for any arbitrary sampling.
 
         Parameters
         ----------
@@ -117,22 +131,28 @@ class EvaluationGrid():
         """Build a Evaluation grid from a sampling parallel to
         'xy', 'yz' or 'xz' plane.
 
+        .. warning::
+            This function will be deprecated in v1.3.0, because NumCalc
+            does not require triangulated evaluation grids. Please use
+            :py:func:`from_coordinates` instead. It will create EvaluationGrids
+            without faces for any arbitrary sampling.
+
         Parameters
         ----------
-        coordinates :py:class:`~pyfar.classes.coordinates.Coordinates`
+        coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
             The coordinates of the evaluation grid. It must contain weights.
-        plane : "xy", "yz", "xz"
+        plane : 'xy', 'yz' or 'xz'
             In case all values of the evaluation grid are constant for one
             dimension, this dimension has to be discarded during the
             triangulation. E.g. if all points have a z-value of 0 (or
-            any other constant), plane must be "xy".
+            any other constant), plane must be 'xy'.
         name : str
             The name of the evaluation grid.
 
         Returns
         -------
         EvaluationGrid
-            The evaluation grid with the parallel to the xy plane.
+            The evaluation grid with the parallel to the defined plane.
         """
         if plane == "xy":
             mask = (0, 1)
