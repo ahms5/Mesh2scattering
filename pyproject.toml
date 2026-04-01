@@ -25,8 +25,7 @@ classifiers = [
 dependencies = [
     'numpy>=1.14.0',
     'scipy>=1.5.0',
-    'matplotlib',
-    'pyfar',
+    'pyfar<0.8.0',
     'psutil',
     'sofar',
     'trimesh',
@@ -56,6 +55,7 @@ examples = [
 ]
 docs = [
     "sphinx",
+    'matplotlib',
     "autodocsumm>=0.2.14",
     "pydata-sphinx-theme",
     "sphinx_mdinclude",
