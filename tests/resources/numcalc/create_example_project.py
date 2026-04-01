@@ -18,7 +18,7 @@ sound_sources = m2s.input.SoundSource(
     pf.Coordinates(0, 0, [3, 4], weights=[1, 1]),
     m2s.input.SoundSourceType.POINT_SOURCE)
 points = pf.samplings.sph_lebedev(sh_order=10)
-evaluation_grid = m2s.input.EvaluationGrid.from_spherical(
+evaluation_grid = m2s.input.EvaluationGrid.from_coordinates(
     points,
     'example_grid')
 surface_description = m2s.input.SurfaceDescription()

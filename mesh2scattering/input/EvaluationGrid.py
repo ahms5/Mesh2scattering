@@ -3,6 +3,7 @@ import pyfar as pf
 import numpy as np
 import os
 from scipy.spatial import Delaunay, ConvexHull
+import warnings
 
 
 class EvaluationGrid():
@@ -57,24 +58,60 @@ class EvaluationGrid():
             raise ValueError("coordinates must have weights.")
         if not isinstance(name, str):
             raise ValueError("name must be a string.")
-        if not isinstance(faces, np.ndarray):
-            raise ValueError("faces must be a np.ndarray.")
-        if faces.ndim != 2 or faces.shape[1] != 3:
-            raise ValueError("faces must be of shape (n, 3).")
-        faces = np.atleast_2d(np.array(faces, dtype=int))
+        if faces is not None:
+            if not isinstance(faces, np.ndarray):
+                raise ValueError("faces must be a np.ndarray.")
+            if faces.ndim != 2 or faces.shape[1] != 3:
+                raise ValueError("faces must be of shape (n, 3).")
+            faces = np.atleast_2d(np.array(faces, dtype=int))
+
+            warnings.warn((
+                "'from_parallel_to_plane', 'from_spherical' and 'faces' "
+                "will be deprecated in v1.3.0, because NumCalc "
+                "does not require triangulated evaluation grids. Please use "
+                "'from_coordinates' instead. It will create EvaluationGrids "
+                "without faces for any arbitrary sampling."),
+                DeprecationWarning, stacklevel=2)
 
         self._coordinates = coordinates
         self._faces = faces
         self._name = name
 
     @classmethod
-    def from_spherical(cls, coordinates, name):
-        """Return the evaluation grid with the spherical coordinates.
+    def from_coordinates(cls, coordinates, name):
+        """Return the evaluation points with the given coordinates.
+
+        Faces are set to None, since they are not required in NumCalc.
 
         Parameters
         ----------
         coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
-            The coordinates of the evaluation grid.
+            The coordinates of the evaluation grid. It must contain weights.
+        name : str
+            The name of the evaluation grid.
+
+        Returns
+        -------
+        EvaluationGrid
+            The evaluation grid with the given coordinates.
+        """
+        return cls(coordinates, None, name)
+
+
+    @classmethod
+    def from_spherical(cls, coordinates, name):
+        """Return the evaluation grid with the spherical coordinates.
+
+        .. warning::
+            This function will be deprecated in v1.3.0, because NumCalc
+            does not require triangulated evaluation grids. Please use
+            :py:func:`from_coordinates` instead. It will create EvaluationGrids
+            without faces for any arbitrary sampling.
+
+        Parameters
+        ----------
+        coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
+            The coordinates of the evaluation grid. It must contain weights.
         name : str
             The name of the evaluation grid.
 
@@ -88,27 +125,34 @@ class EvaluationGrid():
         faces = tri.simplices
         return cls(coordinates, faces, name)
 
+
     @classmethod
     def from_parallel_to_plane(cls, coordinates, plane, name):
         """Build a Evaluation grid from a sampling parallel to
         'xy', 'yz' or 'xz' plane.
 
+        .. warning::
+            This function will be deprecated in v1.3.0, because NumCalc
+            does not require triangulated evaluation grids. Please use
+            :py:func:`from_coordinates` instead. It will create EvaluationGrids
+            without faces for any arbitrary sampling.
+
         Parameters
         ----------
-        coordinates ::py:class:`~pyfar.classes.coordinates.Coordinates`
-            The coordinates of the evaluation grid.
-        plane : "xy", "yz", "xz"
+        coordinates : :py:class:`~pyfar.classes.coordinates.Coordinates`
+            The coordinates of the evaluation grid. It must contain weights.
+        plane : 'xy', 'yz' or 'xz'
             In case all values of the evaluation grid are constant for one
             dimension, this dimension has to be discarded during the
             triangulation. E.g. if all points have a z-value of 0 (or
-            any other constant), plane must be "xy".
+            any other constant), plane must be 'xy'.
         name : str
             The name of the evaluation grid.
 
         Returns
         -------
         EvaluationGrid
-            The evaluation grid with the parallel to the xy plane.
+            The evaluation grid with the parallel to the defined plane.
         """
         if plane == "xy":
             mask = (0, 1)
@@ -165,6 +209,17 @@ class EvaluationGrid():
         numpy.ndarray
             The faces of the evaluation grid.
         """
+        if self._faces is None:
+            N_nodes = self._coordinates.csize
+            N_elements = int(N_nodes/3) + 1 if N_nodes % 3 else int(N_nodes/3)
+            faces = []
+            for nn in range(N_elements):
+                faces.append([
+                    (nn * 3 + 0) % N_nodes,
+                    (nn * 3 + 1) % N_nodes,
+                    (nn * 3 + 2) % N_nodes,
+                ])
+            return np.array(faces)
         return self._faces
 
 
@@ -212,14 +267,16 @@ class EvaluationGrid():
             f_id.write(nodes)
 
         # write elements
-        N = int(faces.shape[0])
-        elems = f"{N}\n"
-        for nn in range(N):
-            elems += (f"{int(start + nn)} "
-                    f"{faces[nn, 0] + start} "
-                    f"{faces[nn, 1] + start} "
-                    f"{faces[nn, 2] + start} "
-                    "2 0 1\n")
+        if faces is not None:
+            N = int(faces.shape[0])
+            elems = f"{N}\n"
+            for nn in range(N):
+                elems += (f"{int(start + nn)} "
+                        f"{faces[nn, 0] + start} "
+                        f"{faces[nn, 1] + start} "
+                        f"{faces[nn, 2] + start} "
+                        "2 0 1\n")
 
-        with open(os.path.join(folder_path, "Elements.txt"), "w") as f_id:
-            f_id.write(elems)
+            with open(os.path.join(folder_path, "Elements.txt"), "w") as f_id:
+                f_id.write(elems)
+

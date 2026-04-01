@@ -32,7 +32,7 @@ def test_write_run_project(source_type, bem_method, tmpdir, simple_mesh, bc):
         source_type,
         )
     points = pf.samplings.sph_lebedev(sh_order=10)
-    evaluation_grid = m2s.input.EvaluationGrid.from_spherical(
+    evaluation_grid = m2s.input.EvaluationGrid.from_coordinates(
         points,
         'example_grid')
     bcm = None

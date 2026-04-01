@@ -105,7 +105,7 @@ def write_scattering_project_numcalc(
         i_start += evaluation_grid.coordinates.csize
 
     # write NumCalc input files for all sources (NC.inp)
-    version_m2s = version.parse(m2s.__version__)
+    version_m2s = m2s.__version__
     evaluation_grid_names = [grid.name for grid in evaluation_grids]
     source_type = sound_sources.source_type
     source_positions = sound_sources.source_coordinates

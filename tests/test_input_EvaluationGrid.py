@@ -50,58 +50,23 @@ def test_evaluation_grid_invalid_faces():
         EvaluationGrid(coords, np.array([[0]]), 'name')
 
 
-def test_from_spherical():
+def test_from_coordinates():
     points = pf.samplings.sph_lebedev(sh_order=10)
-    grid = EvaluationGrid.from_spherical(
+    grid = EvaluationGrid.from_coordinates(
        points, "Lebedev_N10")
     npt.assert_almost_equal(grid.coordinates.cartesian, points.cartesian)
     assert grid.name == "Lebedev_N10"
     npt.assert_almost_equal(grid.weights, points.weights)
-    assert isinstance(grid.faces, np.ndarray)
-    npt.assert_array_equal(grid.faces.shape, (336, 3))
-
-
-@pytest.mark.parametrize("plane", ['xy', 'yz', 'xz'])
-def test_from_parallel_to_plane(plane):
-    x = np.arange(0, 50, 10)
-    y = x
-    xx, yy = np.meshgrid(x, y)
-    xx = xx.flatten()
-    yy = yy.flatten()
-    if plane == 'xy':
-        points = pf.Coordinates(xx, yy, 0, weights=xx)
-    elif plane == 'xz':
-        points = pf.Coordinates(xx, 0, yy, weights=xx)
-    elif plane == 'yz':
-        points = pf.Coordinates(0, xx, yy, weights=xx)
-
-    grid = EvaluationGrid.from_parallel_to_plane(
-        points, plane, f"{plane}_plane")
-
-    assert grid.name == f"{plane}_plane"
-    npt.assert_almost_equal(grid.coordinates.cartesian, points.cartesian)
-    npt.assert_almost_equal(grid.weights, points.weights)
-    assert isinstance(grid.faces, np.ndarray)
-    npt.assert_array_equal(grid.faces.shape, (32, 3))
-
-
-def test_from_parallel_to_plane_invalid_plane():
-    points = pf.Coordinates(0, 0, 0, weights=1)
-
-    with pytest.raises(
-            ValueError,
-            match="plane must be 'xy', 'yz', or 'xz'."):
-        EvaluationGrid.from_parallel_to_plane(
-            points, 'xyz', "plane")
+    assert grid.faces is None
 
 
 @pytest.mark.parametrize("start", [0, 100])
-def test_write(start, tmpdir):
+def test_write_without_faces(start, tmpdir):
     points = pf.samplings.sph_lebedev(sh_order=10)
-    grid = EvaluationGrid.from_spherical(
+    grid = EvaluationGrid.from_coordinates(
        points, "Lebedev_N10")
 
-    filename = os.path.join(tmpdir, "test_evaluation_grid")
+    filename = os.path.join(tmpdir, "test_write_without_faces")
 
     grid.export_numcalc(filename, start)
     # read and check Nodes
@@ -119,10 +84,7 @@ def test_write(start, tmpdir):
         f"\n{start+points.csize-1} {x[-1]} {y[-1]} {z[-1]}\n")
 
     # read and check Elements
-    with open(filename + "/Elements.txt", "r") as f_id:
-        file = f_id.readlines()
-    assert len(file) == int(file[0]) + 1
-    assert int(file[0]) == grid.faces.shape[0]
+    assert os.path.isfile(filename + "/Elements.txt") is False
 
 
 def test_read_write(tmpdir):
