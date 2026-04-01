@@ -209,6 +209,17 @@ class EvaluationGrid():
         numpy.ndarray
             The faces of the evaluation grid.
         """
+        if self._faces is None:
+            N_nodes = self._coordinates.csize
+            N_elements = int(N_nodes/3) + 1 if N_nodes % 3 else int(N_nodes/3)
+            faces = []
+            for nn in range(N_elements):
+                faces.append([
+                    (nn * 3 + 0) % N_nodes,
+                    (nn * 3 + 1) % N_nodes,
+                    (nn * 3 + 2) % N_nodes,
+                ])
+            return np.array(faces)
         return self._faces
 
 
@@ -268,3 +279,4 @@ class EvaluationGrid():
 
             with open(os.path.join(folder_path, "Elements.txt"), "w") as f_id:
                 f_id.write(elems)
+

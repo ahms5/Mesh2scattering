@@ -35,7 +35,7 @@ def test_write_project(source_type, bem_method, tmpdir, simple_mesh):
         source_type,
         )
     points = pf.samplings.sph_lebedev(sh_order=10)
-    evaluation_grid = m2s.input.EvaluationGrid.from_spherical(
+    evaluation_grid = m2s.input.EvaluationGrid.from_coordinates(
         points,
         'example_grid')
     surface_description = m2s.input.SurfaceDescription()
@@ -343,7 +343,7 @@ def valid_inputs(simple_mesh):
         "frequencies": np.array([1000, 2000, 3000]),
         "sound_sources": SoundSource(
             pf.Coordinates(0, 0, 0, weights=1), SoundSourceType.POINT_SOURCE),
-        "evaluation_grids": [EvaluationGrid.from_spherical(
+        "evaluation_grids": [EvaluationGrid.from_coordinates(
             pf.samplings.sph_gaussian(10), "grid1")],
         "sample_mesh": SampleMesh(simple_mesh, SurfaceDescription()),
     }
