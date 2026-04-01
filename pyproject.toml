@@ -29,7 +29,6 @@ dependencies = [
     'pyfar',
     'psutil',
     'sofar',
-    'netCDF4!=1.7.4',
     'trimesh',
     'pooch',
 ]
@@ -49,6 +48,11 @@ tests = [
     "ruff==0.9.8",
     "coverage",
     "nbmake>=0.7.0",
+    "mesh2scattering[examples]",
+]
+examples = [
+    "spharpy",
+    "matplotlib",
 ]
 docs = [
     "sphinx",
@@ -62,6 +66,7 @@ docs = [
     "sphinx_gallery",
     "nbsphinx_link",
     "ipython",
+    "mesh2scattering[examples]",
 ]
 dev = ["mesh2scattering[deploy,tests,docs]"]
 
