@@ -4,7 +4,8 @@
 ## mesh2scattering
 
 - MAINT: remove restriction to pyfar version ([#75](https://github.com/ahms5/Mesh2scattering/pulls/75))
-- DOC: remove obsolete dependency ``nbsphinx_link`` and use ``nbsphinx`` directly ([#76](https://github.com/ahms5/Mesh2scattering/pulls/76), [#79](https://github.com/ahms5/Mesh2scattering/pulls/79))
+- MAINT: move matplotlib dependency to documentation as it is not required for the main package ([#74](https://github.com/ahms5/Mesh2scattering/pulls/74))
+- DOC: remove obsolete dependency ``nbsphinx_link`` and use ``nbsphinx`` directly ([#76](https://github.com/ahms5/Mesh2scattering/pulls/76))
 
 ### v1.0.4 - (2026-02-03)
 
