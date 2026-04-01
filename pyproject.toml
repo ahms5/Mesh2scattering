@@ -26,7 +26,7 @@ dependencies = [
     'numpy>=1.14.0',
     'scipy>=1.5.0',
     'matplotlib',
-    'pyfar<0.8.0',
+    'pyfar',
     'psutil',
     'sofar',
     'netCDF4!=1.7.4',
