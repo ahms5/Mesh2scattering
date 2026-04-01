@@ -26,7 +26,9 @@ def test_import():
     'SL-FMM BEM',
     'ML-FMM BEM',
 ])
-def test_write_project(source_type, bem_method, tmpdir, simple_mesh):
+def test_write_project(
+        source_type, bem_method, tmpdir, simple_mesh,
+        simple_hemispherical_grid):
     project_path = os.path.join(tmpdir, 'project')
     project_title = 'test_project'
     frequencies = np.array([500])
@@ -34,7 +36,7 @@ def test_write_project(source_type, bem_method, tmpdir, simple_mesh):
         pf.Coordinates(1, 0, 1, weights=1),
         source_type,
         )
-    points = pf.samplings.sph_lebedev(sh_order=10)
+    points = simple_hemispherical_grid
     evaluation_grid = m2s.input.EvaluationGrid.from_spherical(
         points,
         'example_grid')
@@ -288,7 +290,7 @@ def test__write_nc_inp(source_type, bem_method, tmpdir):
 
 
 @pytest.fixture
-def valid_inputs(simple_mesh):
+def valid_inputs(simple_mesh, simple_hemispherical_grid):
     return {
         "project_path": "test_project",
         "project_title": "Test Project",
@@ -296,7 +298,7 @@ def valid_inputs(simple_mesh):
         "sound_sources": SoundSource(
             pf.Coordinates(0, 0, 0, weights=1), SoundSourceType.POINT_SOURCE),
         "evaluation_grids": [EvaluationGrid.from_spherical(
-            pf.samplings.sph_gaussian(10), "grid1")],
+            simple_hemispherical_grid, "grid1")],
         "sample_mesh": SampleMesh(simple_mesh, SurfaceDescription()),
     }
 

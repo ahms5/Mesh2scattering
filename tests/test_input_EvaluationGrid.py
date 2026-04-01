@@ -50,15 +50,15 @@ def test_evaluation_grid_invalid_faces():
         EvaluationGrid(coords, np.array([[0]]), 'name')
 
 
-def test_from_spherical():
-    points = pf.samplings.sph_lebedev(sh_order=10)
+def test_from_spherical(simple_hemispherical_grid):
+    points = simple_hemispherical_grid
     grid = EvaluationGrid.from_spherical(
-       points, "Lebedev_N10")
+       points, "test_grid")
     npt.assert_almost_equal(grid.coordinates.cartesian, points.cartesian)
-    assert grid.name == "Lebedev_N10"
+    assert grid.name == "test_grid"
     npt.assert_almost_equal(grid.weights, points.weights)
     assert isinstance(grid.faces, np.ndarray)
-    npt.assert_array_equal(grid.faces.shape, (336, 3))
+    npt.assert_array_equal(grid.faces.shape, (120, 3))
 
 
 @pytest.mark.parametrize("plane", ['xy', 'yz', 'xz'])
@@ -96,10 +96,10 @@ def test_from_parallel_to_plane_invalid_plane():
 
 
 @pytest.mark.parametrize("start", [0, 100])
-def test_write(start, tmpdir):
-    points = pf.samplings.sph_lebedev(sh_order=10)
+def test_write(start, simple_hemispherical_grid,  tmpdir):
+    points = simple_hemispherical_grid
     grid = EvaluationGrid.from_spherical(
-       points, "Lebedev_N10")
+       points, "test_grid")
 
     filename = os.path.join(tmpdir, "test_evaluation_grid")
 

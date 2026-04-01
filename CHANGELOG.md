@@ -3,6 +3,8 @@
 
 ## mesh2scattering
 
+- remove restriction to pyfar version ([#75](https://github.com/ahms5/Mesh2scattering/pulls/75))
+
 ### v1.0.4 - (2026-02-03)
 
 - switch from circleCI to Github Actions ([#67](https://github.com/ahms5/Mesh2scattering/pulls/67))

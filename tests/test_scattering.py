@@ -6,30 +6,29 @@ import pyfar as pf
 
 
 @pytest.fixture
-def half_sphere():
-    """Return 42th order gaussian sampling for the half sphere and radius 1.
+def half_sphere(simple_hemispherical_grid_dense):
+    """5 degree resolution sampling for the half sphere and radius 1.
 
     Returns
     -------
     :py:class:`~pyfar.classes.coordinates.Coordinates`
         half sphere sampling grid
     """
-    mics = pf.samplings.sph_gaussian(42)
+    mics = simple_hemispherical_grid_dense
     # delete lower part of sphere
     return mics[mics.elevation <= np.pi/2]
 
 
 @pytest.fixture
-def quarter_half_sphere():
-    """Return 10th order gaussian sampling for the quarter half sphere
-    and radius 1.
+def quarter_half_sphere(simple_hemispherical_grid):
+    """30 degree resolution sampling for the quarter half sphere and radius 1.
 
     Returns
     -------
     :py:class:`~pyfar.classes.coordinates.Coordinates`
         quarter half sphere sampling grid
     """
-    incident_directions = pf.samplings.sph_gaussian(10)
+    incident_directions = simple_hemispherical_grid
     incident_directions = incident_directions[
         incident_directions.elevation <= np.pi/2]
     return incident_directions[
