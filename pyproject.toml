@@ -62,7 +62,7 @@ docs = [
     "sphinx-design",
     "sphinx-favicon",
     "sphinx-reredirects",
-    "nbsphinx",
+    "nbsphinx<9.0.0", # nbsphinx 9 breaks nbsphinx_link
     "sphinx_gallery",
     "nbsphinx_link",
     "ipython",
