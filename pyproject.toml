@@ -64,7 +64,6 @@ docs = [
     "sphinx-reredirects",
     "nbsphinx",
     "sphinx_gallery",
-    "nbsphinx_link",
     "ipython",
     "mesh2scattering[examples]",
 ]

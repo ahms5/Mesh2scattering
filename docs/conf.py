@@ -14,6 +14,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 import mesh2scattering  # noqa
 
+os.makedirs('examples', exist_ok=True)
+shutil.copy('../examples/demo.ipynb', 'examples/demo.ipynb')
+
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
@@ -30,7 +33,6 @@ extensions = [
     'sphinx_favicon',
     'sphinx_mdinclude',
     'nbsphinx',
-    'nbsphinx_link',
 ]
 suppress_warnings = ["config.cache"]
 
