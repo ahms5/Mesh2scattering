@@ -32,6 +32,8 @@ class EvaluationGrid():
         >>> import spharpy
         >>>
         >>> points = spharpy.samplings.lebedev(10)
+        >>> points.weights = spharpy.samplings.calculate_sampling_weights(
+        ...     points)
         >>> grid = m2s.input.EvaluationGrid.from_spherical(
         ...     points, "Lebedev_N10")
     """
