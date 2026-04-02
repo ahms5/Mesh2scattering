@@ -3,6 +3,8 @@
 
 ## mesh2scattering
 
+### v1.0.5 - (2026-04-02)
+
 - MAINT: deprecate pyfar 3.9 and 3.10 ([#80](https://github.com/ahms5/Mesh2scattering/pulls/80))
 - MAINT: remove restriction to pyfar version ([#75](https://github.com/ahms5/Mesh2scattering/pulls/75), [#78](https://github.com/ahms5/Mesh2scattering/pulls/78))
 - MAINT: move matplotlib dependency to documentation as it is not required for the main package ([#74](https://github.com/ahms5/Mesh2scattering/pulls/74))
