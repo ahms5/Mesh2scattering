@@ -28,7 +28,7 @@ Use pip to install mesh2scattering
 pip install mesh2scattering
 ```
 
-(Requires Python 3.9 or higher)
+(Requires Python 3.11 or higher)
 
 For Windows the exe is downloaded automatically.
 For Linux and MacOS NumCalc is build automatically, note that this requires
