@@ -31,7 +31,7 @@ class EvaluationGrid():
         >>> import pyfar as pf
         >>> import spharpy
         >>>
-        >>> points = spharpy.sampling.lebedev(10)
+        >>> points = spharpy.samplings.lebedev(10)
         >>> grid = m2s.input.EvaluationGrid.from_spherical(
         ...     points, "Lebedev_N10")
     """
