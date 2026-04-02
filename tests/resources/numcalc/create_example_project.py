@@ -3,6 +3,7 @@ import mesh2scattering as m2s
 import os
 import pyfar as pf
 import numpy as np
+import spharpy
 import trimesh
 
 # %%
@@ -17,7 +18,7 @@ frequencies = np.array([100, 200])
 sound_sources = m2s.input.SoundSource(
     pf.Coordinates(0, 0, [3, 4], weights=[1, 1]),
     m2s.input.SoundSourceType.POINT_SOURCE)
-points = pf.samplings.sph_lebedev(sh_order=10)
+points = spharpy.samplings.lebedev(10)(sh_order=10)
 evaluation_grid = m2s.input.EvaluationGrid.from_spherical(
     points,
     'example_grid')

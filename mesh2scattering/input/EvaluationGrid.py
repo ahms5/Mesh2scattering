@@ -29,8 +29,9 @@ class EvaluationGrid():
 
         >>> import mesh2scattering as m2s
         >>> import pyfar as pf
+        >>> import spharpy
         >>>
-        >>> points = pf.samplings.sph_lebedev(sh_order=10)
+        >>> points = spharpy.samplings.lebedev(10)
         >>> grid = m2s.input.EvaluationGrid.from_spherical(
         ...     points, "Lebedev_N10")
     """
