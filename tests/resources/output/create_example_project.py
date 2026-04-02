@@ -4,13 +4,14 @@ import os
 import pyfar as pf
 import numpy as np
 import trimesh
+import spharpy
 
 # %%
 frequencies = np.array([500, 1000])
 sound_sources = m2s.input.SoundSource(
     pf.Coordinates(0, 0, [3, 4], weights=[1, 1]),
     m2s.input.SoundSourceType.POINT_SOURCE)
-points = pf.samplings.sph_gaussian(sh_order=63)
+points = spharpy.sampling.gaussian(n_max=63)
 evaluation_grid = m2s.input.EvaluationGrid.from_spherical(
     points,
     'gaussian_63')
