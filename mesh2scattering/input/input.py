@@ -367,13 +367,13 @@ def _write_nc_inp(
                 curves += 1
                 fw(f"{curves} {len(materials[m]['freqs'])}\n")
                 for f, v in zip(materials[m]['freqs'],
-                                materials[m]['real']):
+                                materials[m]['real'], strict=True):
                     fw(f"{f} {v} 0.0\n")
                 # write curve for imaginary values
                 curves += 1
                 fw(f"{curves} {len(materials[m]['freqs'])}\n")
                 for f, v in zip(materials[m]['freqs'],
-                                materials[m]['imag']):
+                                materials[m]['imag'], strict=True):
                     fw(f"{f} {v} 0.0\n")
 
         else:

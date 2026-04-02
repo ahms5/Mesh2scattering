@@ -42,7 +42,7 @@ tests = [
     "pytest",
     "pytest-cov",
     "watchdog",
-    "ruff==0.9.8",
+    "ruff==0.15.8",
     "coverage",
     "nbmake>=0.7.0",
     "mesh2scattering[examples]",
