@@ -50,7 +50,7 @@ tests = [
     "mesh2scattering[examples]",
 ]
 examples = [
-    "spharpy",
+    "spharpy>1.0.0",
     "matplotlib",
 ]
 docs = [
