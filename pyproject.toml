@@ -55,7 +55,6 @@ examples = [
 ]
 docs = [
     "sphinx",
-    'matplotlib',
     "autodocsumm>=0.2.14",
     "pydata-sphinx-theme",
     "sphinx_mdinclude",
